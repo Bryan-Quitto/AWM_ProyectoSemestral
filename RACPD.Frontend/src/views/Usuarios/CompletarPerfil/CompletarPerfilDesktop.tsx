@@ -1,5 +1,6 @@
 import type { CompletarPerfilProps } from './CompletarPerfilContenedor'
-import { CampoContrasena, IndicadorFortalezaContrasena } from '../../../views/Compartidos/Seguridad'
+import { CampoContrasena } from '../../../components/Seguridad/CampoContrasena'
+import { IndicadorFortalezaContrasena } from '../../../components/Seguridad/IndicadorFortalezaContrasena'
 
 export const CompletarPerfilDesktop = ({
   form,

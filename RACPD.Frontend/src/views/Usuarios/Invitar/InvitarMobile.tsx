@@ -1,4 +1,12 @@
 import type { InvitarProps } from './InvitarContenedor'
+import { Controller } from 'react-hook-form'
+import { SelectorDinamico } from '../../../components/SelectorDinamico'
+
+const opcionesRol = [
+  { valor: 1, etiqueta: 'Cuidador Principal' },
+  { valor: 2, etiqueta: 'Apoyo' },
+  { valor: 0, etiqueta: 'Administrador' },
+]
 
 export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: InvitarProps) => {
   return (
@@ -41,16 +49,20 @@ export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: I
             <label htmlFor="rol" className="block text-sm font-medium text-blue-900">
               Rol
             </label>
-            <select
-              id="rol"
-              disabled={isMutating}
-              className="w-full p-3 bg-gray-50 border border-blue-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
-              {...form.register('rol', { valueAsNumber: true })}
-            >
-              <option value={1}>Cuidador Principal</option>
-              <option value={2}>Apoyo</option>
-              <option value={0}>Administrador</option>
-            </select>
+            <Controller
+              name="rol"
+              control={form.control}
+              render={({ field }) => (
+                <SelectorDinamico
+                  id="rol"
+                  disabled={isMutating}
+                  opciones={opcionesRol}
+                  value={field.value}
+                  onChange={field.onChange}
+                  error={form.formState.errors.rol?.message}
+                />
+              )}
+            />
             {form.formState.errors.rol && (
               <p className="text-xs text-red-500">{form.formState.errors.rol.message}</p>
             )}

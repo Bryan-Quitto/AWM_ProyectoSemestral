@@ -31,6 +31,12 @@ ESTRICTAMENTE PROHIBIDO devolver errores HTTP como texto plano o cuerpos vacíos
 - PROHIBIDO usar `useEffect` para sincronizar datos de SWR con estado local. Usa el patrón de **Estado Derivado**.
 - **Arquitectura Dual Views:** Toda UI debe bifurcarse en `[Nombre]Desktop.tsx` y `[Nombre]Mobile.tsx` en la subcarpeta `/views/`.
 
+### 🧩 REGLA-AHA-UI & ESTRUCTURA DE COMPONENTES (Zero-Premature Optimization)
+- **Regla de 3 (WET antes de DRY):** ESTRICTAMENTE PROHIBIDO crear componentes "reutilizables" por simple especulación. Es preferible duplicar código de UI (Write Everything Twice) en las fases iniciales antes que crear un "Componente Dios" lleno de banderas (`isMobile`, `hideLabel`).
+- **Ubicación Estricta:** 
+  - Todo componente de uso universal y 100% agnóstico (Botones, Inputs, Selectores Dinámicos, Validadores de Contraseña) **DEBE** ir en `src/components/`.
+  - Si un componente tiene lógica de negocio específica de un flujo, **DEBE** quedarse en `src/views/` o `src/features/`. Nunca contamines `src/components/` con componentes atados a un dominio.
+
 ### 🛡️ REGLA-ZOD-SCHEMA-BRIDGE & REGLA-TS-ESTRICTO (Día Cero)
 Estas reglas de compilación estricta (TS/ESLint) deben configurarse e imponerse desde la inicialización del repositorio.
 - Todo formulario usa exclusivamente el inferido de Zod: `useForm<z.infer<typeof miSchema>>`.

@@ -23,6 +23,7 @@ Procesa el requerimiento por estas 5 fases y responde estructuradamente:
 
 ## FASE 3: Propuesta de Elevación (World-Class UX en Salud)
 - Evalúa desde UX/Rendimiento. ¿Cómo garantizamos acceso rápido en situaciones de estrés (ej. Botón SOS o Contacto WhatsApp)? Propón mejoras funcionales.
+- **Evitar Abstracción Prematura:** Cuestiona si reutilizar UI es vital (Regla de 3). Agrupa UI 100% agnóstica en `src/components/`, y UI ligada a dominio en `src/views/`.
 
 ## FASE 4: El Borrador del `spec.md`
 Si se supera la Fase 1, redacta el esquema asegurando:
