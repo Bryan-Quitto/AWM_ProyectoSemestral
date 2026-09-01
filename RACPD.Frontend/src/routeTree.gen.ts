@@ -14,6 +14,7 @@ import { Route as InicioSesionRouteImport } from './routes/inicio-sesion'
 import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
 import { Route as ProtegidasCompletarPerfilRouteImport } from './routes/_protegidas/completar-perfil'
+import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegidas/configuracion'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
 import { Route as ProtegidasUsuariosInvitarRouteImport } from './routes/_protegidas/usuarios/invitar'
 
@@ -42,6 +43,11 @@ const ProtegidasCompletarPerfilRoute =
     path: '/completar-perfil',
     getParentRoute: () => ProtegidasRoute,
   } as any)
+const ProtegidasConfiguracionRoute = ProtegidasConfiguracionRouteImport.update({
+  id: '/configuracion',
+  path: '/configuracion',
+  getParentRoute: () => ProtegidasRoute,
+} as any)
 const ProtegidasFichaPacienteRoute = ProtegidasFichaPacienteRouteImport.update({
   id: '/ficha-paciente',
   path: '/ficha-paciente',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
+  '/configuracion': typeof ProtegidasConfiguracionRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
 }
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
+  '/configuracion': typeof ProtegidasConfiguracionRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/': typeof ProtegidasIndexRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/inicio-sesion': typeof InicioSesionRoute
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
   '/_protegidas/completar-perfil': typeof ProtegidasCompletarPerfilRoute
+  '/_protegidas/configuracion': typeof ProtegidasConfiguracionRoute
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/_protegidas/': typeof ProtegidasIndexRoute
   '/_protegidas/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/inicio-sesion'
     | '/agenda'
     | '/completar-perfil'
+    | '/configuracion'
     | '/ficha-paciente'
     | '/usuarios/invitar'
   fileRoutesByTo: FileRoutesByTo
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/inicio-sesion'
     | '/agenda'
     | '/completar-perfil'
+    | '/configuracion'
     | '/ficha-paciente'
     | '/'
     | '/usuarios/invitar'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/inicio-sesion'
     | '/_protegidas/agenda'
     | '/_protegidas/completar-perfil'
+    | '/_protegidas/configuracion'
     | '/_protegidas/ficha-paciente'
     | '/_protegidas/'
     | '/_protegidas/usuarios/invitar'
@@ -150,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasCompletarPerfilRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/configuracion': {
+      id: '/_protegidas/configuracion'
+      path: '/configuracion'
+      fullPath: '/configuracion'
+      preLoaderRoute: typeof ProtegidasConfiguracionRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
     '/_protegidas/ficha-paciente': {
       id: '/_protegidas/ficha-paciente'
       path: '/ficha-paciente'
@@ -170,6 +189,7 @@ declare module '@tanstack/react-router' {
 interface ProtegidasRouteChildren {
   ProtegidasAgendaRoute: typeof ProtegidasAgendaRoute
   ProtegidasCompletarPerfilRoute: typeof ProtegidasCompletarPerfilRoute
+  ProtegidasConfiguracionRoute: typeof ProtegidasConfiguracionRoute
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
   ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
@@ -178,6 +198,7 @@ interface ProtegidasRouteChildren {
 const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasAgendaRoute: ProtegidasAgendaRoute,
   ProtegidasCompletarPerfilRoute: ProtegidasCompletarPerfilRoute,
+  ProtegidasConfiguracionRoute: ProtegidasConfiguracionRoute,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
   ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,

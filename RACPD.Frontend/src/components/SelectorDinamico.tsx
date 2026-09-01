@@ -56,7 +56,7 @@ export const SelectorDinamico = ({
         disabled={disabled}
         onClick={() => setIsOpen(!isOpen)}
         className={`
-          w-full p-3 pr-10 bg-white border rounded-xl transition-all
+          w-full p-3 pr-10 bg-white border rounded-xl transition-all cursor-pointer
           text-left flex items-center justify-between
           focus:outline-none focus:ring-2 focus:border-transparent
           disabled:opacity-50 disabled:bg-gray-50 disabled:cursor-not-allowed

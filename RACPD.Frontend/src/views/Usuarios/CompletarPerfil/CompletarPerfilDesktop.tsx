@@ -1,6 +1,7 @@
 import type { CompletarPerfilProps } from './CompletarPerfilContenedor'
 import { CampoContrasena } from '../../../components/Seguridad/CampoContrasena'
 import { IndicadorFortalezaContrasena } from '../../../components/Seguridad/IndicadorFortalezaContrasena'
+import { Boton } from '../../../components/Boton'
 
 export const CompletarPerfilDesktop = ({
   form,
@@ -104,13 +105,13 @@ export const CompletarPerfilDesktop = ({
             />
           </div>
 
-          <button
+          <Boton
             type="submit"
-            disabled={isMutating}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            cargando={isMutating}
+            className="w-full p-3 rounded-lg"
           >
             {isMutating ? 'Guardando...' : 'Guardar y continuar'}
-          </button>
+          </Boton>
         </form>
       </div>
     </div>

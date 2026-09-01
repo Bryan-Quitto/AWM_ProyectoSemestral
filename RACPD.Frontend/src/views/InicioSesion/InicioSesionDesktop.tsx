@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
-import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { iniciarSesionSchema } from './schema'
+import { Boton } from '../../components/Boton'
 
 interface Props {
   form: UseFormReturn<z.infer<typeof iniciarSesionSchema>>
@@ -80,18 +81,13 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
               )}
             </div>
 
-            <button
+            <Boton
               type="submit"
-              disabled={isMutating}
-              className={`w-full flex items-center justify-center gap-2 text-white py-3 rounded-lg font-semibold transition-all cursor-pointer ${
-                isMutating
-                  ? 'bg-blue-400 cursor-not-allowed opacity-90'
-                  : 'bg-blue-600 hover:bg-blue-700 hover:shadow-md cursor-pointer active:scale-[0.98]'
-              }`}
+              cargando={isMutating}
+              className="w-full py-3 rounded-lg"
             >
-              {isMutating && <Loader2 size={20} className="animate-spin" />}
               {isMutating ? 'Iniciando sesión...' : 'Ingresar'}
-            </button>
+            </Boton>
           </form>
         </div>
       </div>

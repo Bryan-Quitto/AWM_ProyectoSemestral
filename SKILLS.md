@@ -43,6 +43,10 @@ Estas reglas de compilación estricta (TS/ESLint) deben configurarse e imponerse
 - Prohibidas aserciones ciegas (`as T`), Non-Null Assertions (`!`) y uso de `any`.
 - Uso obligatorio de **Type Guards** reutilizables para evaluar datos en runtime.
 
+### 🖱️ REGLA-UX-INTERACCIONES (Microinteracciones Estrictas)
+- Todo elemento interactivo (botones, enlaces, cards clickeables) **DEBE** incluir explícitamente `cursor-pointer`.
+- Todo elemento interactivo que posea estados de bloqueo **DEBE** incluir obligatoriamente `disabled:cursor-not-allowed` y un cambio de opacidad o color (ej. `disabled:opacity-50`). No asumas el comportamiento por defecto del navegador.
+
 ### 🚨 REGLA-EF-CONSULTAS-SEGURAS (Zero-Indulgence)
 - Evitar el bug de Npgsql 10 con `SplitQuery`.
 - Prohibido más de una invocación a `FirstOrDefault(...)` dentro de un `.Select(...)`.

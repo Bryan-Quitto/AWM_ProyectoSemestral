@@ -1,6 +1,7 @@
 import type { InvitarProps } from './InvitarContenedor'
 import { Controller } from 'react-hook-form'
 import { SelectorDinamico } from '../../../components/SelectorDinamico'
+import { Boton } from '../../../components/Boton'
 
 const opcionesRol = [
   { valor: 1, etiqueta: 'Cuidador Principal' },
@@ -70,13 +71,13 @@ export const InvitarDesktop = ({ form, onSubmit, isMutating, apiError, exito }: 
             )}
           </div>
 
-          <button
+          <Boton
             type="submit"
-            disabled={isMutating}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg font-medium hover:bg-blue-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            cargando={isMutating}
+            className="w-full p-3 rounded-lg"
           >
             {isMutating ? 'Enviando invitación...' : 'Enviar Invitación'}
-          </button>
+          </Boton>
         </form>
       </div>
     </div>

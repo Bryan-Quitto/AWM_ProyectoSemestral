@@ -1,6 +1,7 @@
 import type { InvitarProps } from './InvitarContenedor'
 import { Controller } from 'react-hook-form'
 import { SelectorDinamico } from '../../../components/SelectorDinamico'
+import { Boton } from '../../../components/Boton'
 
 const opcionesRol = [
   { valor: 1, etiqueta: 'Cuidador Principal' },
@@ -68,13 +69,13 @@ export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: I
             )}
           </div>
 
-          <button
+          <Boton
             type="submit"
-            disabled={isMutating}
-            className="w-full mt-2 bg-blue-600 text-white p-3.5 rounded-xl font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            cargando={isMutating}
+            className="w-full mt-2 p-3.5 rounded-xl shadow-sm"
           >
             {isMutating ? 'Procesando...' : 'Invitar'}
-          </button>
+          </Boton>
         </form>
       </div>
     </div>
