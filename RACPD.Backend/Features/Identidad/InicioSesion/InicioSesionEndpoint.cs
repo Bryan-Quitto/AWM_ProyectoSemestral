@@ -101,6 +101,8 @@ public class InicioSesionEndpoint : Endpoint<IniciarSesionRequest, IniciarSesion
 
         if (!response.IsSuccessStatusCode)
         {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            Logger.LogError("Error de Supabase Auth: {StatusCode} - {ErrorBody}", response.StatusCode, errorBody);
             AddError("Credenciales inválidas.");
             ThrowIfAnyErrors();
         }

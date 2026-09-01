@@ -5,14 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run lint && tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "api:generate": "orval"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
     "@tailwindcss/vite": "^4.3.3",
+    "@tanstack/router-cli": "^1.167.33",
     "fuse.js": "^7.5.0",
+    "lucide-react": "^1.38.0",
     "orval": "^8.27.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
@@ -22,6 +25,8 @@
     "zod": "^4.5.4"
   },
   "devDependencies": {
+    "@tanstack/router-devtools": "^1.167.1",
+    "@tanstack/router-plugin": "^1.168.35",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
