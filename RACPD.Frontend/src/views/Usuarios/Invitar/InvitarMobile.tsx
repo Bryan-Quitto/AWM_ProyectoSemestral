@@ -12,7 +12,7 @@ export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: I
             {apiError}
           </div>
         )}
-        
+
         {exito && (
           <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
             {exito}
@@ -20,40 +20,6 @@ export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: I
         )}
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <div className="space-y-1.5">
-            <label htmlFor="nombre" className="block text-sm font-medium text-blue-900">
-              Nombre
-            </label>
-            <input
-              id="nombre"
-              type="text"
-              disabled={isMutating}
-              className="w-full p-3 bg-gray-50 border border-blue-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
-              placeholder="Juan"
-              {...form.register('nombre')}
-            />
-            {form.formState.errors.nombre && (
-              <p className="text-xs text-red-500">{form.formState.errors.nombre.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="apellido" className="block text-sm font-medium text-blue-900">
-              Apellido
-            </label>
-            <input
-              id="apellido"
-              type="text"
-              disabled={isMutating}
-              className="w-full p-3 bg-gray-50 border border-blue-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all disabled:opacity-50"
-              placeholder="Pérez"
-              {...form.register('apellido')}
-            />
-            {form.formState.errors.apellido && (
-              <p className="text-xs text-red-500">{form.formState.errors.apellido.message}</p>
-            )}
-          </div>
-
           <div className="space-y-1.5">
             <label htmlFor="correo" className="block text-sm font-medium text-blue-900">
               Correo Electrónico
@@ -93,7 +59,7 @@ export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: I
           <button
             type="submit"
             disabled={isMutating}
-            className="w-full mt-2 bg-blue-600 text-white p-3.5 rounded-xl font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 shadow-sm"
+            className="w-full mt-2 bg-blue-600 text-white p-3.5 rounded-xl font-medium hover:bg-blue-700 active:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {isMutating ? 'Procesando...' : 'Invitar'}
           </button>

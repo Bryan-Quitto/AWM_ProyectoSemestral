@@ -1,0 +1,9 @@
+import { createFileRoute } from '@tanstack/react-router'
+
+export const Route = createFileRoute('/_protegidas/completar-perfil')({
+  component: RouteComponent,
+})
+
+function RouteComponent() {
+  return <div>Hello "/_protegidas/completar-perfil"!</div>
+}

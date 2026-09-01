@@ -70,7 +70,7 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-400 hover:text-blue-600 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -83,7 +83,7 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
             <button
               type="submit"
               disabled={isMutating}
-              className={`w-full flex items-center justify-center gap-2 text-white py-3 rounded-lg font-semibold transition-all ${
+              className={`w-full flex items-center justify-center gap-2 text-white py-3 rounded-lg font-semibold transition-all cursor-pointer ${
                 isMutating
                   ? 'bg-blue-400 cursor-not-allowed opacity-90'
                   : 'bg-blue-600 hover:bg-blue-700 hover:shadow-md cursor-pointer active:scale-[0.98]'

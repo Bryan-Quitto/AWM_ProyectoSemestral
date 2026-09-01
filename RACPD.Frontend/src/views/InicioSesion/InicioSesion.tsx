@@ -6,14 +6,12 @@ import { useNavigate } from '@tanstack/react-router'
 import { iniciarSesionSchema } from './schema'
 import { InicioSesionDesktop } from './InicioSesionDesktop'
 import { InicioSesionMobile } from './InicioSesionMobile'
-import { useRACPDBackendFeaturesIdentidadInicioSesionInicioSesionEndpoint } from '../../api/generated/api/api'
+import { supabase } from '../../lib/supabase'
 
 export const InicioSesion = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [apiError, setApiError] = useState<string | null>(null)
   const navigate = useNavigate()
-  
-  const { trigger, isMutating } = useRACPDBackendFeaturesIdentidadInicioSesionInicioSesionEndpoint()
 
   const form = useForm<z.infer<typeof iniciarSesionSchema>>({
     resolver: zodResolver(iniciarSesionSchema),
@@ -29,35 +27,36 @@ export const InicioSesion = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
+  const [isMutating, setIsMutating] = useState(false)
+
   const onSubmit = async (data: z.infer<typeof iniciarSesionSchema>) => {
     setApiError(null)
+    setIsMutating(true)
     try {
-      const response = await trigger(data)
-      if (response.status === 200) {
-        localStorage.setItem('token', response.data.token!)
-        localStorage.setItem('rol', response.data.usuario?.rol || '')
-        navigate({ to: '/' })
-      } else if (response.status === 400) {
-        const errorData = response.data as any
-        let detailedMessage = 'Credenciales inválidas.'
-        
-        if (errorData.errors && typeof errorData.errors === 'object') {
-          const keys = Object.keys(errorData.errors)
-          if (keys.length > 0) {
-            detailedMessage = errorData.errors[keys[0]][0]
-          }
-        } else if (errorData.detail) {
-          detailedMessage = errorData.detail
-        } else if (errorData.message && errorData.message !== 'One or more validation errors occurred.') {
-          detailedMessage = errorData.message
+      // Autenticamos directamente contra Supabase desde el cliente. Esto
+      // establece la sesión en el SDK (localStorage + cookies), que es la
+      // fuente de verdad que consultan los guards del router.
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.correo,
+        password: data.contrasena
+      })
+
+      if (error) {
+        if (error.message.toLowerCase().includes('invalid')) {
+          setApiError('Credenciales inválidas.')
+        } else if (error.message.toLowerCase().includes('email not confirmed')) {
+          setApiError('Debes confirmar tu correo electrónico antes de iniciar sesión.')
+        } else {
+          setApiError(error.message)
         }
-        
-        setApiError(detailedMessage)
-      } else {
-        setApiError('Ha ocurrido un error inesperado al iniciar sesión.')
+        return
       }
+
+      navigate({ to: '/' })
     } catch {
       setApiError('No se pudo conectar al servidor.')
+    } finally {
+      setIsMutating(false)
     }
   }
 

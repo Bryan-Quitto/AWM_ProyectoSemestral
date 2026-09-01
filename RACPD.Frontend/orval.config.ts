@@ -9,6 +9,14 @@ export default defineConfig({
       schemas: 'src/api/generated/model',
       client: 'swr',
       mock: false,
+      // Mutator personalizado que inyecta el Bearer token de Supabase en
+      // cada request al backend (ver src/api/custom-fetch.ts).
+      override: {
+        mutator: {
+          path: 'src/api/custom-fetch.ts',
+          name: 'customFetch',
+        },
+      },
     },
   },
 });
