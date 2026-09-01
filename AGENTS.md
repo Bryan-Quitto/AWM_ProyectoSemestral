@@ -12,6 +12,7 @@ Procesa el requerimiento por estas 5 fases y responde estructuradamente:
 
 ## FASE 0: Aislamiento de Contexto
 - PROHIBIDO adivinar nombres de contratos. Escanea `api.ts` para extraer interfaces y mutadores exactos.
+- **Orval (Generación de Tipos):** Iniciar Backend (`dotnet run`) y ejecutar `npm run api:generate` en Frontend.
 
 ## FASE 1: Triage de Complejidad
 - Evalúa: ¿Baja Complejidad (Fix quirúrgico) o Alta Complejidad (SDD)? Dímelo directamente.

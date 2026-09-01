@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from '@tanstack/react-router'
-import { Home, User, CalendarDays, LogOut, AlertTriangle } from 'lucide-react'
+import { Home, User, CalendarDays, LogOut, AlertTriangle, UserPlus } from 'lucide-react'
 
 export const LayoutPrincipalMobile = () => {
   const navigate = useNavigate()
@@ -43,6 +43,12 @@ export const LayoutPrincipalMobile = () => {
           <CalendarDays size={24} />
           <span className="text-[10px] mt-1 font-medium">Agenda</span>
         </Link>
+        {localStorage.getItem('rol') === 'AdministradorSistema' && (
+          <Link to="/usuarios/invitar" className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform">
+            <UserPlus size={24} />
+            <span className="text-[10px] mt-1 font-medium">Invitar</span>
+          </Link>
+        )}
       </nav>
     </div>
   )

@@ -1,25 +1,35 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
+import type { UseFormReturn } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useNavigate } from '@tanstack/react-router'
-import { iniciarSesionSchema } from './schema'
-import { InicioSesionDesktop } from './InicioSesionDesktop'
-import { InicioSesionMobile } from './InicioSesionMobile'
-import { useRACPDBackendFeaturesIdentidadInicioSesionInicioSesionEndpoint } from '../../api/generated/api/api'
+import { invitarUsuarioSchema } from './schema'
+import { InvitarDesktop } from './InvitarDesktop'
+import { InvitarMobile } from './InvitarMobile'
+import { useRACPDBackendFeaturesUsuariosInvitarInvitarEndpoint } from '../../../api/generated/api/api'
 
-export const InicioSesion = () => {
+export type InvitarProps = {
+  form: UseFormReturn<z.infer<typeof invitarUsuarioSchema>>
+  onSubmit: (data: z.infer<typeof invitarUsuarioSchema>) => Promise<void>
+  isMutating: boolean
+  apiError: string | null
+  exito: string | null
+}
+
+export const InvitarContenedor = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
   const [apiError, setApiError] = useState<string | null>(null)
-  const navigate = useNavigate()
+  const [exito, setExito] = useState<string | null>(null)
   
-  const { trigger, isMutating } = useRACPDBackendFeaturesIdentidadInicioSesionInicioSesionEndpoint()
+  const { trigger, isMutating } = useRACPDBackendFeaturesUsuariosInvitarInvitarEndpoint()
 
-  const form = useForm<z.infer<typeof iniciarSesionSchema>>({
-    resolver: zodResolver(iniciarSesionSchema),
+  const form = useForm<z.infer<typeof invitarUsuarioSchema>>({
+    resolver: zodResolver(invitarUsuarioSchema),
     defaultValues: {
       correo: '',
-      contrasena: ''
+      nombre: '',
+      apellido: '',
+      rol: 1 // Default to CuidadorPrincipal
     }
   })
 
@@ -29,17 +39,17 @@ export const InicioSesion = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const onSubmit = async (data: z.infer<typeof iniciarSesionSchema>) => {
+  const onSubmit = async (data: z.infer<typeof invitarUsuarioSchema>) => {
     setApiError(null)
+    setExito(null)
     try {
       const response = await trigger(data)
       if (response.status === 200) {
-        localStorage.setItem('token', response.data.token!)
-        localStorage.setItem('rol', response.data.usuario?.rol || '')
-        navigate({ to: '/' })
-      } else if (response.status === 400) {
+        setExito('¡Invitación enviada con éxito!')
+        form.reset()
+      } else {
         const errorData = response.data as any
-        let detailedMessage = 'Credenciales inválidas.'
+        let detailedMessage = 'Ha ocurrido un error al invitar al usuario.'
         
         if (errorData.errors && typeof errorData.errors === 'object') {
           const keys = Object.keys(errorData.errors)
@@ -53,15 +63,13 @@ export const InicioSesion = () => {
         }
         
         setApiError(detailedMessage)
-      } else {
-        setApiError('Ha ocurrido un error inesperado al iniciar sesión.')
       }
     } catch {
       setApiError('No se pudo conectar al servidor.')
     }
   }
 
-  const props = { form, onSubmit, isMutating, apiError }
+  const props: InvitarProps = { form, onSubmit, isMutating, apiError, exito }
 
-  return isMobile ? <InicioSesionMobile {...props} /> : <InicioSesionDesktop {...props} />
+  return isMobile ? <InvitarMobile {...props} /> : <InvitarDesktop {...props} />
 }

@@ -35,6 +35,22 @@ builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
 builder.Services.AddHttpClient();
 
+// Configurar Supabase Client
+var supabaseUrl = builder.Configuration["SUPABASE_URL"];
+var supabaseKey = builder.Configuration["SUPABASE_SERVICE_ROLE_KEY"];
+if (!string.IsNullOrEmpty(supabaseUrl) && !string.IsNullOrEmpty(supabaseKey))
+{
+    var options = new Supabase.SupabaseOptions { AutoRefreshToken = true, AutoConnectRealtime = true };
+    builder.Services.AddSingleton(provider => new Supabase.Client(supabaseUrl, supabaseKey, options));
+
+    // Configurar Supabase GoTrue AdminClient (Para invitaciones con Service Role)
+    var authUrl = $"{supabaseUrl}/auth/v1";
+    var gotrueOptions = new Supabase.Gotrue.ClientOptions { AllowUnconfirmedUserSessions = true };
+    gotrueOptions.Headers.Add("Authorization", $"Bearer {supabaseKey}");
+    gotrueOptions.Headers.Add("apikey", supabaseKey);
+    builder.Services.AddSingleton(provider => new Supabase.Gotrue.AdminClient(authUrl, gotrueOptions));
+}
+
 var app = builder.Build();
 
 app.UseAuthentication();

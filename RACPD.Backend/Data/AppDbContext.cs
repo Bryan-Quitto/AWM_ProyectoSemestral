@@ -20,5 +20,13 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Usuario>()
             .Property(u => u.Rol)
             .HasConversion<string>();
+
+        modelBuilder.Entity<Usuario>()
+            .Property(u => u.Nombre)
+            .HasMaxLength(100);
+
+        modelBuilder.Entity<Usuario>()
+            .Property(u => u.Apellido)
+            .HasMaxLength(100);
     }
 }

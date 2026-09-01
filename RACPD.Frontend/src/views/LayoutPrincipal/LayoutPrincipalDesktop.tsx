@@ -1,5 +1,5 @@
 import { Link, Outlet, useNavigate } from '@tanstack/react-router'
-import { Home, User, CalendarDays, LogOut, AlertTriangle } from 'lucide-react'
+import { Home, User, CalendarDays, LogOut, AlertTriangle, UserPlus } from 'lucide-react'
 
 export const LayoutPrincipalDesktop = () => {
   const navigate = useNavigate()
@@ -28,6 +28,12 @@ export const LayoutPrincipalDesktop = () => {
             <CalendarDays size={20} />
             <span>Agenda</span>
           </Link>
+          {localStorage.getItem('rol') === 'AdministradorSistema' && (
+            <Link to="/usuarios/invitar" className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors">
+              <UserPlus size={20} />
+              <span>Invitar Cuidador</span>
+            </Link>
+          )}
         </nav>
         <div className="p-4 border-t border-blue-200 flex flex-col gap-3">
           <div className="w-full flex items-center justify-center gap-2 py-3 bg-red-50 text-red-700 text-center rounded-lg font-bold border border-red-200 cursor-pointer hover:bg-red-100 transition-colors select-none active:scale-[0.98]">

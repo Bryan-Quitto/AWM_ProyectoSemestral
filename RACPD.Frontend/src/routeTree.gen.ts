@@ -14,6 +14,7 @@ import { Route as InicioSesionRouteImport } from './routes/inicio-sesion'
 import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
+import { Route as ProtegidasUsuariosInvitarRouteImport } from './routes/_protegidas/usuarios/invitar'
 
 const ProtegidasRoute = ProtegidasRouteImport.update({
   id: '/_protegidas',
@@ -39,18 +40,26 @@ const ProtegidasFichaPacienteRoute = ProtegidasFichaPacienteRouteImport.update({
   path: '/ficha-paciente',
   getParentRoute: () => ProtegidasRoute,
 } as any)
+const ProtegidasUsuariosInvitarRoute =
+  ProtegidasUsuariosInvitarRouteImport.update({
+    id: '/usuarios/invitar',
+    path: '/usuarios/invitar',
+    getParentRoute: () => ProtegidasRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtegidasIndexRoute
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
+  '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
 }
 export interface FileRoutesByTo {
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/': typeof ProtegidasIndexRoute
+  '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -59,12 +68,15 @@ export interface FileRoutesById {
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/_protegidas/': typeof ProtegidasIndexRoute
+  '/_protegidas/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/inicio-sesion' | '/agenda' | '/ficha-paciente'
+  fullPaths:
+    '/' | '/inicio-sesion' | '/agenda' | '/ficha-paciente' | '/usuarios/invitar'
   fileRoutesByTo: FileRoutesByTo
-  to: '/inicio-sesion' | '/agenda' | '/ficha-paciente' | '/'
+  to:
+    '/inicio-sesion' | '/agenda' | '/ficha-paciente' | '/' | '/usuarios/invitar'
   id:
     | '__root__'
     | '/_protegidas'
@@ -72,6 +84,7 @@ export interface FileRouteTypes {
     | '/_protegidas/agenda'
     | '/_protegidas/ficha-paciente'
     | '/_protegidas/'
+    | '/_protegidas/usuarios/invitar'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -116,6 +129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasFichaPacienteRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/usuarios/invitar': {
+      id: '/_protegidas/usuarios/invitar'
+      path: '/usuarios/invitar'
+      fullPath: '/usuarios/invitar'
+      preLoaderRoute: typeof ProtegidasUsuariosInvitarRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
   }
 }
 
@@ -123,12 +143,14 @@ interface ProtegidasRouteChildren {
   ProtegidasAgendaRoute: typeof ProtegidasAgendaRoute
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
+  ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
 }
 
 const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasAgendaRoute: ProtegidasAgendaRoute,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
+  ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,
 }
 
 const ProtegidasRouteWithChildren = ProtegidasRoute._addFileChildren(
