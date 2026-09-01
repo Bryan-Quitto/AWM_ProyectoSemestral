@@ -1,0 +1,69 @@
+# --- [ Frontend Lockfiles ] ---
+# Git rastrea estos archivos, pero son miles de lineas de hashes de versiones
+# que la IA no necesita para programar.
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# --- [ RACPD - Autogenerados Orval (API) ] ---
+# PROHIBIDO modificar manualmente (ver SKILLS.md - Orval-Only).
+RACPD.Frontend/src/api/generated/
+RACPD.Frontend/swagger.json
+
+# --- [ Migraciones de Base de Datos ] ---
+# El historial de codigo C# autogenerado por Entity Framework Core es masivo.
+# Trae solo necesita leer las Entidades/Modelos y el DbContext, no las migraciones.
+**/Migrations/
+
+# --- [ Archivos Estaticos y Multimedia ] ---
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.ico
+*.gif
+*.webp
+*.avif
+
+# --- [ Datos Estaticos y Documentacion Pesada ] ---
+*.pdf
+*.docx
+*.csv
+
+# --- [ Dependencias de Terceros ] ---
+node_modules/
+packages/
+
+# --- [ Compilados y Binarios (.NET y Frontend) ] ---
+bin/
+obj/
+dist/
+build/
+out/
+*.min.js
+*.min.css
+*.map
+
+# --- [ Logs y Reportes de Pruebas ] ---
+*.log
+logs/
+TestResults/
+coverage/
+
+# --- [ Carpetas de Entornos Virtuales e IDEs ] ---
+.vs/
+.idea/
+.next/
+
+# --- [ Bases de Datos Locales ] ---
+*.db
+*.sqlite
+*.sqlite3
+*.mdf
+*.ldf
+
+# --- [ Historial y Cache de Otras IAs ] ---
+.aider*
+.aider.chat.history.md
+.aider.tags.cache.v4
+.antigravityignore

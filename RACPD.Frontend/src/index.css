@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-salud-primario: #0284c7; /* Confianza / Principal */
+  --color-salud-secundario: #38bdf8; /* Alivio / Acciones secundarias */
+  --color-salud-fondo: #f8fafc; /* Blanco muy claro para evitar fatiga visual */
+}
+
+body {
+  background-color: var(--color-salud-fondo);
+  color: #0f172a; /* Texto oscuro para contraste */
+  font-family: system-ui, -apple-system, sans-serif;
+}
