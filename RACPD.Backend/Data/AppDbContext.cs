@@ -12,6 +12,8 @@ public class AppDbContext : DbContext
     }
 
     public DbSet<Usuario> Usuarios { get; set; } = null!;
+    public DbSet<PerfilDependiente> PerfilesDependientes { get; set; } = null!;
+    public DbSet<BloqueRelevo> BloquesRelevo { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,5 +30,33 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Usuario>()
             .Property(u => u.Apellido)
             .HasMaxLength(100);
+
+        modelBuilder.Entity<PerfilDependiente>()
+            .Property(p => p.NombreCompleto).HasMaxLength(200);
+
+        modelBuilder.Entity<PerfilDependiente>()
+            .Property(p => p.CondicionesCronicas).HasMaxLength(4000);
+
+        modelBuilder.Entity<PerfilDependiente>()
+            .Property(p => p.TipoSangre)
+            .HasConversion<string>();
+            
+        modelBuilder.Entity<PerfilDependiente>()
+            .OwnsMany(p => p.ContactosEmergencia, b =>
+            {
+                b.ToJson();
+            });
+
+        modelBuilder.Entity<PerfilDependiente>()
+            .Property(p => p.Version)
+            .IsRowVersion();
+
+        modelBuilder.Entity<BloqueRelevo>()
+            .Property(b => b.Estado)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<BloqueRelevo>()
+            .Property(b => b.Version)
+            .IsRowVersion();
     }
 }
