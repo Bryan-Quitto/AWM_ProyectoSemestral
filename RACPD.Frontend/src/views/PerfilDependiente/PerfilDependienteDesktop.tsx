@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
 import { PerfilDependienteSchema, TIPOS_SANGRE, type PerfilDependienteForm, type ContactoEmergenciaForm, type TipoSangre } from './schema';
 import { ContactosEmergenciaForm } from './ContactosEmergenciaForm';
 import { Boton } from '../../components/Boton';
@@ -26,7 +25,6 @@ const TIPO_SANGRE_LABELS: Record<TipoSangre, string> = {
 };
 
 export function PerfilDependienteDesktop() {
-  const navigate = useNavigate();
   const [modoEditar, setModoEditar] = useState(false);
   const [alergiaInput, setAlergiaInput] = useState('');
   const [exito, setExito] = useState<string | null>(null);
@@ -57,9 +55,8 @@ export function PerfilDependienteDesktop() {
       contactosEmergencia:
         (perfilExistente?.contactosEmergencia as ContactoEmergenciaForm[]) ?? [],
     }),
-    [perfilExistente]
+    [perfilExistente, tipoSangreExistente]
   );
-  const valoresInicialesDep = valoresIniciales;
 
   const form = useForm<PerfilDependienteForm>({
     resolver: zodResolver(PerfilDependienteSchema),
@@ -68,7 +65,8 @@ export function PerfilDependienteDesktop() {
   });
 
   const { isDirty, isValid } = form.formState;
-  const alergias = form.watch('alergiasEstructuradas') ?? [];
+  const alergias =
+    useWatch({ control: form.control, name: 'alergiasEstructuradas' }) ?? [];
   const {
     fields: contactos,
     append: appendContacto,
@@ -87,8 +85,9 @@ export function PerfilDependienteDesktop() {
 
   useEffect(() => {
     if (perfilExistente) {
-      form.reset(valoresInicialesDep);
+      form.reset(valoresIniciales);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfilExistente?.id]);
 
   const puedeAgregarAlergia =
@@ -567,7 +566,7 @@ export function PerfilDependienteDesktop() {
           <Boton
             type="button"
             variante="secundario"
-            onClick={() => form.reset(valoresInicialesDep)}
+            onClick={() => form.reset(valoresIniciales)}
             disabled={!isDirty || isCreando || isActualizando}
             className="py-2.5 px-6 rounded-xl"
           >

@@ -3,6 +3,7 @@ using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Listar;
 
@@ -33,8 +34,7 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 

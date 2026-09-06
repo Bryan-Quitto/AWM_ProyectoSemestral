@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Reservar;
 
@@ -34,15 +35,16 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
         if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
         {
-            AddError("El ID del bloque no es válido.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                "El identificador del bloque es inválido.");
             return;
         }
 
@@ -52,24 +54,30 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
 
         if (bloque == null)
         {
-            AddError("El bloque de turno no fue encontrado.", "id");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "El bloque de turno no fue encontrado.",
+                tipoRecurso: "bloque-turno-no-encontrado");
             return;
         }
 
         // R2: No reservar su propio bloque
         if (bloque.CreadoPorId == usuarioId)
         {
-            AddError("No puedes reservar tu propio bloque de turno.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarConflictoAsync(
+                HttpContext,
+                "No puedes reservar tu propio bloque de turno.",
+                tipoConflicto: "auto-reserva-bloque");
             return;
         }
 
-        // R3: No bloques pasados
+        // R3: No bloques pasadas
         if (bloque.EstaVencido)
         {
-            AddError("No se puede reservar un bloque en fecha pasada.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarConflictoAsync(
+                HttpContext,
+                "No se puede reservar un bloque en fecha pasada.",
+                tipoConflicto: "bloque-vencido");
             return;
         }
 
@@ -77,8 +85,10 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
         var yaReservo = bloque.Reservas.Any(r => r.UsuarioId == usuarioId && r.Activa);
         if (yaReservo)
         {
-            AddError("Ya tienes una reserva activa para este bloque.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarConflictoAsync(
+                HttpContext,
+                "Ya tienes una reserva activa para este bloque.",
+                tipoConflicto: "doble-reserva");
             return;
         }
 
@@ -86,8 +96,10 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
         var cuposDisponibles = bloque.CuposMaximos - bloque.Reservas.Count(r => r.Activa);
         if (cuposDisponibles <= 0)
         {
-            AddError("Este bloque ya no tiene cupos disponibles.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarConflictoAsync(
+                HttpContext,
+                "Este bloque ya no tiene cupos disponibles.",
+                tipoConflicto: "sin-cupos");
             return;
         }
 
@@ -98,8 +110,9 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
 
         if (usuario == null)
         {
-            AddError("El usuario no está registrado en el sistema.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(
+                HttpContext,
+                "El usuario no está registrado en el sistema.");
             return;
         }
 

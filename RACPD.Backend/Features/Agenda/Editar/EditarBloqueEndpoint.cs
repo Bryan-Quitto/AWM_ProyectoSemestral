@@ -3,6 +3,7 @@ using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Editar;
 
@@ -39,35 +40,58 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
         if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
         {
-            AddError("El ID del bloque no es válido.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                "El identificador del bloque es inválido.");
             return;
         }
 
         // Parsear campos
-        if (!DateOnly.TryParse(req.Fecha, out var fecha))
+        var erroresParseo = new Dictionary<string, IEnumerable<string>>();
+        DateOnly? fecha = null;
+        TimeOnly? horaInicio = null;
+        TimeOnly? horaFin = null;
+
+        if (!DateOnly.TryParse(req.Fecha, out var f))
         {
-            AddError("La fecha no tiene un formato válido.", nameof(req.Fecha));
+            erroresParseo["fecha"] = ["La fecha no tiene un formato válido (YYYY-MM-DD)."];
+        }
+        else
+        {
+            fecha = f;
+        }
+        if (!TimeOnly.TryParse(req.HoraInicio, out var hi))
+        {
+            erroresParseo["horaInicio"] = ["La hora de inicio no tiene un formato válido (HH:mm)."];
+        }
+        else
+        {
+            horaInicio = hi;
+        }
+        if (!TimeOnly.TryParse(req.HoraFin, out var hf))
+        {
+            erroresParseo["horaFin"] = ["La hora de fin no tiene un formato válido (HH:mm)."];
+        }
+        else
+        {
+            horaFin = hf;
         }
 
-        if (!TimeOnly.TryParse(req.HoraInicio, out var horaInicio))
+        if (erroresParseo.Count > 0)
         {
-            AddError("La hora de inicio no tiene un formato válido.", nameof(req.HoraInicio));
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                erroresParseo,
+                "Los campos enviados no cumplen el formato esperado.");
+            return;
         }
-
-        if (!TimeOnly.TryParse(req.HoraFin, out var horaFin))
-        {
-            AddError("La hora de fin no tiene un formato válido.", nameof(req.HoraFin));
-        }
-
-        ThrowIfAnyErrors();
 
         var bloque = await _dbContext.BloquesTurno
             .Include(b => b.Reservas.Where(r => r.Activa))
@@ -75,47 +99,61 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
 
         if (bloque == null)
         {
-            AddError("El bloque de turno no fue encontrado.", "id");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "El bloque de turno no fue encontrado.",
+                tipoRecurso: "bloque-turno-no-encontrado");
             return;
         }
 
         // R: Solo el creador puede editar
         if (bloque.CreadoPorId != usuarioId)
         {
-            AddError("Solo el cuidador principal que creó este bloque puede editarlo.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarProhibidoAsync(
+                HttpContext,
+                "Solo el cuidador principal que creó este bloque puede editarlo.",
+                tipoProhibido: "no-creador-bloque");
             return;
         }
 
-        // Validaciones
-        if (horaFin <= horaInicio)
+        // Validaciones de negocio
+        var erroresNegocio = new Dictionary<string, IEnumerable<string>>();
+        if (horaFin!.Value <= horaInicio!.Value)
         {
-            AddError("La hora de fin debe ser posterior a la hora de inicio.", "horaFin");
+            erroresNegocio["horaFin"] = ["La hora de fin debe ser posterior a la hora de inicio."];
         }
-
         if (req.CuposMaximos < 1 || req.CuposMaximos > 5)
         {
-            AddError("Los cupos deben estar entre 1 y 5.", "cuposMaximos");
+            erroresNegocio["cuposMaximos"] = ["Los cupos deben estar entre 1 y 5."];
         }
 
         var reservasActivas = bloque.Reservas.Count(r => r.Activa);
         if (req.CuposMaximos < reservasActivas)
         {
-            AddError($"No se puede reducir los cupos a {req.CuposMaximos} porque ya hay {reservasActivas} reserva(s) activa(s).", "cuposMaximos");
+            erroresNegocio["cuposMaximos"] = [
+                $"No se puede reducir los cupos a {req.CuposMaximos} porque ya hay {reservasActivas} reserva(s) activa(s)."
+            ];
         }
 
         if (!string.IsNullOrWhiteSpace(req.Descripcion) && req.Descripcion.Length > 200)
         {
-            AddError("La descripción no puede exceder 200 caracteres.", "descripcion");
+            erroresNegocio["descripcion"] = ["La descripción no puede exceder 200 caracteres."];
         }
 
-        ThrowIfAnyErrors();
+        if (erroresNegocio.Count > 0)
+        {
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                erroresNegocio,
+                "Los datos no cumplen las reglas de negocio del turno.",
+                titulo: "Reglas de negocio violadas");
+            return;
+        }
 
         // Actualizar
-        bloque.Fecha = fecha;
-        bloque.HoraInicio = horaInicio;
-        bloque.HoraFin = horaFin;
+        bloque.Fecha = fecha!.Value;
+        bloque.HoraInicio = horaInicio!.Value;
+        bloque.HoraFin = horaFin!.Value;
         bloque.CuposMaximos = req.CuposMaximos;
         bloque.Descripcion = req.Descripcion?.Trim();
         bloque.FechaModificacion = DateTimeOffset.UtcNow;

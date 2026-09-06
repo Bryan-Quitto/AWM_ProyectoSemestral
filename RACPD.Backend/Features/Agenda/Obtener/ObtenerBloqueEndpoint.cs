@@ -3,6 +3,7 @@ using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Obtener;
 
@@ -31,15 +32,16 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
         if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
         {
-            AddError("El ID del bloque no es válido.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                "El identificador del bloque es inválido.");
             return;
         }
 
@@ -52,8 +54,10 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
 
         if (bloque == null)
         {
-            AddError("El bloque de turno no fue encontrado.", "id");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "El bloque de turno no fue encontrado.",
+                tipoRecurso: "bloque-turno-no-encontrado");
             return;
         }
 

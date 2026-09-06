@@ -3,6 +3,7 @@ using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.CancelarReserva;
 
@@ -33,15 +34,16 @@ public class CancelarReservaEndpoint : EndpointWithoutRequest<Response>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
         if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
         {
-            AddError("El ID del bloque no es válido.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                "El identificador del bloque es inválido.");
             return;
         }
 
@@ -51,8 +53,10 @@ public class CancelarReservaEndpoint : EndpointWithoutRequest<Response>
 
         if (reserva == null)
         {
-            AddError("No tienes una reserva activa para este bloque.", "id");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "No tienes una reserva activa para este bloque.",
+                tipoRecurso: "reserva-activa-no-encontrada");
             return;
         }
 
@@ -63,8 +67,10 @@ public class CancelarReservaEndpoint : EndpointWithoutRequest<Response>
         // Solo el dueño de la reserva o admin puede cancelar
         if (!esAdmin && reserva.UsuarioId != usuarioId)
         {
-            AddError("Solo quien hizo la reserva o un administrador pueden cancelarla.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarProhibidoAsync(
+                HttpContext,
+                "Solo quien hizo la reserva o un administrador pueden cancelarla.",
+                tipoProhibido: "no-dueno-reserva");
             return;
         }
 

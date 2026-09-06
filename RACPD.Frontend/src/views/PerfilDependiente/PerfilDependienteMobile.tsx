@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigate } from '@tanstack/react-router';
 import { PerfilDependienteSchema, TIPOS_SANGRE, type PerfilDependienteForm, type ContactoEmergenciaForm, type TipoSangre } from './schema';
@@ -57,7 +57,7 @@ export function PerfilDependienteMobile() {
       contactosEmergencia:
         (perfilExistente?.contactosEmergencia as ContactoEmergenciaForm[]) ?? [],
     }),
-    [perfilExistente]
+    [perfilExistente, tipoSangreExistente]
   );
 
   const form = useForm<PerfilDependienteForm>({
@@ -65,10 +65,11 @@ export function PerfilDependienteMobile() {
     defaultValues: valoresIniciales,
     mode: 'onChange',
   });
-  const valoresInicialesDep = valoresIniciales;
+
   const { isDirty, isValid } = form.formState;
 
-  const alergias = form.watch('alergiasEstructuradas') ?? [];
+  const alergias =
+    useWatch({ control: form.control, name: 'alergiasEstructuradas' }) ?? [];
   const {
     fields: contactos,
     append: appendContacto,
@@ -87,8 +88,9 @@ export function PerfilDependienteMobile() {
 
   useEffect(() => {
     if (perfilExistente) {
-      form.reset(valoresInicialesDep);
+      form.reset(valoresIniciales);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfilExistente?.id]);
 
   useEffect(() => {
@@ -371,7 +373,7 @@ export function PerfilDependienteMobile() {
                 <button
                   type="button"
                   onClick={() => {
-                    form.reset(valoresInicialesDep);
+                    form.reset(valoresIniciales);
                     setModoEditar(false);
                   }}
                   className="cursor-pointer disabled:cursor-not-allowed p-2 rounded-full text-gray-500 hover:bg-gray-100 transition disabled:opacity-50"

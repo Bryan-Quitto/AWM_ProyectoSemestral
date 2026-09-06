@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Crear;
 
@@ -40,30 +41,52 @@ public class CrearBloqueEndpoint : Endpoint<Request, Response>
 
         if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
-        // Parsear fecha
-        if (!DateOnly.TryParse(req.Fecha, out var fecha))
+        // Parsear campos. Errores de parseo → RFC 7807 400.
+        var erroresParseo = new Dictionary<string, IEnumerable<string>>();
+        DateOnly? fecha = null;
+        TimeOnly? horaInicio = null;
+        TimeOnly? horaFin = null;
+
+        if (!DateOnly.TryParse(req.Fecha, out var f))
         {
-            AddError("La fecha no tiene un formato válido (YYYY-MM-DD).", nameof(req.Fecha));
+            erroresParseo["fecha"] = ["La fecha no tiene un formato válido (YYYY-MM-DD)."];
+        }
+        else
+        {
+            fecha = f;
         }
 
-        // Parsear hora inicio
-        if (!TimeOnly.TryParse(req.HoraInicio, out var horaInicio))
+        if (!TimeOnly.TryParse(req.HoraInicio, out var hi))
         {
-            AddError("La hora de inicio no tiene un formato válido (HH:mm).", nameof(req.HoraInicio));
+            erroresParseo["horaInicio"] = ["La hora de inicio no tiene un formato válido (HH:mm)."];
+        }
+        else
+        {
+            horaInicio = hi;
         }
 
-        // Parsear hora fin
-        if (!TimeOnly.TryParse(req.HoraFin, out var horaFin))
+        if (!TimeOnly.TryParse(req.HoraFin, out var hf))
         {
-            AddError("La hora de fin no tiene un formato válido (HH:mm).", nameof(req.HoraFin));
+            erroresParseo["horaFin"] = ["La hora de fin no tiene un formato válido (HH:mm)."];
+        }
+        else
+        {
+            horaFin = hf;
         }
 
-        ThrowIfAnyErrors();
+        if (erroresParseo.Count > 0)
+        {
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                erroresParseo,
+                "Los campos enviados no cumplen el formato esperado.",
+                titulo: "Datos de creación inválidos");
+            return;
+        }
 
         // Verificar que el usuario existe
         var usuario = await _dbContext.Usuarios
@@ -72,41 +95,48 @@ public class CrearBloqueEndpoint : Endpoint<Request, Response>
 
         if (usuario == null)
         {
-            AddError("El usuario no está registrado en el sistema.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(
+                HttpContext,
+                "El usuario no está registrado en el sistema.");
             return;
         }
 
         // Validaciones de negocio
+        var erroresNegocio = new Dictionary<string, IEnumerable<string>>();
         var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
-        if (fecha < hoy)
+        if (fecha!.Value < hoy)
         {
-            AddError("No se pueden crear bloques en fechas pasadas.", nameof(req.Fecha));
+            erroresNegocio["fecha"] = ["No se pueden crear bloques en fechas pasadas."];
         }
-
-        if (horaFin <= horaInicio)
+        if (horaFin!.Value <= horaInicio!.Value)
         {
-            AddError("La hora de fin debe ser posterior a la hora de inicio.", nameof(req.HoraFin));
+            erroresNegocio["horaFin"] = ["La hora de fin debe ser posterior a la hora de inicio."];
         }
-
         if (req.CuposMaximos < 1 || req.CuposMaximos > 5)
         {
-            AddError("Los cupos deben estar entre 1 y 5.", nameof(req.CuposMaximos));
+            erroresNegocio["cuposMaximos"] = ["Los cupos deben estar entre 1 y 5."];
         }
-
         if (!string.IsNullOrWhiteSpace(req.Descripcion) && req.Descripcion.Length > 200)
         {
-            AddError("La descripción no puede exceder 200 caracteres.", nameof(req.Descripcion));
+            erroresNegocio["descripcion"] = ["La descripción no puede exceder 200 caracteres."];
         }
 
-        ThrowIfAnyErrors();
+        if (erroresNegocio.Count > 0)
+        {
+            await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                HttpContext,
+                erroresNegocio,
+                "Los datos no cumplen las reglas de negocio del turno.",
+                titulo: "Reglas de negocio violadas");
+            return;
+        }
 
         var bloque = new BloqueTurno
         {
             Id = Guid.NewGuid(),
-            Fecha = fecha,
-            HoraInicio = horaInicio,
-            HoraFin = horaFin,
+            Fecha = fecha.Value,
+            HoraInicio = horaInicio.Value,
+            HoraFin = horaFin.Value,
             CuposMaximos = req.CuposMaximos,
             Descripcion = req.Descripcion?.Trim(),
             CreadoPorId = usuarioId,
