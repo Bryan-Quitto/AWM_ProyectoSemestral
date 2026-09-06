@@ -1,11 +1,12 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { Proximamente } from '../../components/Proximamente'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
+// Ruta legada 'ficha-paciente' redirige a la vista funcional 'perfil-dependiente'.
+// El sidebar / tab bar de LayoutPrincipal Desktop y Mobile siguen apuntando aquí
+// por consistencia visual, pero el destino real es la Ficha del Dependiente del SCEN 002.
 export const Route = createFileRoute('/_protegidas/ficha-paciente')({
-  component: () => (
-    <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold text-blue-900 mb-6">Ficha de Paciente</h1>
-      <Proximamente />
-    </div>
-  )
+  beforeLoad: () => {
+    throw redirect({
+      to: '/perfil-dependiente',
+    })
+  },
 })
