@@ -207,7 +207,10 @@ export const AgendaDesktop = () => {
         <h1 className="text-3xl font-bold text-gray-900">Agenda de Turnos</h1>
 
         {esPrincipal && (
-          <Boton onClick={() => setDialogoAbierto(true)} className="cursor-pointer gap-2">
+          <Boton
+            onClick={() => setDialogoAbierto(true)}
+            className="cursor-pointer gap-2 !rounded-xl !py-3 !px-5"
+          >
             <Plus className="w-4 h-4" />
             Nuevo Turno
           </Boton>

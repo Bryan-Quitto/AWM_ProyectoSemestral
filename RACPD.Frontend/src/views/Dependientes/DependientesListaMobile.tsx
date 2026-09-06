@@ -4,6 +4,8 @@ import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarM
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
 import { ModalDetalle } from '../../components/ModalDetalle';
+import { etiquetaTipoSangre } from '../../schemas/tipoSangre';
+import { formatearFechaAsignacion } from '../../schemas/fechaAsignacion';
 import { Edit3, Eye, Plus, User, Droplets, AlertTriangle, Users, HeartPulse, ShieldAlert } from 'lucide-react';
 
 interface Props {
@@ -21,6 +23,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
     tipoSangre?: string;
     rolEnDependiente?: string;
     puedeEditar?: boolean;
+    fechaAsignacion?: string;
     condicionesCronicas?: string | null;
     alergiasEstructuradas?: string[];
   }>;
@@ -48,8 +51,21 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
   return (
     <div className="min-h-screen bg-blue-50 pb-24">
       <header className="bg-white px-5 py-4 shadow-sm border-b border-blue-100 sticky top-0 z-20">
-        <h1 className="text-xl font-bold text-blue-900">Mis Dependientes</h1>
-        <p className="text-xs text-blue-600">Pacientes bajo tu cuidado</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-blue-900">Mis Dependientes</h1>
+            <p className="text-xs text-blue-600">Pacientes bajo tu cuidado</p>
+          </div>
+          {puedeCrear && (
+            <Boton
+              onClick={() => navigate({ to: '/dependientes/nuevo' })}
+              aria-label="Crear nuevo dependiente"
+              className="!w-11 !h-11 !p-0 !rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md active:scale-95 shrink-0"
+            >
+              <Plus className="w-5 h-5" />
+            </Boton>
+          )}
+        </div>
       </header>
 
       <main className="px-4 pt-4 space-y-3">
@@ -102,11 +118,14 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                     <h2 className="font-bold text-base leading-tight truncate">
                       {d.nombreCompleto ?? 'Sin nombre'}
                     </h2>
-                    <p className="text-xs text-sky-50/90 mt-0.5">
-                      {d.rolEnDependiente === 'CuidadorPrincipal'
-                        ? 'Cuidador principal'
-                        : 'Apoyo'}
-                    </p>
+                    {(() => {
+                      const fecha = formatearFechaAsignacion(d.fechaAsignacion);
+                      return fecha ? (
+                        <p className="text-xs text-sky-50/90 mt-0.5">
+                          Asignado el {fecha}
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -116,7 +135,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                     <Droplets className="w-4 h-4 text-red-600 shrink-0" />
                     <span className="text-xs font-medium">Sangre:</span>
                     <span className="text-xs font-bold text-gray-900 truncate">
-                      {d.tipoSangre || 'Desconocido'}
+                      {etiquetaTipoSangre(d.tipoSangre)}
                     </span>
                   </div>
                   <div className="flex gap-1.5 shrink-0">
@@ -223,16 +242,6 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
         >
           {modalContenido?.texto}
         </ModalDetalle>
-
-        {puedeCrear && (
-          <button
-            type="button"
-            onClick={() => navigate({ to: '/dependientes/nuevo' })}
-            className="cursor-pointer disabled:cursor-not-allowed w-full mt-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white py-3 rounded-2xl font-bold text-base shadow-lg shadow-blue-200 transition flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Plus className="w-5 h-5" /> Crear nuevo dependiente
-          </button>
-        )}
       </main>
     </div>
   );

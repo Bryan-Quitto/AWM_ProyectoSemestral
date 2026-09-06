@@ -1,5 +1,8 @@
 import type { Control, FieldErrors, FieldArrayPath, FieldValues, UseFieldArrayAppend, UseFieldArrayRemove } from 'react-hook-form';
+import { Controller } from 'react-hook-form';
 import { Boton } from '../../components/Boton';
+import { CampoTelefonoEcuador } from '../../components/CampoTelefonoEcuador';
+import { normalizarTelefonoEcuador } from '../../schemas/telefono';
 import { Plus, Trash2 } from 'lucide-react';
 import type { ContactoEmergenciaForm } from './schema';
 
@@ -20,6 +23,13 @@ const contactoVacio: ContactoEmergenciaForm = {
   telefonoWhatsApp: '',
 };
 
+/**
+ * Normaliza el cuerpo del número (almacenado sin prefijo en el formulario)
+ * al formato E.164 (`+5939XXXXXXXX`) que espera el backend.
+ */
+const cuerpoAFormatoE164 = (valor: string): string =>
+  normalizarTelefonoEcuador(valor);
+
 export function ContactosEmergenciaForm<
   TForm extends FieldValues & { contactosEmergencia?: ContactoEmergenciaForm[] | undefined }
 >({
@@ -37,10 +47,9 @@ export function ContactosEmergenciaForm<
     return (
       <div className="space-y-4">
         {contactos.map((_, idx) => {
-          const campo = `contactosEmergencia.${idx}` as const;
           const errCampo = erroresContactos?.[idx] as FieldErrors<ContactoEmergenciaForm> | undefined;
           return (
-            <div key={campo.toString()} className="p-4 bg-white border border-blue-200 rounded-xl shadow-sm">
+            <div key={idx} className="p-4 bg-white border border-blue-200 rounded-xl shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-semibold text-blue-900">Contacto {idx + 1}</h4>
                 <button
@@ -55,11 +64,20 @@ export function ContactosEmergenciaForm<
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
-                  <input
-                    type="text"
-                    {...(control.register as any)(`${campo}.nombre`)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    placeholder="María Pérez"
+                  <Controller
+                    control={control}
+                    name={`contactosEmergencia.${idx}.nombre` as any}
+                    render={({ field }) => (
+                      <input
+                        type="text"
+                        value={String(field.value ?? '')}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        placeholder="María Pérez"
+                      />
+                    )}
                   />
                   {errCampo?.nombre?.message && (
                     <p className="text-red-500 text-xs mt-1">{errCampo.nombre.message}</p>
@@ -67,27 +85,39 @@ export function ContactosEmergenciaForm<
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Relación</label>
-                  <input
-                    type="text"
-                    {...(control.register as any)(`${campo}.relacion`)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    placeholder="Hija, Esposa, Hermano..."
+                  <Controller
+                    control={control}
+                    name={`contactosEmergencia.${idx}.relacion` as any}
+                    render={({ field }) => (
+                      <input
+                        type="text"
+                        value={String(field.value ?? '')}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        ref={field.ref}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        placeholder="Hija, Esposa, Hermano..."
+                      />
+                    )}
                   />
                   {errCampo?.relacion?.message && (
                     <p className="text-red-500 text-xs mt-1">{errCampo.relacion.message}</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono WhatsApp</label>
-                  <input
-                    type="tel"
-                    {...(control.register as any)(`${campo}.telefonoWhatsApp`)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    placeholder="+5939XXXXXXXX"
+                  <Controller
+                    control={control}
+                    name={`contactosEmergencia.${idx}.telefonoWhatsApp` as any}
+                    render={({ field }) => (
+                      <CampoTelefonoEcuador
+                        etiqueta="Teléfono WhatsApp"
+                        variante="mobile"
+                        value={String(field.value ?? '').replace(/^\+593/, '')}
+                        onChange={(cuerpo) => field.onChange(cuerpoAFormatoE164(cuerpo))}
+                        error={errCampo?.telefonoWhatsApp?.message}
+                      />
+                    )}
                   />
-                  {errCampo?.telefonoWhatsApp?.message && (
-                    <p className="text-red-500 text-xs mt-1">{errCampo.telefonoWhatsApp.message}</p>
-                  )}
                 </div>
               </div>
             </div>
@@ -132,39 +162,60 @@ export function ContactosEmergenciaForm<
               </tr>
             )}
             {contactos.map((_, idx) => {
-              const campo = `contactosEmergencia.${idx}` as const;
               const errCampo = erroresContactos?.[idx] as FieldErrors<ContactoEmergenciaForm> | undefined;
               return (
-                <tr key={campo.toString()}>
+                <tr key={idx}>
                   <td className="px-4 py-3">
-                    <input
-                      type="text"
-                      {...(control.register as any)(`${campo}.nombre`)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    <Controller
+                      control={control}
+                      name={`contactosEmergencia.${idx}.nombre` as any}
+                      render={({ field }) => (
+                        <input
+                          type="text"
+                          value={String(field.value ?? '')}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        />
+                      )}
                     />
                     {errCampo?.nombre?.message && (
                       <p className="text-red-500 text-xs mt-1">{errCampo.nombre.message}</p>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <input
-                      type="text"
-                      {...(control.register as any)(`${campo}.relacion`)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    <Controller
+                      control={control}
+                      name={`contactosEmergencia.${idx}.relacion` as any}
+                      render={({ field }) => (
+                        <input
+                          type="text"
+                          value={String(field.value ?? '')}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          ref={field.ref}
+                          className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        />
+                      )}
                     />
                     {errCampo?.relacion?.message && (
                       <p className="text-red-500 text-xs mt-1">{errCampo.relacion.message}</p>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <input
-                      type="tel"
-                      {...(control.register as any)(`${campo}.telefonoWhatsApp`)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                    <Controller
+                      control={control}
+                      name={`contactosEmergencia.${idx}.telefonoWhatsApp` as any}
+                      render={({ field }) => (
+                        <CampoTelefonoEcuador
+                          variante="desktop"
+                          value={String(field.value ?? '').replace(/^\+593/, '')}
+                          onChange={(cuerpo) => field.onChange(cuerpoAFormatoE164(cuerpo))}
+                          error={errCampo?.telefonoWhatsApp?.message}
+                        />
+                      )}
                     />
-                    {errCampo?.telefonoWhatsApp?.message && (
-                      <p className="text-red-500 text-xs mt-1">{errCampo.telefonoWhatsApp.message}</p>
-                    )}
                   </td>
                   <td className="px-4 py-3 text-right">
                     <button

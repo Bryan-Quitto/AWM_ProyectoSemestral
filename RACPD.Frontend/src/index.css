@@ -11,3 +11,22 @@ body {
   color: #0f172a; /* Texto oscuro para contraste */
   font-family: system-ui, -apple-system, sans-serif;
 }
+
+/*
+ * Neutraliza el botón de "revelar contraseña" que algunos navegadores
+ * (Chrome, Edge, Safari) añaden automáticamente sobre los inputs
+ * `type="password"` cuando detectan credenciales. Sin esto, aparece un
+ * segundo ojo nativo a la izquierda del nuestro, rompiendo el layout.
+ * Conservamos el botón propio (CampoContrasena) para los navegadores
+ * que NO lo incluyen (Firefox, navegadores antiguos, etc.).
+ */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-password-toggle-button,
+input[type="password"]::-webkit-password-toggle-icon {
+  display: none !important;
+  -webkit-appearance: none;
+}

@@ -47,7 +47,7 @@ public class ObtenerDependienteEndpoint : EndpointWithoutRequest<ObtenerDependie
             .Where(v => v.UsuarioId == userId.Value
                      && v.PerfilDependienteId == perfilId
                      && v.Activo)
-            .Select(v => new { v.RolEnDependiente })
+            .Select(v => new { v.RolEnDependiente, v.FechaAsignacion })
             .FirstOrDefaultAsync(ct);
 
         if (vinculo is null)
@@ -76,7 +76,8 @@ public class ObtenerDependienteEndpoint : EndpointWithoutRequest<ObtenerDependie
                 }).ToList(),
                 Version = p.Version,
                 RolEnDependiente = vinculo.RolEnDependiente.ToString(),
-                PuedeEditar = vinculo.RolEnDependiente == RolEnDependiente.CuidadorPrincipal
+                PuedeEditar = vinculo.RolEnDependiente == RolEnDependiente.CuidadorPrincipal,
+                FechaAsignacion = vinculo.FechaAsignacion
             })
             .FirstOrDefaultAsync(ct);
 
@@ -104,6 +105,7 @@ public class ObtenerDependienteResponse
     public uint Version { get; init; }
     public string RolEnDependiente { get; init; } = string.Empty;
     public bool PuedeEditar { get; init; }
+    public DateTimeOffset FechaAsignacion { get; init; }
 }
 
 public class ContactoEmergenciaDto

@@ -60,37 +60,53 @@ export function CampoContrasena(props: CampoContrasenaProps) {
     : 'Mostrar contraseña';
 
   return (
-    <div className="relative">
-      <input
-        type={tipoInput}
-        value={value}
-        onChange={manejarCambio}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete={autoComplete}
-        id={id}
-        name={name}
-        aria-label={ariaLabel}
-        className="w-full p-3 pr-12 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white"
-      />
+    <>
+      {/*
+        El wrapper relativo contiene SOLO el input y el botón. El mensaje
+        de error se renderiza FUERA de este wrapper (más abajo). Si el
+        <p> de error viviera dentro, aumentaría la altura del contenedor
+        relativo y el botón `inset-y-0` se expandiría para cubrir también
+        el espacio del error, descentrando el ícono verticalmente cada
+        vez que apareciera un mensaje.
+      */}
+      <div className="relative">
+        <input
+          type={tipoInput}
+          value={value}
+          onChange={manejarCambio}
+          placeholder={placeholder}
+          disabled={disabled}
+          autoComplete={autoComplete}
+          id={id}
+          name={name}
+          aria-label={ariaLabel}
+          className="w-full p-3 pr-12 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all disabled:opacity-50 bg-white [&::-ms-reveal]:hidden [&::-ms-clear]:hidden [&::-webkit-password-toggle-button]:hidden [&::-webkit-password-toggle-icon]:hidden [-webkit-appearance:none]"
+        />
 
-      <button
-        type="button"
-        onClick={() => setMostrar((estadoAnterior) => !estadoAnterior)}
-        disabled={disabled}
-        aria-label={etiquetaAlternar}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-      >
-        {mostrar ? (
-          <EyeOff aria-hidden="true" size={20} />
-        ) : (
-          <Eye aria-hidden="true" size={20} />
-        )}
-      </button>
+        {/*
+          Botón de alternar visibilidad anclado con `inset-y-0` + flex en lugar
+          de `top-1/2 -translate-y-1/2`. Esto garantiza que el ícono quede
+          centrado verticalmente respecto al input sin depender del
+          line-height del navegador.
+        */}
+        <button
+          type="button"
+          onClick={() => setMostrar((estadoAnterior) => !estadoAnterior)}
+          disabled={disabled}
+          aria-label={etiquetaAlternar}
+          className="absolute inset-y-0 right-0 flex items-center justify-center px-3 text-blue-600 hover:text-blue-800 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+        >
+          {mostrar ? (
+            <EyeOff aria-hidden="true" size={20} />
+          ) : (
+            <Eye aria-hidden="true" size={20} />
+          )}
+        </button>
+      </div>
 
       {typeof error === 'string' && error.length > 0 ? (
         <p className="text-sm text-red-500 mt-1">{error}</p>
       ) : null}
-    </div>
+    </>
   );
 }

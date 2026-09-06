@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { telefonoEcuadorRegla } from '../../schemas/telefono';
 
 export const TIPOS_SANGRE = [
   'APositivo',
@@ -23,9 +24,7 @@ export const ContactoEmergenciaSchema = z.object({
     .string()
     .min(2, 'La relación debe tener al menos 2 caracteres')
     .max(100, 'La relación no puede exceder los 100 caracteres'),
-  telefonoWhatsApp: z
-    .string()
-    .regex(/^\+593\d{9}$/, 'Debe ser un número de Ecuador válido (+593...)'),
+  telefonoWhatsApp: telefonoEcuadorRegla,
 });
 
 export const PerfilDependienteSchema = z.object({

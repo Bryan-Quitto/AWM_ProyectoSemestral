@@ -83,6 +83,15 @@ export const CompletarPerfilContenedor = () => {
 
   const form = useForm<CompletarPerfilForm>({
     resolver: zodResolver(completarPerfilSchema),
+    // Estrategia de validación:
+    // - `mode: 'onBlur'` → valida cuando el cuidador sale del campo.
+    //   Equilibrio entre no molestar mientras escribe y darle feedback
+    //   inmediato al perder foco. Vital en situaciones de estrés donde
+    //   el cuidador necesita saber al instante si su input es válido.
+    // - `reValidateMode: 'onChange'` → después del primer blur, vuelve
+    //   a validar mientras escribe para corregir el error en vivo.
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       nombre: '',
       apellido: '',

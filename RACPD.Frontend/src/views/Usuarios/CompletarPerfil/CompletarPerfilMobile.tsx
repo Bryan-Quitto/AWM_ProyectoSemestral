@@ -12,8 +12,12 @@ export const CompletarPerfilMobile = ({
 }: CompletarPerfilProps) => {
   return (
     <div className="min-h-screen bg-blue-50/30 p-4">
+      <header className="mb-6 text-center">
+        <h1 className="text-2xl font-extrabold tracking-tight text-blue-900">RACPD</h1>
+        <p className="text-xs text-blue-600/80">Red de Apoyo para Cuidadores</p>
+      </header>
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-blue-100">
-        <h1 className="text-xl font-bold text-blue-900 mb-1">Completa tu perfil</h1>
+        <h2 className="text-xl font-bold text-blue-900 mb-1">Completa tu perfil</h2>
         <p className="text-sm text-blue-600 mb-6">Necesitamos unos datos para empezar.</p>
 
         {apiError && (

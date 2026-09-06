@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PerfilDependienteSchema, TIPOS_SANGRE, type PerfilDependienteForm, type ContactoEmergenciaForm, type TipoSangre } from './schema';
+import { TIPO_SANGRE_ETIQUETAS } from '../../schemas/tipoSangre';
+import { formatearFechaAsignacion } from '../../schemas/fechaAsignacion';
 import { ContactosEmergenciaForm } from './ContactosEmergenciaForm';
 import { Boton } from '../../components/Boton';
 import { SelectorDinamico } from '../../components/SelectorDinamico';
@@ -11,18 +13,9 @@ import {
   useRACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint,
   useRACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteEndpoint,
 } from '../../api/generated/api/api';
+import { useInvalidarPerfilesDependientes } from '../../features/perfiles-dependientes/useInvalidarPerfilesDependientes';
 
-const TIPO_SANGRE_LABELS: Record<TipoSangre, string> = {
-  APositivo: 'A+',
-  ANegativo: 'A−',
-  BPositivo: 'B+',
-  BNegativo: 'B−',
-  ABPositivo: 'AB+',
-  ABNegativo: 'AB−',
-  OPositivo: 'O+',
-  ONegativo: 'O−',
-  Desconocido: 'Desconocido',
-};
+const TIPO_SANGRE_LABELS = TIPO_SANGRE_ETIQUETAS;
 
 interface PerfilDependienteMobileProps {
   perfilId?: string;
@@ -56,6 +49,8 @@ export function PerfilDependienteMobile({
   const existePerfil = !!perfilExistente?.id;
   const puedeEditarBackend = perfilExistente?.puedeEditar === true;
   const versionActual = perfilExistente?.version ?? 0;
+
+  const invalidarPerfiles = useInvalidarPerfilesDependientes();
 
   const tipoSangreExistente = perfilExistente?.tipoSangre as TipoSangre | undefined;
   const valoresIniciales: PerfilDependienteForm = useMemo(
@@ -104,7 +99,7 @@ export function PerfilDependienteMobile({
       form.reset(valoresIniciales);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [perfilExistente?.id]);
+  }, [perfilExistente?.id, perfilExistente?.version]);
 
   const puedeAgregarAlergia =
     alergiaInput.trim().length >= 1 &&
@@ -169,7 +164,10 @@ export function PerfilDependienteMobile({
           return;
         }
         setExito('Ficha creada correctamente.');
-        setTimeout(() => onVolverALista?.(), 800);
+        // Invalido TODO el feature (lista + futuros caches derivados)
+        // antes de navegar para que el listado muestre el nuevo dependiente.
+        await invalidarPerfiles(perfilExistente?.id);
+        setTimeout(() => onVolverALista?.(), 600);
       } else {
         const respuesta = (await actualizarPerfil({
           ...data,
@@ -180,7 +178,10 @@ export function PerfilDependienteMobile({
           handleErrors(respuesta);
           return;
         }
-        await refetchPerfil();
+        // Invalidación amplia: cubre la doble suscripción del detalle
+        // (route + componente) y refresca la lista para que el listado
+        // muestre los cambios al volver.
+        await invalidarPerfiles(perfilExistente?.id);
         setExito('Ficha actualizada correctamente.');
         setModoEditar(false);
       }
@@ -247,7 +248,12 @@ export function PerfilDependienteMobile({
                   </div>
                   <div>
                     <h2 className="font-bold text-lg leading-tight">{perfilExistente.nombreCompleto}</h2>
-                    <p className="text-xs text-sky-50/90">Paciente / Dependiente</p>
+                    {(() => {
+                      const fecha = formatearFechaAsignacion(perfilExistente.fechaAsignacion);
+                      return fecha ? (
+                        <p className="text-xs text-sky-50/90">Asignado el {fecha}</p>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               </div>

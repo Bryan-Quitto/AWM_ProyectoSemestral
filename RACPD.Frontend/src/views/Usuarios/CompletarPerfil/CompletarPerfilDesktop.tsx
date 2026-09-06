@@ -11,9 +11,13 @@ export const CompletarPerfilDesktop = ({
   rolTextoLegible
 }: CompletarPerfilProps) => {
   return (
-    <div className="flex justify-center items-center min-h-screen p-8 bg-blue-50/50">
+    <div className="flex flex-col justify-center items-center min-h-screen p-8 bg-blue-50/50">
+      <header className="mb-6 text-center">
+        <h1 className="text-3xl font-extrabold tracking-tight text-blue-900">RACPD</h1>
+        <p className="text-sm text-blue-600/80">Red de Apoyo para Cuidadores de Personas con Dependencia</p>
+      </header>
       <div className="w-full max-w-2xl bg-white p-8 rounded-xl shadow-sm border border-blue-100">
-        <h1 className="text-2xl font-bold text-blue-900 mb-2">Completa tu perfil</h1>
+        <h2 className="text-2xl font-bold text-blue-900 mb-2">Completa tu perfil</h2>
         <p className="text-blue-600 mb-8">Necesitamos unos datos para que puedas empezar a usar la plataforma.</p>
 
         {apiError && (

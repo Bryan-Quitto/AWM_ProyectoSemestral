@@ -10,10 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtegidasRouteImport } from './routes/_protegidas'
+import { Route as CompletarPerfilRouteImport } from './routes/completar-perfil'
 import { Route as InicioSesionRouteImport } from './routes/inicio-sesion'
 import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
-import { Route as ProtegidasCompletarPerfilRouteImport } from './routes/_protegidas/completar-perfil'
 import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegidas/configuracion'
 import { Route as ProtegidasDependientesRouteImport } from './routes/_protegidas/dependientes'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
@@ -25,6 +25,11 @@ import { Route as ProtegidasDependientesPerfilIdAccesoRouteImport } from './rout
 
 const ProtegidasRoute = ProtegidasRouteImport.update({
   id: '/_protegidas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompletarPerfilRoute = CompletarPerfilRouteImport.update({
+  id: '/completar-perfil',
+  path: '/completar-perfil',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InicioSesionRoute = InicioSesionRouteImport.update({
@@ -42,12 +47,6 @@ const ProtegidasAgendaRoute = ProtegidasAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => ProtegidasRoute,
 } as any)
-const ProtegidasCompletarPerfilRoute =
-  ProtegidasCompletarPerfilRouteImport.update({
-    id: '/completar-perfil',
-    path: '/completar-perfil',
-    getParentRoute: () => ProtegidasRoute,
-  } as any)
 const ProtegidasConfiguracionRoute = ProtegidasConfiguracionRouteImport.update({
   id: '/configuracion',
   path: '/configuracion',
@@ -96,9 +95,9 @@ const ProtegidasDependientesPerfilIdAccesoRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof ProtegidasIndexRoute
+  '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
-  '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
@@ -109,9 +108,9 @@ export interface FileRoutesByFullPath {
   '/dependientes/$perfilId/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRoutesByTo {
+  '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
   '/agenda': typeof ProtegidasAgendaRoute
-  '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/': typeof ProtegidasIndexRoute
@@ -124,9 +123,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_protegidas': typeof ProtegidasRouteWithChildren
+  '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
-  '/_protegidas/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/_protegidas/configuracion': typeof ProtegidasConfiguracionRoute
   '/_protegidas/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
@@ -141,9 +140,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/completar-perfil'
     | '/inicio-sesion'
     | '/agenda'
-    | '/completar-perfil'
     | '/configuracion'
     | '/dependientes'
     | '/ficha-paciente'
@@ -154,9 +153,9 @@ export interface FileRouteTypes {
     | '/dependientes/$perfilId/acceso'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/completar-perfil'
     | '/inicio-sesion'
     | '/agenda'
-    | '/completar-perfil'
     | '/configuracion'
     | '/ficha-paciente'
     | '/'
@@ -168,9 +167,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_protegidas'
+    | '/completar-perfil'
     | '/inicio-sesion'
     | '/_protegidas/agenda'
-    | '/_protegidas/completar-perfil'
     | '/_protegidas/configuracion'
     | '/_protegidas/dependientes'
     | '/_protegidas/ficha-paciente'
@@ -184,6 +183,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   ProtegidasRoute: typeof ProtegidasRouteWithChildren
+  CompletarPerfilRoute: typeof CompletarPerfilRoute
   InicioSesionRoute: typeof InicioSesionRoute
 }
 
@@ -194,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof ProtegidasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/completar-perfil': {
+      id: '/completar-perfil'
+      path: '/completar-perfil'
+      fullPath: '/completar-perfil'
+      preLoaderRoute: typeof CompletarPerfilRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/inicio-sesion': {
@@ -215,13 +222,6 @@ declare module '@tanstack/react-router' {
       path: '/agenda'
       fullPath: '/agenda'
       preLoaderRoute: typeof ProtegidasAgendaRouteImport
-      parentRoute: typeof ProtegidasRoute
-    }
-    '/_protegidas/completar-perfil': {
-      id: '/_protegidas/completar-perfil'
-      path: '/completar-perfil'
-      fullPath: '/completar-perfil'
-      preLoaderRoute: typeof ProtegidasCompletarPerfilRouteImport
       parentRoute: typeof ProtegidasRoute
     }
     '/_protegidas/configuracion': {
@@ -306,7 +306,6 @@ const ProtegidasDependientesRouteWithChildren =
 
 interface ProtegidasRouteChildren {
   ProtegidasAgendaRoute: typeof ProtegidasAgendaRoute
-  ProtegidasCompletarPerfilRoute: typeof ProtegidasCompletarPerfilRoute
   ProtegidasConfiguracionRoute: typeof ProtegidasConfiguracionRoute
   ProtegidasDependientesRoute: typeof ProtegidasDependientesRouteWithChildren
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
@@ -316,7 +315,6 @@ interface ProtegidasRouteChildren {
 
 const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasAgendaRoute: ProtegidasAgendaRoute,
-  ProtegidasCompletarPerfilRoute: ProtegidasCompletarPerfilRoute,
   ProtegidasConfiguracionRoute: ProtegidasConfiguracionRoute,
   ProtegidasDependientesRoute: ProtegidasDependientesRouteWithChildren,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
@@ -330,6 +328,7 @@ const ProtegidasRouteWithChildren = ProtegidasRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   ProtegidasRoute: ProtegidasRouteWithChildren,
+  CompletarPerfilRoute: CompletarPerfilRoute,
   InicioSesionRoute: InicioSesionRoute,
 }
 export const routeTree = rootRouteImport

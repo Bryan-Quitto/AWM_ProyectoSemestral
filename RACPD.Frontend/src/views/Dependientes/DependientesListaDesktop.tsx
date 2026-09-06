@@ -4,6 +4,8 @@ import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarM
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
 import { ModalDetalle } from '../../components/ModalDetalle';
+import { etiquetaTipoSangre } from '../../schemas/tipoSangre';
+import { formatearFechaAsignacion } from '../../schemas/fechaAsignacion';
 import { Edit3, Eye, Plus, User, Droplets, AlertTriangle, Users, HeartPulse, ShieldAlert } from 'lucide-react';
 
 interface Props {
@@ -22,6 +24,7 @@ export function DependientesListaDesktop({ puedeCrear }: Props) {
     tipoSangre?: string;
     rolEnDependiente?: string;
     puedeEditar?: boolean;
+    fechaAsignacion?: string;
     condicionesCronicas?: string | null;
     alergiasEstructuradas?: string[];
   }>;
@@ -96,13 +99,14 @@ export function DependientesListaDesktop({ puedeCrear }: Props) {
                     <h2 className="font-bold text-base leading-tight truncate">
                       {d.nombreCompleto ?? 'Sin nombre'}
                     </h2>
-                    <p className="text-xs text-sky-50/90 mt-0.5">
-                      {d.rolEnDependiente === 'CuidadorPrincipal'
-                        ? 'Cuidador principal'
-                        : d.rolEnDependiente === 'Apoyo'
-                        ? 'Apoyo'
-                        : 'Sin rol'}
-                    </p>
+                    {(() => {
+                      const fecha = formatearFechaAsignacion(d.fechaAsignacion);
+                      return fecha ? (
+                        <p className="text-xs text-sky-50/90 mt-0.5">
+                          Asignado el {fecha}
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               </div>
@@ -111,7 +115,7 @@ export function DependientesListaDesktop({ puedeCrear }: Props) {
                   <Droplets className="w-4 h-4 text-red-600" />
                   <span className="text-sm font-medium">Tipo de sangre:</span>
                   <span className="text-sm font-bold text-gray-900">
-                    {d.tipoSangre || 'Desconocido'}
+                    {etiquetaTipoSangre(d.tipoSangre)}
                   </span>
                 </div>
                 <div className="flex items-start gap-2 text-gray-700 mb-2">

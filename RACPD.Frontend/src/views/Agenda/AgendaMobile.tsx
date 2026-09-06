@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Calendar } from 'lucide-react';
+import { Boton } from '../../components/Boton';
 import { TarjetaBloque } from './TarjetaBloque';
 import { DialogoBloque } from './DialogoBloque';
 import { CalendarioAgenda } from './CalendarioAgenda';
@@ -203,14 +204,26 @@ export const AgendaMobile = () => {
             <h1 className="text-xl font-bold text-gray-900">Agenda</h1>
             <p className="text-sm text-gray-500">{bloquesFiltrados.length} turno{bloquesFiltrados.length !== 1 ? 's' : ''}</p>
           </div>
-          <button
-            onClick={() => setMostrarCalendario(!mostrarCalendario)}
-            className={`p-3 rounded-xl cursor-pointer transition-all ${
-              mostrarCalendario ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
-            <Calendar className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {esPrincipal && (
+              <Boton
+                onClick={() => setDialogoAbierto(true)}
+                aria-label="Nuevo turno"
+                className="!w-11 !h-11 !p-0 !rounded-full bg-blue-600 text-white hover:bg-blue-700 shadow-md active:scale-95"
+              >
+                <Plus className="w-5 h-5" />
+              </Boton>
+            )}
+            <button
+              onClick={() => setMostrarCalendario(!mostrarCalendario)}
+              className={`p-3 rounded-xl cursor-pointer transition-all ${
+                mostrarCalendario ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+              aria-label="Mostrar u ocultar calendario"
+            >
+              <Calendar className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Filtros compactos */}
@@ -281,15 +294,10 @@ export const AgendaMobile = () => {
         )}
       </div>
 
-      {/* FAB */}
-      {esPrincipal && (
-        <button
-          onClick={() => setDialogoAbierto(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl flex items-center justify-center cursor-pointer active:scale-95"
-        >
-          <Plus className="w-6 h-6" />
-        </button>
-      )}
+      {/* FAB (Floating Action Button) para crear un nuevo turno.
+          Ahora vive en el header junto al toggle de calendario,
+          siguiendo tu indicación. Mejor accesibilidad en móvil para
+          cuidadores con una mano ocupada. */}
 
       <DialogoBloque
         abierto={dialogoAbierto}
