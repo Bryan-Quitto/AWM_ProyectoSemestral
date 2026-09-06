@@ -1,9 +1,8 @@
 using FastEndpoints;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 using System.Security.Claims;
 
 namespace RACPD.Backend.Features.PerfilesDependientes.ObtenerMiDependiente;
@@ -20,7 +19,7 @@ public class ObtenerMiDependienteEndpoint : EndpointWithoutRequest<ObtenerMiDepe
     public override void Configure()
     {
         Get("/api/perfiles-dependientes/mi-dependiente");
-        Roles(Rol.CuidadorPrincipal.ToString());
+        Roles(Rol.CuidadorPrincipal.ToString(), Rol.Apoyo.ToString());
     }
 
     public override async Task HandleAsync(CancellationToken ct)
@@ -30,8 +29,7 @@ public class ObtenerMiDependienteEndpoint : EndpointWithoutRequest<ObtenerMiDepe
 
         if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
@@ -56,19 +54,10 @@ public class ObtenerMiDependienteEndpoint : EndpointWithoutRequest<ObtenerMiDepe
 
         if (perfil is null)
         {
-            var problema = new Microsoft.AspNetCore.Mvc.ProblemDetails
-            {
-                Type = "https://racpd.app/errors/perfil-no-encontrado",
-                Title = "Perfil dependiente no encontrado",
-                Status = StatusCodes.Status404NotFound,
-                Detail = "No se ha encontrado un perfil dependiente asociado a su identificador de cuidador.",
-                Instance = HttpContext.Request.Path
-            };
-            await Send.StringAsync(
-                global::System.Text.Json.JsonSerializer.Serialize(problema),
-                StatusCodes.Status404NotFound,
-                "application/problem+json",
-                ct);
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "No se ha encontrado un perfil dependiente asociado a su identificador de cuidador.",
+                tipoRecurso: "perfil-dependiente-no-encontrado");
             return;
         }
 
