@@ -1,11 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { Proximamente } from '../../components/Proximamente'
+import { AgendaContenedor } from '../../views/Agenda/AgendaContenedor'
 
 export const Route = createFileRoute('/_protegidas/agenda')({
   component: () => (
-    <div className="p-6 h-full">
-      <h1 className="text-2xl font-bold text-blue-900 mb-6">Agenda</h1>
-      <Proximamente />
+    <div className="h-full">
+      <AgendaContenedor />
     </div>
   )
 })
