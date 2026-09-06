@@ -1,4 +1,6 @@
 using FastEndpoints;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Enums;
@@ -54,8 +56,19 @@ public class ObtenerMiDependienteEndpoint : EndpointWithoutRequest<ObtenerMiDepe
 
         if (perfil is null)
         {
-            AddError("No se ha encontrado un perfil dependiente asociado a su identificador de cuidador.");
-            await Send.ErrorsAsync(StatusCodes.Status404NotFound, ct);
+            var problema = new Microsoft.AspNetCore.Mvc.ProblemDetails
+            {
+                Type = "https://racpd.app/errors/perfil-no-encontrado",
+                Title = "Perfil dependiente no encontrado",
+                Status = StatusCodes.Status404NotFound,
+                Detail = "No se ha encontrado un perfil dependiente asociado a su identificador de cuidador.",
+                Instance = HttpContext.Request.Path
+            };
+            await Send.StringAsync(
+                global::System.Text.Json.JsonSerializer.Serialize(problema),
+                StatusCodes.Status404NotFound,
+                "application/problem+json",
+                ct);
             return;
         }
 

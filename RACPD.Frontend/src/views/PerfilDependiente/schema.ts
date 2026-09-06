@@ -33,7 +33,7 @@ export const PerfilDependienteSchema = z.object({
     .string()
     .min(3, 'El nombre completo debe tener al menos 3 caracteres')
     .max(200, 'El nombre completo no puede exceder los 200 caracteres'),
-    tipoSangre: z.enum(TIPOS_SANGRE, 'El tipo de sangre es obligatorio o inválido'),
+  tipoSangre: z.enum(TIPOS_SANGRE, 'El tipo de sangre es obligatorio o inválido'),
   condicionesCronicas: z
     .string()
     .max(4000, 'Las condiciones crónicas no pueden exceder los 4000 caracteres'),

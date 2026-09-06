@@ -84,6 +84,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Soporte para RFC 7807 ProblemDetails en respuestas de error.
+builder.Services.AddProblemDetails();
+
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
 builder.Services.AddHttpClient();
