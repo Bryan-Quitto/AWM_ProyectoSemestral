@@ -20,6 +20,7 @@ import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegida
 import { Route as ProtegidasDependientesIndexRouteImport } from './routes/_protegidas/dependientes/index'
 import { Route as ProtegidasDependientesPerfilIdRouteImport } from './routes/_protegidas/dependientes/$perfilId'
 import { Route as ProtegidasDependientesNuevoRouteImport } from './routes/_protegidas/dependientes/nuevo'
+import { Route as ProtegidasUsuariosIndexRouteImport } from './routes/_protegidas/usuarios/index'
 import { Route as ProtegidasUsuariosInvitarRouteImport } from './routes/_protegidas/usuarios/invitar'
 import { Route as ProtegidasDependientesPerfilIdAccesoRouteImport } from './routes/_protegidas/dependientes/$perfilId_.acceso'
 
@@ -80,6 +81,11 @@ const ProtegidasDependientesNuevoRoute =
     path: '/nuevo',
     getParentRoute: () => ProtegidasDependientesRoute,
   } as any)
+const ProtegidasUsuariosIndexRoute = ProtegidasUsuariosIndexRouteImport.update({
+  id: '/usuarios/',
+  path: '/usuarios/',
+  getParentRoute: () => ProtegidasRoute,
+} as any)
 const ProtegidasUsuariosInvitarRoute =
   ProtegidasUsuariosInvitarRouteImport.update({
     id: '/usuarios/invitar',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
   '/dependientes/': typeof ProtegidasDependientesIndexRoute
+  '/usuarios/': typeof ProtegidasUsuariosIndexRoute
   '/dependientes/$perfilId/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRoutesByTo {
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
   '/dependientes': typeof ProtegidasDependientesIndexRoute
+  '/usuarios': typeof ProtegidasUsuariosIndexRoute
   '/dependientes/$perfilId/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRoutesById {
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/_protegidas/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/_protegidas/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
   '/_protegidas/dependientes/': typeof ProtegidasDependientesIndexRoute
+  '/_protegidas/usuarios/': typeof ProtegidasUsuariosIndexRoute
   '/_protegidas/dependientes/$perfilId_/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRouteTypes {
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/dependientes/nuevo'
     | '/usuarios/invitar'
     | '/dependientes/'
+    | '/usuarios/'
     | '/dependientes/$perfilId/acceso'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/dependientes/nuevo'
     | '/usuarios/invitar'
     | '/dependientes'
+    | '/usuarios'
     | '/dependientes/$perfilId/acceso'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/_protegidas/dependientes/nuevo'
     | '/_protegidas/usuarios/invitar'
     | '/_protegidas/dependientes/'
+    | '/_protegidas/usuarios/'
     | '/_protegidas/dependientes/$perfilId_/acceso'
   fileRoutesById: FileRoutesById
 }
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasDependientesNuevoRouteImport
       parentRoute: typeof ProtegidasDependientesRoute
     }
+    '/_protegidas/usuarios/': {
+      id: '/_protegidas/usuarios/'
+      path: '/usuarios'
+      fullPath: '/usuarios/'
+      preLoaderRoute: typeof ProtegidasUsuariosIndexRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
     '/_protegidas/usuarios/invitar': {
       id: '/_protegidas/usuarios/invitar'
       path: '/usuarios/invitar'
@@ -311,6 +330,7 @@ interface ProtegidasRouteChildren {
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
   ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
+  ProtegidasUsuariosIndexRoute: typeof ProtegidasUsuariosIndexRoute
 }
 
 const ProtegidasRouteChildren: ProtegidasRouteChildren = {
@@ -320,6 +340,7 @@ const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
   ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,
+  ProtegidasUsuariosIndexRoute: ProtegidasUsuariosIndexRoute,
 }
 
 const ProtegidasRouteWithChildren = ProtegidasRoute._addFileChildren(

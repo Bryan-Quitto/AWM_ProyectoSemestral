@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { LayoutPrincipalDesktop } from './LayoutPrincipalDesktop'
 import { LayoutPrincipalMobile } from './LayoutPrincipalMobile'
 import { VerificadorPerfil } from './VerificadorPerfil'
+import { useVerificarCuentaActiva } from '../../autenticacion/useVerificarCuentaActiva'
 
 export const LayoutPrincipal = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -11,6 +12,11 @@ export const LayoutPrincipal = () => {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Verifica en eventos del navegador (F5, focus, visibilitychange y
+  // timer en background) que la cuenta del usuario siga activa. Si el
+  // admin la desactivó, este hook fuerza signOut + redirect con mensaje.
+  useVerificarCuentaActiva()
 
   return (
     <>

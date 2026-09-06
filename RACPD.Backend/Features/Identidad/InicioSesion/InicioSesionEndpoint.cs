@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -126,6 +127,21 @@ public class InicioSesionEndpoint : Endpoint<IniciarSesionRequest, IniciarSesion
         {
             AddError("El usuario no está registrado en el sistema local.");
             ThrowIfAnyErrors();
+        }
+
+        // Defensa en profundidad: aunque Supabase Auth acepte las credenciales,
+        // si la fila local indica cuenta desactivada, bloqueamos el inicio de
+        // sesión aquí. El frontend también hace este check vía
+        // /api/usuarios/mi-perfil tras signInWithPassword; este es el respaldo
+        // para clientes que llamen al endpoint directamente.
+        if (usuario!.Estado == EstadoUsuario.Desactivado)
+        {
+            await ProblemDetailsHelper.EnviarProhibidoAsync(
+                HttpContext,
+                "Tu cuenta ha sido desactivada. Por favor, contacta al " +
+                "administrador del sistema para reactivarla.",
+                tipoProhibido: "cuenta-desactivada");
+            return;
         }
 
         var responseDto = new IniciarSesionResponse

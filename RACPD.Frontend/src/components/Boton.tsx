@@ -8,8 +8,8 @@ export interface BotonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export const Boton = forwardRef<HTMLButtonElement, BotonProps>(
   ({ className, variante = 'primario', cargando, children, disabled, ...props }, ref) => {
-    const clasesBase = 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center transition-all font-medium';
-    
+    const clasesBase = 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center transition-all font-medium rounded-xl';
+
     const variantes = {
       primario: 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:scale-[0.98]',
       secundario: 'bg-white text-blue-600 border-2 border-blue-600 hover:bg-blue-50 hover:shadow-sm active:scale-[0.98]',

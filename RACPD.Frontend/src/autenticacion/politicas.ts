@@ -41,6 +41,11 @@ export const POLITICAS_RUTAS = {
     mensajeAccesoDenegado:
       'Solo los administradores del sistema pueden invitar usuarios.'
   },
+  '/usuarios': {
+    rolesPermitidos: ['AdministradorSistema'] as const,
+    mensajeAccesoDenegado:
+      'Solo los administradores del sistema pueden gestionar usuarios.'
+  },
   '/agenda': {
     // El rol AdministradorSistema NO tiene acciones funcionales en la
     // agenda (no puede crear, editar ni eliminar bloques desde la UI),

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
-import { Home, Users, CalendarDays, LogOut, UserPlus, Settings } from 'lucide-react'
+import { Home, Users, CalendarDays, LogOut, Settings } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
@@ -97,11 +97,11 @@ export const LayoutPrincipalDesktop = () => {
           )}
           {esAdmin && (
             <Link
-              to="/usuarios/invitar"
-              className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors"
+              to="/usuarios"
+              className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors cursor-pointer"
             >
-              <UserPlus size={20} />
-              <span>Invitar Usuario</span>
+              <Users size={20} />
+              <span>Usuarios</span>
             </Link>
           )}
         </nav>
