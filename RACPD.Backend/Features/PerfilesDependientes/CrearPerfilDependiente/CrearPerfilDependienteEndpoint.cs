@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 using System.Security.Claims;
 
 namespace RACPD.Backend.Features.PerfilesDependientes.CrearPerfilDependiente;
@@ -20,37 +21,24 @@ public class CrearPerfilDependienteEndpoint : Endpoint<CrearPerfilDependienteReq
     public override void Configure()
     {
         Post("/api/perfiles-dependientes");
+        // Solo el cuidador principal GLOBAL puede crear perfiles dependientes.
+        // Un Apoyo NO puede crear un perfil (decisión de producto).
         Roles(Rol.CuidadorPrincipal.ToString());
     }
 
     public override async Task HandleAsync(CrearPerfilDependienteRequest req, CancellationToken ct)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
-
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        var userId = UsuarioActualHelper.ObtenerUsuarioId(User);
+        if (userId is null)
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
-            return;
-        }
-
-        var existe = await _dbContext.PerfilesDependientes
-            .AnyAsync(p => p.CuidadorPrincipalId == userId, ct);
-
-        if (existe)
-        {
-            await Send.ResponseAsync(
-                Guid.Empty,
-                StatusCodes.Status409Conflict,
-                ct);
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
         var tipoSangre = Enum.Parse<TipoSangre>(req.TipoSangre, ignoreCase: false);
 
         var perfil = new PerfilDependiente(
-            userId,
+            userId.Value,
             req.NombreCompleto,
             tipoSangre,
             req.CondicionesCronicas,
@@ -64,6 +52,15 @@ public class CrearPerfilDependienteEndpoint : Endpoint<CrearPerfilDependienteReq
         );
 
         _dbContext.PerfilesDependientes.Add(perfil);
+
+        // Crear el vínculo automático del creador como CuidadorPrincipal del perfil.
+        var vinculo = new VinculoDependiente(
+            userId.Value,
+            perfil.Id,
+            RolEnDependiente.CuidadorPrincipal,
+            asignadoPorUsuarioId: userId.Value);
+        _dbContext.VinculosDependientes.Add(vinculo);
+
         await _dbContext.SaveChangesAsync(ct);
 
         HttpContext.Response.Headers.Location = $"/api/perfiles-dependientes/{perfil.Id}";

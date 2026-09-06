@@ -7,10 +7,22 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
+using System.Security.Claims;
 
 namespace RACPD.Backend.Features.Usuarios.Invitar;
 
-public record InvitarUsuarioRequest(string Correo, Rol Rol);
+/// <summary>
+/// Payload de invitación. Los campos <c>PerfilDependienteId</c> y
+/// <c>RolEnDependienteInicial</c> son opcionales: si vienen, al completar el
+/// invitado su perfil se le creará automáticamente un <see cref="VinculoDependiente"/>
+/// con ese rol sobre el perfil indicado.
+/// </summary>
+public record InvitarUsuarioRequest(
+    string Correo,
+    Rol Rol,
+    Guid? PerfilDependienteId = null,
+    RolEnDependiente? RolEnDependienteInicial = null);
 public record InvitarUsuarioResponse(string Mensaje, string Correo);
 
 public class InvitarUsuarioValidator : Validator<InvitarUsuarioRequest>
@@ -46,6 +58,11 @@ internal class SupabaseInviteUser
 /// solo genera el link (fue diseñado para cuando tú quieres enviar el correo por tu cuenta).
 /// El endpoint correcto del API de GoTrue para invitar y que Supabase dispare el correo
 /// a través de SMTP configurado (Brevo) es `POST /auth/v1/invite`.
+///
+/// CAMBIO 2026-09-06: Soporte opcional para vincular al invitado a un perfil
+/// dependiente desde el momento de la invitación, vía
+/// <c>perfilDependienteId</c> + <c>rolEnDependienteInicial</c>.
+/// El vínculo se materializa al completar el perfil (ver <c>CompletarPerfilEndpoint</c>).
 /// </summary>
 public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioResponse>
 {
@@ -78,6 +95,59 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
             "[Invitar] correo recibido='{Correo}' longitud={Len}",
             req.Correo,
             req.Correo?.Length ?? -1);
+
+        // Si se especificó un perfil dependiente, validar que el solicitante sea
+        // el cuidador principal del mismo. Esto refuerza la regla de negocio:
+        // solo el cuidador principal puede vincular Apoyos.
+        if (req.PerfilDependienteId is not null)
+        {
+            var userId = UsuarioActualHelper.ObtenerUsuarioId(User);
+            if (userId is null)
+            {
+                await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
+                return;
+            }
+
+            var esCuidadorDelPerfil = await _dbContext.VinculosDependientes
+                .AnyAsync(v => v.UsuarioId == userId.Value
+                            && v.PerfilDependienteId == req.PerfilDependienteId.Value
+                            && v.Activo
+                            && v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal, ct);
+
+            if (!esCuidadorDelPerfil)
+            {
+                await ProblemDetailsHelper.EnviarProhibidoAsync(
+                    HttpContext,
+                    "Solo el cuidador principal del perfil puede invitar usuarios vinculados a él.",
+                    tipoProhibido: "sin-permiso-vincular-invitados");
+                return;
+            }
+
+            // Si no se especificó rol-en-dependiente, por defecto es Apoyo.
+            // (Regla de negocio: solo el cuidador principal puede ser CuidadorPrincipal,
+            // y al invitado normalmente se le invita como Apoyo.)
+            if (req.RolEnDependienteInicial is null)
+            {
+                _logger.LogInformation(
+                    "[Invitar] No se especificó rolEnDependienteInicial. Se asignará 'Apoyo' por defecto.");
+            }
+            else if (req.RolEnDependienteInicial == RolEnDependiente.CuidadorPrincipal)
+            {
+                // Si ya hay otro cuidador principal activo, no se puede invitar a otro como tal.
+                var existeOtroCuidador = await _dbContext.VinculosDependientes
+                    .AnyAsync(v => v.PerfilDependienteId == req.PerfilDependienteId.Value
+                                && v.Activo
+                                && v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal, ct);
+                if (existeOtroCuidador)
+                {
+                    await ProblemDetailsHelper.EnviarConflictoAsync(
+                        HttpContext,
+                        "Este perfil ya tiene un cuidador principal activo. Primero desactive el vínculo actual antes de invitar a otro cuidador principal.",
+                        tipoConflicto: "ya-existe-cuidador-principal");
+                    return;
+                }
+            }
+        }
 
         var urlSupabase = _configuration["SUPABASE_URL"]?.Trim('"');
         var claveServicioSupabase = _configuration["SUPABASE_SERVICE_ROLE_KEY"]?.Trim('"');
@@ -130,13 +200,34 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
             await _dbContext.SaveChangesAsync(ct);
         }
 
+        // Construimos el cuerpo de invitación. Si hay datos de vínculo
+        // pendiente, los empaquetamos como "pending_vinculo" para que el
+        // endpoint de completar perfil los materialice.
+        object dataParaSupabase;
+        if (req.PerfilDependienteId is not null)
+        {
+            dataParaSupabase = new
+            {
+                role = req.Rol.ToString(),
+                pending_vinculo = new
+                {
+                    perfil_dependiente_id = req.PerfilDependienteId.Value.ToString(),
+                    rol_en_dependiente = (req.RolEnDependienteInicial ?? RolEnDependiente.Apoyo).ToString()
+                }
+            };
+        }
+        else
+        {
+            dataParaSupabase = new
+            {
+                role = req.Rol.ToString()
+            };
+        }
+
         var cuerpoInvitacion = new
         {
             email = req.Correo,
-            data = new
-            {
-                role = req.Rol.ToString()
-            }
+            data = dataParaSupabase
         };
 
         var contenido = new StringContent(
@@ -261,6 +352,44 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
         };
 
         _dbContext.Usuarios.Add(nuevoUsuario);
+
+        // Si la invitación viene con datos de vínculo pendiente, persistimos
+        // el vínculo también. Lo dejamos activo=false inicialmente; el endpoint
+        // de completar perfil lo activará cuando el invitado termine su perfil.
+        // NOTA: Se persiste activo=true directamente porque al completar perfil
+        // es prácticamente inmediato; pero para mantener idempotencia en el
+        // completar-perfil, el endpoint de completar-perfil debe verificar
+        // primero si ya existe un vínculo y no duplicarlo.
+        if (req.PerfilDependienteId is not null)
+        {
+            var rolInicial = req.RolEnDependienteInicial ?? RolEnDependiente.Apoyo;
+
+            // Si es CuidadorPrincipal y ya existe otro, fallar limpiamente.
+            if (rolInicial == RolEnDependiente.CuidadorPrincipal)
+            {
+                var existeOtro = await _dbContext.VinculosDependientes
+                    .AnyAsync(v => v.PerfilDependienteId == req.PerfilDependienteId.Value
+                                && v.Activo
+                                && v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal, ct);
+                if (existeOtro)
+                {
+                    await ProblemDetailsHelper.EnviarConflictoAsync(
+                        HttpContext,
+                        "Este perfil ya tiene un cuidador principal activo. La invitación se envió pero el vínculo no se creó.",
+                        tipoConflicto: "ya-existe-cuidador-principal");
+                    return;
+                }
+            }
+
+            var solicitanteId = UsuarioActualHelper.ObtenerUsuarioId(User);
+            var vinculo = new VinculoDependiente(
+                usuarioInvitado.Id,
+                req.PerfilDependienteId.Value,
+                rolInicial,
+                asignadoPorUsuarioId: solicitanteId);
+            _dbContext.VinculosDependientes.Add(vinculo);
+        }
+
         try
         {
             await _dbContext.SaveChangesAsync(ct);
@@ -283,4 +412,3 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
             ct);
     }
 }
-

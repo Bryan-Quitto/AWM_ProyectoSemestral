@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
-import { Home, User, CalendarDays, LogOut, AlertTriangle, UserPlus, Settings } from 'lucide-react'
+import { Home, Users, CalendarDays, LogOut, AlertTriangle, UserPlus, Settings } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
@@ -41,7 +41,7 @@ export const LayoutPrincipalMobile = () => {
   }, [])
 
   const esAdmin = usuario?.rol === 'AdministradorSistema'
-  // RBAC: el menú inferior solo muestra "Perfil Dep." a cuidadores.
+  // RBAC: el menú inferior solo muestra "Dependientes" a cuidadores y apoyo.
   const puedeVerFichaDependiente =
     usuario?.rol === 'CuidadorPrincipal' || usuario?.rol === 'Apoyo'
 
@@ -100,11 +100,11 @@ export const LayoutPrincipalMobile = () => {
         </Link>
         {puedeVerFichaDependiente && (
           <Link
-            to="/perfil-dependiente"
+            to="/dependientes"
             className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
           >
-            <User size={24} />
-            <span className="text-[10px] mt-1 font-medium">Perfil</span>
+            <Users size={24} />
+            <span className="text-[10px] mt-1 font-medium">Dependientes</span>
           </Link>
         )}
         {!esAdmin && (

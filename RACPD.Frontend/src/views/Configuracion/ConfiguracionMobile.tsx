@@ -1,24 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  configuracionPerfilSchema, 
+import { mutate } from 'swr';
+import {
+  configuracionPerfilSchema,
   configuracionContrasenaSchema
 } from '../../features/configuracion/schemas';
-import type { 
-  ConfiguracionPerfilFormData, 
-  ConfiguracionContrasenaFormData 
+import type {
+  ConfiguracionPerfilFormData,
+  ConfiguracionContrasenaFormData
 } from '../../features/configuracion/schemas';
-import { 
-  CampoContrasena, 
-  IndicadorFortalezaContrasena, 
-  usePoliticaContrasena 
+import {
+  CampoContrasena,
+  IndicadorFortalezaContrasena,
+  usePoliticaContrasena
 } from '../../components/Seguridad';
 import { Boton } from '../../components/Boton';
 import {
   useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint,
   useRACPDBackendFeaturesUsuariosMiPerfilActualizarPerfilEndpoint,
-  useRACPDBackendFeaturesUsuariosMiPerfilModificarContrasenaEndpoint
+  useRACPDBackendFeaturesUsuariosMiPerfilModificarContrasenaEndpoint,
+  getRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpointKey,
 } from '../../api/generated/api/api';
 
 export function ConfiguracionMobile() {
@@ -79,6 +81,9 @@ export function ConfiguracionMobile() {
         return;
       }
       setPerfilExito(true);
+      // Invalida la cache global de SWR para que el header (y cualquier
+      // otra instancia del hook) refresquen nombre/apellido de inmediato.
+      void mutate(getRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpointKey());
       setTimeout(() => setPerfilExito(false), 3000);
     } catch {
       // Errores de red

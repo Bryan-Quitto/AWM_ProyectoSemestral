@@ -7,8 +7,6 @@
  *
  * IMPORTANTE: Mantener alineado con las políticas del Backend
  * (atributo `Roles(...)` de cada Endpoint de FastEndpoints).
- * Backend ya restringe `/api/perfiles-dependientes/mi-dependiente`
- * a CuidadorPrincipal | Apoyo.
  */
 import { toast } from 'sonner'
 import { redirect, type Redirect } from '@tanstack/react-router'
@@ -27,15 +25,16 @@ export type PoliticaRuta = {
  * agregarse aquí (Regla de 3: 1 sola fuente de verdad).
  */
 export const POLITICAS_RUTAS = {
-  '/perfil-dependiente': {
+  '/dependientes': {
     rolesPermitidos: ['CuidadorPrincipal', 'Apoyo'] as const,
     mensajeAccesoDenegado:
-      'Tu rol no tiene permisos para acceder a la ficha del dependiente.'
+      'Tu rol no tiene permisos para acceder al listado de dependientes.'
   },
-  '/perfil-dependiente/sos': {
+  '/dependientes/nuevo': {
+    // El control fino se hace dentro de la ruta (solo CuidadorPrincipal).
     rolesPermitidos: ['CuidadorPrincipal', 'Apoyo'] as const,
     mensajeAccesoDenegado:
-      'Tu rol no tiene permisos para acceder al modo SOS del dependiente.'
+      'Tu rol no tiene permisos para crear dependientes.'
   },
   '/usuarios/invitar': {
     rolesPermitidos: ['AdministradorSistema'] as const,

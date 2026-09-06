@@ -1,17 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useForm, useFieldArray, useWatch } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useNavigate } from '@tanstack/react-router';
 import { PerfilDependienteSchema, TIPOS_SANGRE, type PerfilDependienteForm, type ContactoEmergenciaForm, type TipoSangre } from './schema';
 import { ContactosEmergenciaForm } from './ContactosEmergenciaForm';
 import { Boton } from '../../components/Boton';
+import { SelectorDinamico } from '../../components/SelectorDinamico';
 import { AlertTriangle, Edit3, X, Plus, Trash2, AlertCircle, CheckCircle2, User, Droplets, Pill } from 'lucide-react';
 import {
-  useRACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteEndpoint,
+  useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint,
   useRACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint,
   useRACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteEndpoint,
 } from '../../api/generated/api/api';
-import type { RACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteResponse } from '../../api/generated/model';
 
 const TIPO_SANGRE_LABELS: Record<TipoSangre, string> = {
   APositivo: 'A+',
@@ -25,9 +24,21 @@ const TIPO_SANGRE_LABELS: Record<TipoSangre, string> = {
   Desconocido: 'Desconocido',
 };
 
-export function PerfilDependienteMobile() {
-  const navigate = useNavigate();
-  const [modoEditar, setModoEditar] = useState(false);
+interface PerfilDependienteMobileProps {
+  perfilId?: string;
+  onVolverALista?: () => void;
+  /** Cuando es true y existe perfil, arranca en modo edición. */
+  modoInicialEditar?: boolean;
+}
+
+export function PerfilDependienteMobile({
+  perfilId,
+  onVolverALista,
+  modoInicialEditar = false
+}: PerfilDependienteMobileProps) {
+  const [modoEditar, setModoEditar] = useState(
+    !perfilId || modoInicialEditar
+  );
   const [alergiaInput, setAlergiaInput] = useState('');
   const [exito, setExito] = useState<string | null>(null);
   const [alerta, setAlerta] = useState<string | null>(null);
@@ -35,21 +46,23 @@ export function PerfilDependienteMobile() {
   const {
     data: perfilData,
     isLoading: isCargandoPerfil,
-    mutate: refetchMiDependiente,
-  } = useRACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteEndpoint();
+    mutate: refetchPerfil,
+  } = useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint(
+    perfilId ?? '',
+    { swr: { enabled: Boolean(perfilId) } }
+  );
 
-  const perfilExistente: RACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteResponse | undefined =
-    perfilData && 'data' in perfilData ? (perfilData as any).data : undefined;
+  const perfilExistente = perfilData?.data;
   const existePerfil = !!perfilExistente?.id;
+  const puedeEditarBackend = perfilExistente?.puedeEditar === true;
+  const versionActual = perfilExistente?.version ?? 0;
 
   const tipoSangreExistente = perfilExistente?.tipoSangre as TipoSangre | undefined;
   const valoresIniciales: PerfilDependienteForm = useMemo(
     () => ({
       nombreCompleto: perfilExistente?.nombreCompleto ?? '',
       tipoSangre:
-        (TIPOS_SANGRE as readonly string[]).includes(
-          tipoSangreExistente ?? ''
-        )
+        (TIPOS_SANGRE as readonly string[]).includes(tipoSangreExistente ?? '')
           ? (tipoSangreExistente as TipoSangre)
           : 'Desconocido',
       condicionesCronicas: perfilExistente?.condicionesCronicas ?? '',
@@ -83,7 +96,7 @@ export function PerfilDependienteMobile() {
     useRACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint();
   const { trigger: actualizarPerfil, isMutating: isActualizando } =
     useRACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteEndpoint(
-      perfilExistente?.id ?? '00000000-0000-0000-0000-000000000000'
+      perfilExistente?.id ?? perfilId ?? '00000000-0000-0000-0000-000000000000'
     );
 
   useEffect(() => {
@@ -92,12 +105,6 @@ export function PerfilDependienteMobile() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [perfilExistente?.id]);
-
-  useEffect(() => {
-    if (!existePerfil) {
-      setModoEditar(true);
-    }
-  }, [existePerfil]);
 
   const puedeAgregarAlergia =
     alergiaInput.trim().length >= 1 &&
@@ -127,7 +134,7 @@ export function PerfilDependienteMobile() {
         respuesta.data?.detail ??
           'Conflicto de concurrencia: alguien más actualizó la ficha. Recargando la última versión...'
       );
-      void refetchMiDependiente();
+      void refetchPerfil();
       setTimeout(() => setAlerta(null), 6000);
       return true;
     }
@@ -158,40 +165,34 @@ export function PerfilDependienteMobile() {
       if (!existePerfil) {
         const respuesta = (await crearPerfil(data)) as any;
         if (respuesta.status >= 400) {
-          void refetchMiDependiente();
           handleErrors(respuesta);
           return;
         }
-        // Revalidar SWR para que perfilExistente se llene con los datos del backend
-        // y los valores del formulario reflejen la ficha recién creada. Después
-        // salir de modo edición para mostrar la vista de lectura.
-        await refetchMiDependiente();
         setExito('Ficha creada correctamente.');
-        setModoEditar(false);
+        setTimeout(() => onVolverALista?.(), 800);
       } else {
-        const version = perfilExistente.version ?? 0;
         const respuesta = (await actualizarPerfil({
           ...data,
-          version,
+          version: versionActual,
         })) as any;
         if (respuesta.status >= 400) {
-          void refetchMiDependiente();
+          void refetchPerfil();
           handleErrors(respuesta);
           return;
         }
-        await refetchMiDependiente();
+        await refetchPerfil();
         setExito('Ficha actualizada correctamente.');
         setModoEditar(false);
       }
       setTimeout(() => setExito(null), 4500);
     } catch {
-      void refetchMiDependiente();
+      void refetchPerfil();
       setAlerta('Ocurrió un error de red. Intente de nuevo en unos segundos.');
       setTimeout(() => setAlerta(null), 5000);
     }
   };
 
-  if (isCargandoPerfil) {
+  if (perfilId && isCargandoPerfil) {
     return (
       <div className="min-h-screen bg-blue-50 p-6 text-center text-blue-800">
         Cargando ficha del dependiente...
@@ -209,7 +210,7 @@ export function PerfilDependienteMobile() {
             </h1>
             <p className="text-xs text-blue-600">Información crítica y SOS</p>
           </div>
-          {existePerfil && !modoEditar && (
+          {existePerfil && !modoEditar && puedeEditarBackend && (
             <button
               type="button"
               onClick={() => setModoEditar(true)}
@@ -222,19 +223,6 @@ export function PerfilDependienteMobile() {
       </header>
 
       <main className="px-4 pt-4 space-y-4">
-        {/* BOTÓN SOS (80% width, Mobile) */}
-        {existePerfil && !modoEditar && (
-          <button
-            type="button"
-            onClick={() => navigate({ to: '/_protegidas/perfil-dependiente/sos' } as any)}
-            className="cursor-pointer disabled:cursor-not-allowed mx-auto block w-[80%] bg-red-600 hover:bg-red-700 active:scale-[0.99] text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-red-200 transition disabled:opacity-50"
-          >
-            <span className="inline-flex items-center gap-2">
-              <AlertTriangle className="w-6 h-6" /> SOS EMERGENCIA
-            </span>
-          </button>
-        )}
-
         {alerta && (
           <div className="p-3.5 bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl flex items-start gap-3">
             <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
@@ -332,6 +320,9 @@ export function PerfilDependienteMobile() {
                             {c?.nombre ?? 'Contacto'}
                           </p>
                           <p className="text-xs text-gray-500">{c?.relacion ?? ''}</p>
+                          <p className="text-sm text-blue-600 mt-0.5 font-mono">
+                            {c?.telefonoWhatsApp ?? ''}
+                          </p>
                         </div>
                         <div className="flex gap-1.5">
                           <a
@@ -339,7 +330,7 @@ export function PerfilDependienteMobile() {
                             className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
                             aria-label={`Llamar a ${c?.nombre ?? ''}`}
                           >
-                            📞 Llamar
+                            ��
                           </a>
                           <a
                             href={`https://wa.me/${
@@ -352,7 +343,7 @@ export function PerfilDependienteMobile() {
                             className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
                             aria-label={`Enviar WhatsApp a ${c?.nombre ?? ''}`}
                           >
-                            💬 WhatsApp
+                            ��
                           </a>
                         </div>
                       </div>
@@ -404,16 +395,22 @@ export function PerfilDependienteMobile() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Sangre</label>
-                <select
-                  {...form.register('tipoSangre')}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl bg-white focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition cursor-pointer"
-                >
-                  {TIPOS_SANGRE.map((t) => (
-                    <option key={t} value={t}>
-                      {TIPO_SANGRE_LABELS[t]}
-                    </option>
-                  ))}
-                </select>
+                <Controller
+                  control={form.control}
+                  name="tipoSangre"
+                  render={({ field }) => (
+                    <SelectorDinamico
+                      id="tipoSangre"
+                      opciones={TIPOS_SANGRE.map((t) => ({
+                        valor: t,
+                        etiqueta: TIPO_SANGRE_LABELS[t],
+                      }))}
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v)}
+                      error={form.formState.errors.tipoSangre?.message}
+                    />
+                  )}
+                />
                 {form.formState.errors.tipoSangre?.message && (
                   <p className="text-red-500 text-xs mt-1">
                     {form.formState.errors.tipoSangre.message}
@@ -505,7 +502,17 @@ export function PerfilDependienteMobile() {
               />
             </section>
 
-            <div className="pt-2">
+            <div className="pt-2 flex gap-2">
+              {!existePerfil && onVolverALista && (
+                <Boton
+                  type="button"
+                  variante="secundario"
+                  onClick={onVolverALista}
+                  className="flex-1 py-3 rounded-xl font-semibold"
+                >
+                  Cancelar
+                </Boton>
+              )}
               <Boton
                 type="submit"
                 disabled={
@@ -515,7 +522,7 @@ export function PerfilDependienteMobile() {
                   isActualizando
                 }
                 cargando={isCreando || isActualizando}
-                className="w-full py-3 rounded-xl font-semibold"
+                className="flex-1 py-3 rounded-xl font-semibold"
               >
                 {isCreando || isActualizando
                   ? 'Guardando...'

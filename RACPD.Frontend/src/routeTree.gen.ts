@@ -15,10 +15,13 @@ import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
 import { Route as ProtegidasCompletarPerfilRouteImport } from './routes/_protegidas/completar-perfil'
 import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegidas/configuracion'
+import { Route as ProtegidasDependientesRouteImport } from './routes/_protegidas/dependientes'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
-import { Route as ProtegidasPerfilDependienteRouteImport } from './routes/_protegidas/perfil-dependiente'
-import { Route as ProtegidasPerfilDependienteSosRouteImport } from './routes/_protegidas/perfil-dependiente/sos'
+import { Route as ProtegidasDependientesIndexRouteImport } from './routes/_protegidas/dependientes/index'
+import { Route as ProtegidasDependientesPerfilIdRouteImport } from './routes/_protegidas/dependientes/$perfilId'
+import { Route as ProtegidasDependientesNuevoRouteImport } from './routes/_protegidas/dependientes/nuevo'
 import { Route as ProtegidasUsuariosInvitarRouteImport } from './routes/_protegidas/usuarios/invitar'
+import { Route as ProtegidasDependientesPerfilIdAccesoRouteImport } from './routes/_protegidas/dependientes/$perfilId_.acceso'
 
 const ProtegidasRoute = ProtegidasRouteImport.update({
   id: '/_protegidas',
@@ -50,28 +53,45 @@ const ProtegidasConfiguracionRoute = ProtegidasConfiguracionRouteImport.update({
   path: '/configuracion',
   getParentRoute: () => ProtegidasRoute,
 } as any)
+const ProtegidasDependientesRoute = ProtegidasDependientesRouteImport.update({
+  id: '/dependientes',
+  path: '/dependientes',
+  getParentRoute: () => ProtegidasRoute,
+} as any)
 const ProtegidasFichaPacienteRoute = ProtegidasFichaPacienteRouteImport.update({
   id: '/ficha-paciente',
   path: '/ficha-paciente',
   getParentRoute: () => ProtegidasRoute,
 } as any)
-const ProtegidasPerfilDependienteRoute =
-  ProtegidasPerfilDependienteRouteImport.update({
-    id: '/perfil-dependiente',
-    path: '/perfil-dependiente',
-    getParentRoute: () => ProtegidasRoute,
+const ProtegidasDependientesIndexRoute =
+  ProtegidasDependientesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProtegidasDependientesRoute,
   } as any)
-const ProtegidasPerfilDependienteSosRoute =
-  ProtegidasPerfilDependienteSosRouteImport.update({
-    id: '/sos',
-    path: '/sos',
-    getParentRoute: () => ProtegidasPerfilDependienteRoute,
+const ProtegidasDependientesPerfilIdRoute =
+  ProtegidasDependientesPerfilIdRouteImport.update({
+    id: '/$perfilId',
+    path: '/$perfilId',
+    getParentRoute: () => ProtegidasDependientesRoute,
+  } as any)
+const ProtegidasDependientesNuevoRoute =
+  ProtegidasDependientesNuevoRouteImport.update({
+    id: '/nuevo',
+    path: '/nuevo',
+    getParentRoute: () => ProtegidasDependientesRoute,
   } as any)
 const ProtegidasUsuariosInvitarRoute =
   ProtegidasUsuariosInvitarRouteImport.update({
     id: '/usuarios/invitar',
     path: '/usuarios/invitar',
     getParentRoute: () => ProtegidasRoute,
+  } as any)
+const ProtegidasDependientesPerfilIdAccesoRoute =
+  ProtegidasDependientesPerfilIdAccesoRouteImport.update({
+    id: '/$perfilId_/acceso',
+    path: '/$perfilId/acceso',
+    getParentRoute: () => ProtegidasDependientesRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -80,10 +100,13 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof ProtegidasAgendaRoute
   '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
+  '/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
-  '/perfil-dependiente': typeof ProtegidasPerfilDependienteRouteWithChildren
-  '/perfil-dependiente/sos': typeof ProtegidasPerfilDependienteSosRoute
+  '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
+  '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
+  '/dependientes/': typeof ProtegidasDependientesIndexRoute
+  '/dependientes/$perfilId/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRoutesByTo {
   '/inicio-sesion': typeof InicioSesionRoute
@@ -91,10 +114,12 @@ export interface FileRoutesByTo {
   '/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
-  '/perfil-dependiente': typeof ProtegidasPerfilDependienteRouteWithChildren
   '/': typeof ProtegidasIndexRoute
-  '/perfil-dependiente/sos': typeof ProtegidasPerfilDependienteSosRoute
+  '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
+  '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
+  '/dependientes': typeof ProtegidasDependientesIndexRoute
+  '/dependientes/$perfilId/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -103,11 +128,14 @@ export interface FileRoutesById {
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
   '/_protegidas/completar-perfil': typeof ProtegidasCompletarPerfilRoute
   '/_protegidas/configuracion': typeof ProtegidasConfiguracionRoute
+  '/_protegidas/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
-  '/_protegidas/perfil-dependiente': typeof ProtegidasPerfilDependienteRouteWithChildren
   '/_protegidas/': typeof ProtegidasIndexRoute
-  '/_protegidas/perfil-dependiente/sos': typeof ProtegidasPerfilDependienteSosRoute
+  '/_protegidas/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
+  '/_protegidas/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/_protegidas/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
+  '/_protegidas/dependientes/': typeof ProtegidasDependientesIndexRoute
+  '/_protegidas/dependientes/$perfilId_/acceso': typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,10 +145,13 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/completar-perfil'
     | '/configuracion'
+    | '/dependientes'
     | '/ficha-paciente'
-    | '/perfil-dependiente'
-    | '/perfil-dependiente/sos'
+    | '/dependientes/$perfilId'
+    | '/dependientes/nuevo'
     | '/usuarios/invitar'
+    | '/dependientes/'
+    | '/dependientes/$perfilId/acceso'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/inicio-sesion'
@@ -128,10 +159,12 @@ export interface FileRouteTypes {
     | '/completar-perfil'
     | '/configuracion'
     | '/ficha-paciente'
-    | '/perfil-dependiente'
     | '/'
-    | '/perfil-dependiente/sos'
+    | '/dependientes/$perfilId'
+    | '/dependientes/nuevo'
     | '/usuarios/invitar'
+    | '/dependientes'
+    | '/dependientes/$perfilId/acceso'
   id:
     | '__root__'
     | '/_protegidas'
@@ -139,11 +172,14 @@ export interface FileRouteTypes {
     | '/_protegidas/agenda'
     | '/_protegidas/completar-perfil'
     | '/_protegidas/configuracion'
+    | '/_protegidas/dependientes'
     | '/_protegidas/ficha-paciente'
-    | '/_protegidas/perfil-dependiente'
     | '/_protegidas/'
-    | '/_protegidas/perfil-dependiente/sos'
+    | '/_protegidas/dependientes/$perfilId'
+    | '/_protegidas/dependientes/nuevo'
     | '/_protegidas/usuarios/invitar'
+    | '/_protegidas/dependientes/'
+    | '/_protegidas/dependientes/$perfilId_/acceso'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasConfiguracionRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/dependientes': {
+      id: '/_protegidas/dependientes'
+      path: '/dependientes'
+      fullPath: '/dependientes'
+      preLoaderRoute: typeof ProtegidasDependientesRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
     '/_protegidas/ficha-paciente': {
       id: '/_protegidas/ficha-paciente'
       path: '/ficha-paciente'
@@ -202,19 +245,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasFichaPacienteRouteImport
       parentRoute: typeof ProtegidasRoute
     }
-    '/_protegidas/perfil-dependiente': {
-      id: '/_protegidas/perfil-dependiente'
-      path: '/perfil-dependiente'
-      fullPath: '/perfil-dependiente'
-      preLoaderRoute: typeof ProtegidasPerfilDependienteRouteImport
-      parentRoute: typeof ProtegidasRoute
+    '/_protegidas/dependientes/': {
+      id: '/_protegidas/dependientes/'
+      path: '/'
+      fullPath: '/dependientes/'
+      preLoaderRoute: typeof ProtegidasDependientesIndexRouteImport
+      parentRoute: typeof ProtegidasDependientesRoute
     }
-    '/_protegidas/perfil-dependiente/sos': {
-      id: '/_protegidas/perfil-dependiente/sos'
-      path: '/sos'
-      fullPath: '/perfil-dependiente/sos'
-      preLoaderRoute: typeof ProtegidasPerfilDependienteSosRouteImport
-      parentRoute: typeof ProtegidasPerfilDependienteRoute
+    '/_protegidas/dependientes/$perfilId': {
+      id: '/_protegidas/dependientes/$perfilId'
+      path: '/$perfilId'
+      fullPath: '/dependientes/$perfilId'
+      preLoaderRoute: typeof ProtegidasDependientesPerfilIdRouteImport
+      parentRoute: typeof ProtegidasDependientesRoute
+    }
+    '/_protegidas/dependientes/nuevo': {
+      id: '/_protegidas/dependientes/nuevo'
+      path: '/nuevo'
+      fullPath: '/dependientes/nuevo'
+      preLoaderRoute: typeof ProtegidasDependientesNuevoRouteImport
+      parentRoute: typeof ProtegidasDependientesRoute
     }
     '/_protegidas/usuarios/invitar': {
       id: '/_protegidas/usuarios/invitar'
@@ -223,29 +273,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasUsuariosInvitarRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/dependientes/$perfilId_/acceso': {
+      id: '/_protegidas/dependientes/$perfilId_/acceso'
+      path: '/$perfilId/acceso'
+      fullPath: '/dependientes/$perfilId/acceso'
+      preLoaderRoute: typeof ProtegidasDependientesPerfilIdAccesoRouteImport
+      parentRoute: typeof ProtegidasDependientesRoute
+    }
   }
 }
 
-interface ProtegidasPerfilDependienteRouteChildren {
-  ProtegidasPerfilDependienteSosRoute: typeof ProtegidasPerfilDependienteSosRoute
+interface ProtegidasDependientesRouteChildren {
+  ProtegidasDependientesPerfilIdRoute: typeof ProtegidasDependientesPerfilIdRoute
+  ProtegidasDependientesNuevoRoute: typeof ProtegidasDependientesNuevoRoute
+  ProtegidasDependientesIndexRoute: typeof ProtegidasDependientesIndexRoute
+  ProtegidasDependientesPerfilIdAccesoRoute: typeof ProtegidasDependientesPerfilIdAccesoRoute
 }
 
-const ProtegidasPerfilDependienteRouteChildren: ProtegidasPerfilDependienteRouteChildren =
+const ProtegidasDependientesRouteChildren: ProtegidasDependientesRouteChildren =
   {
-    ProtegidasPerfilDependienteSosRoute: ProtegidasPerfilDependienteSosRoute,
+    ProtegidasDependientesPerfilIdRoute: ProtegidasDependientesPerfilIdRoute,
+    ProtegidasDependientesNuevoRoute: ProtegidasDependientesNuevoRoute,
+    ProtegidasDependientesIndexRoute: ProtegidasDependientesIndexRoute,
+    ProtegidasDependientesPerfilIdAccesoRoute:
+      ProtegidasDependientesPerfilIdAccesoRoute,
   }
 
-const ProtegidasPerfilDependienteRouteWithChildren =
-  ProtegidasPerfilDependienteRoute._addFileChildren(
-    ProtegidasPerfilDependienteRouteChildren,
+const ProtegidasDependientesRouteWithChildren =
+  ProtegidasDependientesRoute._addFileChildren(
+    ProtegidasDependientesRouteChildren,
   )
 
 interface ProtegidasRouteChildren {
   ProtegidasAgendaRoute: typeof ProtegidasAgendaRoute
   ProtegidasCompletarPerfilRoute: typeof ProtegidasCompletarPerfilRoute
   ProtegidasConfiguracionRoute: typeof ProtegidasConfiguracionRoute
+  ProtegidasDependientesRoute: typeof ProtegidasDependientesRouteWithChildren
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
-  ProtegidasPerfilDependienteRoute: typeof ProtegidasPerfilDependienteRouteWithChildren
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
   ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
 }
@@ -254,9 +318,8 @@ const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasAgendaRoute: ProtegidasAgendaRoute,
   ProtegidasCompletarPerfilRoute: ProtegidasCompletarPerfilRoute,
   ProtegidasConfiguracionRoute: ProtegidasConfiguracionRoute,
+  ProtegidasDependientesRoute: ProtegidasDependientesRouteWithChildren,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
-  ProtegidasPerfilDependienteRoute:
-    ProtegidasPerfilDependienteRouteWithChildren,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
   ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,
 }

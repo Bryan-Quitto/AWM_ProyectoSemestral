@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
-import { Home, User, CalendarDays, LogOut, UserPlus, Settings } from 'lucide-react'
+import { Home, Users, CalendarDays, LogOut, UserPlus, Settings } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
@@ -43,8 +43,8 @@ export const LayoutPrincipalDesktop = () => {
   }, [])
 
   const esAdmin = usuario?.rol === 'AdministradorSistema'
-  // RBAC: solo CuidadorPrincipal y Apoyo gestionan la ficha del dependiente.
-  // El guard en la ruta '/perfil-dependiente' refuerza esto a nivel de navegación,
+  // RBAC: solo CuidadorPrincipal y Acceso ven el listado de dependientes.
+  // El guard en la ruta '/dependientes' refuerza esto a nivel de navegación,
   // pero ocultar el enlace evita fricción y clics inútiles.
   const puedeVerFichaDependiente =
     usuario?.rol === 'CuidadorPrincipal' || usuario?.rol === 'Apoyo'
@@ -79,11 +79,11 @@ export const LayoutPrincipalDesktop = () => {
           </Link>
           {puedeVerFichaDependiente && (
             <Link
-              to="/perfil-dependiente"
+              to="/dependientes"
               className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors cursor-pointer"
             >
-              <User size={20} />
-              <span>Perfil del Dependiente</span>
+              <Users size={20} />
+              <span>Dependientes</span>
             </Link>
           )}
           {!esAdmin && (

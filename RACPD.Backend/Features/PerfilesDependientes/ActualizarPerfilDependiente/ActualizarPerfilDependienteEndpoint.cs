@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
 using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
-using System.Security.Claims;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.PerfilesDependientes.ActualizarPerfilDependiente;
 
@@ -19,38 +19,53 @@ public class ActualizarPerfilDependienteEndpoint : Endpoint<ActualizarPerfilDepe
 
     public override void Configure()
     {
-        Put("/api/perfiles-dependientes/{Id}");
-        Roles(Rol.CuidadorPrincipal.ToString());
+        Put("/api/perfiles-dependientes/{id}");
+        Roles(Rol.CuidadorPrincipal.ToString(), Rol.Apoyo.ToString());
     }
 
     public override async Task HandleAsync(ActualizarPerfilDependienteRequest req, CancellationToken ct)
     {
-        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
-
-        if (string.IsNullOrEmpty(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        var userId = UsuarioActualHelper.ObtenerUsuarioId(User);
+        if (userId is null)
         {
-            AddError("No se pudo identificar al usuario autenticado.");
-            ThrowIfAnyErrors();
+            await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
-        if (!Guid.TryParse(Route<string>("Id"), out var idRuta) || idRuta != req.Id)
+        if (!Guid.TryParse(Route<string>("id"), out var idRuta) || idRuta != req.Id)
         {
             AddError("El identificador de la ruta no coincide con el identificador del cuerpo de la solicitud.");
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, ct);
             return;
         }
 
+        // Autorización: solo el cuidador principal del perfil puede editar.
+        var esCuidadorDelPerfil = await _dbContext.VinculosDependientes
+            .AnyAsync(v => v.UsuarioId == userId.Value
+                        && v.PerfilDependienteId == req.Id
+                        && v.Activo
+                        && v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal, ct);
+
+        if (!esCuidadorDelPerfil)
+        {
+            await ProblemDetailsHelper.EnviarProhibidoAsync(
+                HttpContext,
+                "Solo el cuidador principal del perfil puede editarlo.",
+                tipoProhibido: "sin-permiso-edicion-dependiente");
+            return;
+        }
+
         var perfil = await _dbContext.PerfilesDependientes
             .Include(p => p.ContactosEmergencia)
-            .Where(p => p.Id == req.Id && p.CuidadorPrincipalId == userId)
+            .Where(p => p.Id == req.Id && p.Activo)
             .FirstOrDefaultAsync(ct);
 
         if (perfil is null)
         {
-            AddError("No se encontró ningún perfil dependiente que coincida con el identificador proporcionado para este cuidador.");
-            await Send.ErrorsAsync(StatusCodes.Status404NotFound, ct);
+            await ProblemDetailsHelper.EnviarNoEncontradoAsync(
+                HttpContext,
+                "El perfil dependiente no existe o fue desactivado.",
+                tipoRecurso: "perfil-dependiente-no-encontrado");
             return;
         }
 

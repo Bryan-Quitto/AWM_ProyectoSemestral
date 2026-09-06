@@ -13,6 +13,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Usuario> Usuarios { get; set; } = null!;
     public DbSet<PerfilDependiente> PerfilesDependientes { get; set; } = null!;
+    public DbSet<VinculoDependiente> VinculosDependientes { get; set; } = null!;
     public DbSet<BloqueRelevo> BloquesRelevo { get; set; } = null!;
     public DbSet<BloqueTurno> BloquesTurno { get; set; } = null!;
     public DbSet<ReservaTurno> ReservasTurno { get; set; } = null!;
@@ -54,6 +55,44 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<PerfilDependiente>()
             .Property(p => p.Version)
             .IsRowVersion();
+
+        modelBuilder.Entity<PerfilDependiente>()
+            .HasIndex(p => p.CreadoPorUsuarioId);
+
+        // === VinculoDependiente ===
+        modelBuilder.Entity<VinculoDependiente>(entity =>
+        {
+            entity.HasKey(v => v.Id);
+
+            entity.Property(v => v.RolEnDependiente)
+                .HasConversion<string>();
+
+            entity.HasOne(v => v.Usuario)
+                .WithMany()
+                .HasForeignKey(v => v.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(v => v.PerfilDependiente)
+                .WithMany()
+                .HasForeignKey(v => v.PerfilDependienteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Índice único: no permitir dos vínculos activos del mismo
+            // usuario hacia el mismo perfil.
+            entity.HasIndex(v => new { v.UsuarioId, v.PerfilDependienteId })
+                .IsUnique()
+                .HasFilter("\"Activo\" = true");
+
+            // Índice único parcial en Postgres: máximo un cuidador principal
+            // activo por perfil dependiente.
+            entity.HasIndex(v => v.PerfilDependienteId)
+                .IsUnique()
+                .HasFilter("\"RolEnDependiente\" = 'CuidadorPrincipal' AND \"Activo\" = true")
+                .HasDatabaseName("IX_VinculosDependientes_UnSoloCuidadorPrincipalActivo");
+
+            entity.HasIndex(v => v.UsuarioId);
+            entity.HasIndex(v => v.PerfilDependienteId);
+        });
 
         // === BloqueRelevo ===
         modelBuilder.Entity<BloqueRelevo>()

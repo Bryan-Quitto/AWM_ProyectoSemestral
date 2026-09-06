@@ -11,9 +11,9 @@ import {
   Clock,
 } from 'lucide-react';
 import {
-  useRACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteEndpoint,
+  useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint,
+  useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint,
 } from '../../api/generated/api/api';
-import type { RACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteContactoEmergenciaDto } from '../../api/generated/model';
 import { TIPOS_SANGRE } from './schema';
 
 const TIPO_SANGRE_LABELS: Record<(typeof TIPOS_SANGRE)[number], string> = {
@@ -28,12 +28,29 @@ const TIPO_SANGRE_LABELS: Record<(typeof TIPOS_SANGRE)[number], string> = {
   Desconocido: 'Desconocido',
 };
 
+interface ContactoEmergencia {
+  nombre?: string;
+  relacion?: string;
+  telefonoWhatsApp?: string;
+}
+
 export function SOSMobile() {
   const navigate = useNavigate();
-  const { data: perfilData, isLoading: isCargando, error } =
-    useRACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteObtenerMiDependienteEndpoint();
 
-  const perfil = perfilData?.data;
+  // 1. Pedimos el listado para conocer el perfilId del primer dependiente.
+  const { data: listadoData, isLoading: isListando } =
+    useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint();
+
+  const primerDependienteId = listadoData?.data?.[0]?.perfilId;
+
+  // 2. Con ese id pedimos el detalle para mostrar info crítica en el SOS.
+  const { data: detalleData, isLoading: isCargandoDetalle, error } =
+    useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint(
+      primerDependienteId ?? '',
+      { swr: { enabled: Boolean(primerDependienteId) } }
+    );
+
+  const perfil = detalleData?.data;
 
   const tipoSangre = useMemo(() => {
     if (!perfil?.tipoSangre) return 'Desconocido';
@@ -44,12 +61,12 @@ export function SOSMobile() {
   }, [perfil?.tipoSangre]);
 
   const alergias = perfil?.alergiasEstructuradas ?? [];
-  const contactos: RACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteContactoEmergenciaDto[] =
-    (perfil?.contactosEmergencia as
-      | RACPDBackendFeaturesPerfilesDependientesObtenerMiDependienteContactoEmergenciaDto[]
-      | undefined) ?? [];
+  const contactos: ContactoEmergencia[] =
+    (perfil?.contactosEmergencia as ContactoEmergencia[] | undefined) ?? [];
 
-  if (isCargando) {
+  const volverADependientes = () => navigate({ to: '/dependientes' });
+
+  if (isListando || isCargandoDetalle) {
     return (
       <div className="min-h-screen bg-blue-50 flex items-center justify-center p-8">
         <div className="text-blue-800 font-medium">Cargando ficha SOS...</div>
@@ -63,9 +80,9 @@ export function SOSMobile() {
         <header className="bg-red-600 px-4 py-4 flex items-center gap-3 shadow-md">
           <button
             type="button"
-            onClick={() => navigate({ to: '/perfil-dependiente' })}
+            onClick={volverADependientes}
             className="cursor-pointer disabled:cursor-not-allowed p-2 rounded-full text-white hover:bg-red-500 transition disabled:opacity-50"
-            aria-label="Volver a la ficha"
+            aria-label="Volver al listado"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -84,10 +101,10 @@ export function SOSMobile() {
             </p>
             <button
               type="button"
-              onClick={() => navigate({ to: '/perfil-dependiente' })}
+              onClick={volverADependientes}
               className="cursor-pointer disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-xl transition disabled:opacity-50"
             >
-              Ir a crear la ficha
+              Ir al listado
             </button>
           </div>
         </div>
@@ -102,9 +119,9 @@ export function SOSMobile() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={() => navigate({ to: '/perfil-dependiente' })}
+            onClick={volverADependientes}
             className="cursor-pointer disabled:cursor-not-allowed p-2 rounded-full bg-white/10 text-white hover:bg-white/20 transition disabled:opacity-50"
-            aria-label="Volver a la ficha"
+            aria-label="Volver al listado"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -214,7 +231,7 @@ export function SOSMobile() {
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
                       >
                         <Phone className="w-5 h-5 shrink-0" />
-                        📞 Llamar a {c.nombre ?? 'Contacto'}
+                        �� Llamar a {c.nombre ?? 'Contacto'}
                       </a>
                       <a
                         href={`https://wa.me/${telefonoSoloDigitos}?text=${encodeURIComponent(
@@ -229,7 +246,7 @@ export function SOSMobile() {
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
                       >
                         <MessageCircle className="w-5 h-5 shrink-0" />
-                        💬 WhatsApp {c.nombre ?? 'Contacto'}
+                        �� WhatsApp {c.nombre ?? 'Contacto'}
                       </a>
                     </div>
                   </div>
