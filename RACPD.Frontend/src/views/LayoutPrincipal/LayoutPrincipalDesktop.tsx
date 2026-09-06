@@ -43,6 +43,11 @@ export const LayoutPrincipalDesktop = () => {
   }, [])
 
   const esAdmin = usuario?.rol === 'AdministradorSistema'
+  // RBAC: solo CuidadorPrincipal y Apoyo gestionan la ficha del dependiente.
+  // El guard en la ruta '/perfil-dependiente' refuerza esto a nivel de navegación,
+  // pero ocultar el enlace evita fricción y clics inútiles.
+  const puedeVerFichaDependiente =
+    usuario?.rol === 'CuidadorPrincipal' || usuario?.rol === 'Apoyo'
 
   return (
     <div className="flex h-screen bg-blue-50">
@@ -72,27 +77,31 @@ export const LayoutPrincipalDesktop = () => {
             <Home size={20} />
             <span>Inicio</span>
           </Link>
-          <Link
-            to="/ficha-paciente"
-            className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors"
-          >
-            <User size={20} />
-            <span>Ficha de Paciente</span>
-          </Link>
-          <Link
-            to="/agenda"
-            className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors"
-          >
-            <CalendarDays size={20} />
-            <span>Agenda</span>
-          </Link>
+          {puedeVerFichaDependiente && (
+            <Link
+              to="/perfil-dependiente"
+              className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors cursor-pointer"
+            >
+              <User size={20} />
+              <span>Perfil del Dependiente</span>
+            </Link>
+          )}
+          {!esAdmin && (
+            <Link
+              to="/agenda"
+              className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors cursor-pointer"
+            >
+              <CalendarDays size={20} />
+              <span>Agenda</span>
+            </Link>
+          )}
           {esAdmin && (
             <Link
               to="/usuarios/invitar"
               className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors"
             >
               <UserPlus size={20} />
-              <span>Invitar Cuidador</span>
+              <span>Invitar Usuario</span>
             </Link>
           )}
         </nav>

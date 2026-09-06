@@ -153,7 +153,7 @@ Query Parameters:
 |-----|--------|
 | CuidadorPrincipal | Listar todos + MisBloques + Disponibles |
 | Apoyo | Listar todos + MisReservas + Disponibles |
-| AdministradorSistema | Listar todos |
+| AdministradorSistema | ~~Listar todos~~ **DEPRECATED 2026-09**: el rol AdministradorSistema NO tiene actualmente capacidad funcional en la agenda desde la UI (no puede crear/editar/eliminar bloques ni reservar), por lo que mantenerle acceso de solo lectura generaba "acceso vacío" sin valor. Se removió del diccionario `POLITICAS_RUTAS` del Frontend y de los endpoints de Backend que tenían bypass de ownership (`EliminarBloque`, `CancelarReserva`). Coherente con el principio de menor privilegio. Si en el futuro se requiere moderación admin (anti-abuso, recuperación de turnos huérfanos), exponer acción explícita en UI + actualizar este spec. |
 
 #### POST /api/agenda — Crear Bloque
 

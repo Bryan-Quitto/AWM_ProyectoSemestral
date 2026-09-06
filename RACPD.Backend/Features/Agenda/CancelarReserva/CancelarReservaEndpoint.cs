@@ -60,19 +60,10 @@ public class CancelarReservaEndpoint : EndpointWithoutRequest<Response>
             return;
         }
 
-        var rolClaim = User.FindFirstValue(ClaimTypes.Role)
-            ?? User.FindFirstValue("role");
-        var esAdmin = rolClaim?.Equals(Rol.AdministradorSistema.ToString(), StringComparison.OrdinalIgnoreCase) == true;
-
-        // Solo el dueño de la reserva o admin puede cancelar
-        if (!esAdmin && reserva.UsuarioId != usuarioId)
-        {
-            await ProblemDetailsHelper.EnviarProhibidoAsync(
-                HttpContext,
-                "Solo quien hizo la reserva o un administrador pueden cancelarla.",
-                tipoProhibido: "no-dueno-reserva");
-            return;
-        }
+        // El endpoint ya filtra por r.UsuarioId == usuarioId en la consulta
+        // anterior, por lo que la única forma de llegar aquí es siendo
+        // dueño de la reserva. El rol AdministradorSistema fue removido
+        // de la política (ver Configure), por lo que ya no tiene bypass.
 
         // Soft delete
         reserva.Activa = false;

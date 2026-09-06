@@ -59,16 +59,13 @@ public class EliminarBloqueEndpoint : EndpointWithoutRequest<Response>
             return;
         }
 
-        var rolClaim = User.FindFirstValue(ClaimTypes.Role)
-            ?? User.FindFirstValue("role");
-        var esAdmin = rolClaim?.Equals(Rol.AdministradorSistema.ToString(), StringComparison.OrdinalIgnoreCase) == true;
-
-        // Solo el creador o admin puede eliminar
-        if (!esAdmin && bloque.CreadoPorId != usuarioId)
+        // Solo el creador puede eliminar su propio bloque. El rol
+        // permitido a nivel de endpoint es únicamente CuidadorPrincipal.
+        if (bloque.CreadoPorId != usuarioId)
         {
             await ProblemDetailsHelper.EnviarProhibidoAsync(
                 HttpContext,
-                "Solo el creador del bloque o un administrador pueden eliminarlo.",
+                "Solo el creador del bloque puede eliminarlo.",
                 tipoProhibido: "no-creador-bloque");
             return;
         }

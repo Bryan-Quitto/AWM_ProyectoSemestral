@@ -41,6 +41,9 @@ export const LayoutPrincipalMobile = () => {
   }, [])
 
   const esAdmin = usuario?.rol === 'AdministradorSistema'
+  // RBAC: el menú inferior solo muestra "Perfil Dep." a cuidadores.
+  const puedeVerFichaDependiente =
+    usuario?.rol === 'CuidadorPrincipal' || usuario?.rol === 'Apoyo'
 
   return (
     <div className="flex flex-col h-screen bg-blue-50">
@@ -95,20 +98,24 @@ export const LayoutPrincipalMobile = () => {
           <Home size={24} />
           <span className="text-[10px] mt-1 font-medium">Inicio</span>
         </Link>
-        <Link
-          to="/ficha-paciente"
-          className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
-        >
-          <User size={24} />
-          <span className="text-[10px] mt-1 font-medium">Ficha</span>
-        </Link>
-        <Link
-          to="/agenda"
-          className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
-        >
-          <CalendarDays size={24} />
-          <span className="text-[10px] mt-1 font-medium">Agenda</span>
-        </Link>
+        {puedeVerFichaDependiente && (
+          <Link
+            to="/perfil-dependiente"
+            className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
+          >
+            <User size={24} />
+            <span className="text-[10px] mt-1 font-medium">Perfil</span>
+          </Link>
+        )}
+        {!esAdmin && (
+          <Link
+            to="/agenda"
+            className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
+          >
+            <CalendarDays size={24} />
+            <span className="text-[10px] mt-1 font-medium">Agenda</span>
+          </Link>
+        )}
         {esAdmin && (
           <Link
             to="/usuarios/invitar"
