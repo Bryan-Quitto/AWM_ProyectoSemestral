@@ -67,9 +67,21 @@ export const InicioSesion = () => {
       })
 
       if (error) {
-        if (error.message.toLowerCase().includes('invalid')) {
+        const mensaje = error.message.toLowerCase()
+        // Errores de red: Supabase los reporta como "Failed to fetch",
+        // "NetworkError", "Load failed" o "fetch failed". Los traducimos
+        // a un mensaje entendible; el banner ámbar global ya informa
+        // del estado de conexión.
+        const esErrorDeRed =
+          mensaje.includes('failed to fetch') ||
+          mensaje.includes('networkerror') ||
+          mensaje.includes('load failed') ||
+          mensaje.includes('fetch failed')
+        if (esErrorDeRed) {
+          setApiError('No se puede contactar al servidor. Verifica tu conexión e inténtalo de nuevo.')
+        } else if (mensaje.includes('invalid')) {
           setApiError('Credenciales inválidas.')
-        } else if (error.message.toLowerCase().includes('email not confirmed')) {
+        } else if (mensaje.includes('email not confirmed')) {
           setApiError('Debes confirmar tu correo electrónico antes de iniciar sesión.')
         } else {
           setApiError(error.message)

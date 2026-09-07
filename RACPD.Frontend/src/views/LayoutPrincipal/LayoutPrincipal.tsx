@@ -3,6 +3,7 @@ import { LayoutPrincipalDesktop } from './LayoutPrincipalDesktop'
 import { LayoutPrincipalMobile } from './LayoutPrincipalMobile'
 import { VerificadorPerfil } from './VerificadorPerfil'
 import { useVerificarCuentaActiva } from '../../autenticacion/useVerificarCuentaActiva'
+import { IndicadorConexion } from '../../components/common/IndicadorConexion'
 
 export const LayoutPrincipal = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
@@ -31,6 +32,7 @@ export const LayoutPrincipal = () => {
         UI protegida aparecía antes de confirmar /completar-perfil.
       */}
       <VerificadorPerfil />
+      <IndicadorConexion />
       {isMobile ? <LayoutPrincipalMobile /> : <LayoutPrincipalDesktop />}
     </>
   )

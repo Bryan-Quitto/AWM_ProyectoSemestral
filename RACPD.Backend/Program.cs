@@ -14,11 +14,15 @@ var connectionString = builder.Configuration["MIGRATION_DB_CONNECTION_STRING"]?.
                        ?? builder.Configuration["SUPABASE_DB_CONNECTION_STRING"]?.Trim('"');
 
 // Orígenes permitidos para CORS. El frontend de RACPD corre en
-// http://localhost:3000 (Vite dev) y en producción detrás del mismo dominio.
+// http://localhost:3000 o http://localhost:5174 (Vite dev) según el
+// puerto configurado en vite.config.ts. En producción se sirve detrás
+// del mismo dominio.
 var origenesPermitidosCORS = new[]
 {
     "http://localhost:3000",
-    "http://127.0.0.1:3000"
+    "http://127.0.0.1:3000",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174"
 };
 
 builder.Services.AddCors(opciones =>
