@@ -46,7 +46,7 @@ export const UsuariosAdministracionMobile = ({
         <div>
           <h1 className="text-2xl font-bold text-blue-900">Usuarios</h1>
           <p className="text-sm text-blue-600">
-            Gestiona roles y activa/desactiva cuentas.
+            Invita usuarios y activa/desactiva cuentas.
           </p>
         </div>
         <Boton

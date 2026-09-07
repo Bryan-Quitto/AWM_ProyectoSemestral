@@ -46,7 +46,7 @@ export const UsuariosAdministracionDesktop = ({
         <div>
           <h1 className="text-3xl font-bold text-blue-900">Usuarios</h1>
           <p className="text-blue-700 mt-1">
-            Gestiona las cuentas de la plataforma. Cambia roles o activa/desactiva usuarios.
+            Gestiona las cuentas de la plataforma. Invita nuevos usuarios, activa/desactiva usuarios.
           </p>
         </div>
         <Boton
