@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restablece tu contraseña en RACPD</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #EFF6FF; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width: 100%; background-color: #EFF6FF; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" max-width="600" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); overflow: hidden;">
+                    <tr>
+                        <td style="background-color: #2563EB; padding: 30px 40px; text-align: center;">
+                            <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 0.5px;">Restablece tu contraseña</h1>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 40px;">
+                            <p style="margin: 0 0 20px 0; font-size: 16px; color: #1E3A8A; line-height: 1.6;">
+                                Hola,
+                            </p>
+                            <p style="margin: 0 0 24px 0; font-size: 16px; color: #1E3A8A; line-height: 1.6;">
+                                Recibimos una solicitud para restablecer la contraseña de tu cuenta en la <strong>Red de Apoyo para Cuidadores de Personas con Dependencia (RACPD)</strong>.
+                                Para definir una nueva contraseña de acceso, haz clic en el siguiente botón:
+                            </p>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                                <tr>
+                                    <td align="center" style="padding: 10px 0 30px 0;">
+                                        <a href="{{ .ConfirmationURL }}" style="background-color: #2563EB; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; display: inline-block;">Restablecer mi contraseña</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            <p style="margin: 0 0 10px 0; font-size: 14px; color: #60A5FA; line-height: 1.5;">
+                                Si el botón no funciona, copia y pega este enlace en tu navegador:
+                            </p>
+                            <p style="margin: 0; font-size: 14px; color: #2563EB; word-break: break-all;">
+                                {{ .ConfirmationURL }}
+                            </p>
+                            <p style="margin: 24px 0 0 0; font-size: 14px; color: #60A5FA; line-height: 1.5;">
+                                Si no solicitaste este cambio, puedes ignorar este mensaje. Tu contraseña actual seguirá siendo válida.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color: #DBEAFE; padding: 20px 40px; text-align: center; border-top: 1px solid #BFDBFE;">
+                            <p style="margin: 0; font-size: 13px; color: #1E3A8A;">
+                                Este es un mensaje automático generado por RACPD. Por favor, no respondas a este correo.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

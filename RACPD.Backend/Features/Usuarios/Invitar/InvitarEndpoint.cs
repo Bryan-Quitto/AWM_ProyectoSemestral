@@ -159,6 +159,20 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
             return;
         }
 
+        // URL base del frontend para construir el `redirect_to` que GoTrue
+        // adjunta en el correo de invitación. Si no está configurada, usamos
+        // el puerto de desarrollo real del frontend (5174, fijado por
+        // vite.config.ts → server.port). NO usar `http://localhost:3000`:
+        // ese era el default histórico de create-react-app y ya no aplica.
+        var urlBaseFrontend = _configuration["RACPD_FRONTEND_URL_BASE"]?.Trim('"');
+        if (string.IsNullOrWhiteSpace(urlBaseFrontend))
+        {
+            urlBaseFrontend = "http://localhost:5174";
+        }
+        // Sanitizar: quitar barra final para que la concatenación
+        // `${urlBase}/inicio-sesion` no genere `//inicio-sesion`.
+        urlBaseFrontend = urlBaseFrontend.TrimEnd('/');
+
         var correoNormalizado = req.Correo!.Trim().ToLowerInvariant();
         var usuarioLocal = await _dbContext.Usuarios
             .FirstOrDefaultAsync(u => u.Correo.ToLower() == correoNormalizado, ct);
@@ -239,8 +253,11 @@ public class InvitarEndpoint : Endpoint<InvitarUsuarioRequest, InvitarUsuarioRes
         HttpResponseMessage respuestaSupabase;
         try
         {
-            // Usamos redirect_to en la URL para que GoTrue lo incluya en el email
-            var inviteUrl = $"{urlSupabase}/auth/v1/invite?redirect_to=http://localhost:3000/inicio-sesion";
+            // Usamos redirect_to en la URL para que GoTrue lo incluya en el email.
+            // La base viene de `RACPD_FRONTEND_URL_BASE` (con fallback a
+            // http://localhost:5174) para evitar hardcodear el puerto del
+            // frontend en el backend.
+            var inviteUrl = $"{urlSupabase}/auth/v1/invite?redirect_to={Uri.EscapeDataString($"{urlBaseFrontend}/inicio-sesion")}";
             respuestaSupabase = await clienteHttp.PostAsync(inviteUrl, contenido, ct);
         }
         catch (Exception ex)

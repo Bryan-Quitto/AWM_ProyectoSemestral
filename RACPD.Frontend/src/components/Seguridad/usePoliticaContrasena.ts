@@ -10,8 +10,18 @@
  * El hook es 100% determinista y puro: no produce lecturas ni escrituras
  * secundarias y memoiza su resultado con `useMemo` para optimizar el uso en
  * componentes que cambian con frecuencia.
+ *
+ * Las reglas (longitud mínima y patrones) provienen del módulo SSoT
+ * `politicaContrasena.ts`. Prohibido redeclararlas aquí.
  */
 import { useMemo } from 'react';
+import {
+  LONGITUD_MINIMA,
+  PATRON_MAYUSCULA,
+  PATRON_MINUSCULA,
+  PATRON_DIGITO,
+  PATRON_ESPECIAL
+} from './politicaContrasena';
 
 /**
  * Niveles cualitativos posibles para clasificar una contraseña.
@@ -41,11 +51,11 @@ export type ResultadoPoliticaContrasena = {
  * del hook que la consume.
  */
 function evaluarPolitica(contrasena: string): ResultadoPoliticaContrasena {
-  const longitud = contrasena.length >= 8;
-  const mayuscula = /[A-Z]/.test(contrasena);
-  const minuscula = /[a-z]/.test(contrasena);
-  const digito = /[0-9]/.test(contrasena);
-  const especial = /[^A-Za-z0-9]/.test(contrasena);
+  const longitud = contrasena.length >= LONGITUD_MINIMA;
+  const mayuscula = PATRON_MAYUSCULA.test(contrasena);
+  const minuscula = PATRON_MINUSCULA.test(contrasena);
+  const digito = PATRON_DIGITO.test(contrasena);
+  const especial = PATRON_ESPECIAL.test(contrasena);
 
   const requisitos = { longitud, mayuscula, minuscula, digito, especial };
 

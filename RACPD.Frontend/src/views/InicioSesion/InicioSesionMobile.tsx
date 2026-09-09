@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { iniciarSesionSchema } from './schema'
 import { Boton } from '../../components/Boton'
 
@@ -73,17 +74,26 @@ export const InicioSesionMobile = ({ form, onSubmit, isMutating, apiError }: Pro
               </button>
             </div>
             {errors.contrasena && (
-              <p className="mt-2 text-sm text-red-600">{errors.contrasena.message}</p>
-            )}
-          </div>
+                <p className="mt-2 text-sm text-red-600">{errors.contrasena.message}</p>
+              )}
+            </div>
 
-          <Boton
-            type="submit"
-            cargando={isMutating}
-            className="w-full py-3 rounded-lg mt-4"
-          >
-            {isMutating ? 'Iniciando sesión...' : 'Ingresar'}
-          </Boton>
+            <div className="text-right">
+              <Link
+                to="/recuperar-contrasena"
+                className="text-sm text-blue-600 hover:underline cursor-pointer"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
+            <Boton
+              type="submit"
+              cargando={isMutating}
+              className="w-full py-3 rounded-lg mt-4"
+            >
+              {isMutating ? 'Iniciando sesión...' : 'Ingresar'}
+            </Boton>
         </form>
       </div>
     </div>

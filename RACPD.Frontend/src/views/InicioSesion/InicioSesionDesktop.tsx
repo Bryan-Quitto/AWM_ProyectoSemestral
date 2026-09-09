@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
 import { z } from 'zod'
 import { Eye, EyeOff } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { iniciarSesionSchema } from './schema'
 import { Boton } from '../../components/Boton'
 
@@ -79,6 +80,15 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
               {errors.contrasena && (
                 <p className="mt-2 text-sm text-red-600">{errors.contrasena.message}</p>
               )}
+            </div>
+
+            <div className="text-right">
+              <Link
+                to="/recuperar-contrasena"
+                className="text-sm text-blue-600 hover:underline cursor-pointer"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
 
             <Boton

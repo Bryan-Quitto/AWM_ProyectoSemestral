@@ -20,7 +20,7 @@ public class PerfilDependiente
     public string CondicionesCronicas { get; private set; } = string.Empty; // Texto libre
     
     // Usamos PostgreSQL Arrays o JSONB (EF Core 8+ Primitive Collections)
-    public List<string> AlergiasEstructuradas { get; private set; } = []; 
+    public List<string> AlergiasEstructuradas { get; private set; } = [];
     
     // Owned Type mapeado a columna JSONB
     public List<ContactoEmergencia> ContactosEmergencia { get; private set; } = [];

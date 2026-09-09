@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProtegidasRouteImport } from './routes/_protegidas'
 import { Route as CompletarPerfilRouteImport } from './routes/completar-perfil'
 import { Route as InicioSesionRouteImport } from './routes/inicio-sesion'
+import { Route as RecuperarContrasenaRouteImport } from './routes/recuperar-contrasena'
+import { Route as RestablecerContrasenaRouteImport } from './routes/restablecer-contrasena'
 import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
 import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegidas/configuracion'
@@ -36,6 +38,16 @@ const CompletarPerfilRoute = CompletarPerfilRouteImport.update({
 const InicioSesionRoute = InicioSesionRouteImport.update({
   id: '/inicio-sesion',
   path: '/inicio-sesion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecuperarContrasenaRoute = RecuperarContrasenaRouteImport.update({
+  id: '/recuperar-contrasena',
+  path: '/recuperar-contrasena',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestablecerContrasenaRoute = RestablecerContrasenaRouteImport.update({
+  id: '/restablecer-contrasena',
+  path: '/restablecer-contrasena',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProtegidasIndexRoute = ProtegidasIndexRouteImport.update({
@@ -103,6 +115,8 @@ export interface FileRoutesByFullPath {
   '/': typeof ProtegidasIndexRoute
   '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/dependientes': typeof ProtegidasDependientesRouteWithChildren
@@ -117,6 +131,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
@@ -133,6 +149,8 @@ export interface FileRoutesById {
   '/_protegidas': typeof ProtegidasRouteWithChildren
   '/completar-perfil': typeof CompletarPerfilRoute
   '/inicio-sesion': typeof InicioSesionRoute
+  '/recuperar-contrasena': typeof RecuperarContrasenaRoute
+  '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
   '/_protegidas/configuracion': typeof ProtegidasConfiguracionRoute
   '/_protegidas/dependientes': typeof ProtegidasDependientesRouteWithChildren
@@ -151,6 +169,8 @@ export interface FileRouteTypes {
     | '/'
     | '/completar-perfil'
     | '/inicio-sesion'
+    | '/recuperar-contrasena'
+    | '/restablecer-contrasena'
     | '/agenda'
     | '/configuracion'
     | '/dependientes'
@@ -165,6 +185,8 @@ export interface FileRouteTypes {
   to:
     | '/completar-perfil'
     | '/inicio-sesion'
+    | '/recuperar-contrasena'
+    | '/restablecer-contrasena'
     | '/agenda'
     | '/configuracion'
     | '/ficha-paciente'
@@ -180,6 +202,8 @@ export interface FileRouteTypes {
     | '/_protegidas'
     | '/completar-perfil'
     | '/inicio-sesion'
+    | '/recuperar-contrasena'
+    | '/restablecer-contrasena'
     | '/_protegidas/agenda'
     | '/_protegidas/configuracion'
     | '/_protegidas/dependientes'
@@ -197,6 +221,8 @@ export interface RootRouteChildren {
   ProtegidasRoute: typeof ProtegidasRouteWithChildren
   CompletarPerfilRoute: typeof CompletarPerfilRoute
   InicioSesionRoute: typeof InicioSesionRoute
+  RecuperarContrasenaRoute: typeof RecuperarContrasenaRoute
+  RestablecerContrasenaRoute: typeof RestablecerContrasenaRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -220,6 +246,20 @@ declare module '@tanstack/react-router' {
       path: '/inicio-sesion'
       fullPath: '/inicio-sesion'
       preLoaderRoute: typeof InicioSesionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recuperar-contrasena': {
+      id: '/recuperar-contrasena'
+      path: '/recuperar-contrasena'
+      fullPath: '/recuperar-contrasena'
+      preLoaderRoute: typeof RecuperarContrasenaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restablecer-contrasena': {
+      id: '/restablecer-contrasena'
+      path: '/restablecer-contrasena'
+      fullPath: '/restablecer-contrasena'
+      preLoaderRoute: typeof RestablecerContrasenaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_protegidas/': {
@@ -351,6 +391,8 @@ const rootRouteChildren: RootRouteChildren = {
   ProtegidasRoute: ProtegidasRouteWithChildren,
   CompletarPerfilRoute: CompletarPerfilRoute,
   InicioSesionRoute: InicioSesionRoute,
+  RecuperarContrasenaRoute: RecuperarContrasenaRoute,
+  RestablecerContrasenaRoute: RestablecerContrasenaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
