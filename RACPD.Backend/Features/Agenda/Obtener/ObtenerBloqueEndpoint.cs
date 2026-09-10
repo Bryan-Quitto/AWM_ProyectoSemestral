@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
+using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
 using RACPD.Backend.Infrastructure;
 
@@ -48,6 +49,7 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
         var bloque = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
+            .Include(b => b.PerfilDependiente)
             .Include(b => b.Reservas)
                 .ThenInclude(r => r.Usuario)
             .FirstOrDefaultAsync(b => b.Id == bloqueId, ct);
@@ -92,7 +94,15 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
                 r.UsuarioId == usuarioId
             )).ToList(),
             PuedoReservar: puedoReservar,
-            YaReservé: miReserva != null
+            YaReservé: miReserva != null,
+            PerfilDependienteId: bloque.PerfilDependienteId ?? Guid.Empty,
+            NombreDependiente: bloque.PerfilDependiente?.NombreCompleto ?? string.Empty,
+            TipoRecurrencia: bloque.TipoRecurrencia.ToString(),
+            IntervaloSemanas: bloque.IntervaloSemanas,
+            Tareas: (bloque.Tareas ?? new List<TareaTurnoItem>())
+                .OrderBy(t => t.Orden)
+                .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
+                .ToList()
         );
 
         await Send.OkAsync(dto, ct);

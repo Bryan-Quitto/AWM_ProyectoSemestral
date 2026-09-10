@@ -1,4 +1,4 @@
-import { Calendar, Clock, Users, Trash2, Edit2 } from 'lucide-react';
+import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat } from 'lucide-react';
 import { Boton } from '../../components/Boton';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 
@@ -37,7 +37,6 @@ export const TarjetaBloque = ({
   const esCompleto = (bloque.cuposDisponibles ?? 0) === 0;
   const estaVencido = bloque.fecha ? new Date(bloque.fecha) < new Date(new Date().toISOString().split('T')[0]) : false;
 
-  // Determinar color de borde según estado
   const getBorderColor = () => {
     if (bloque.yaReservé) return 'border-blue-500';
     if (esMiBloque) return 'border-green-500';
@@ -46,7 +45,6 @@ export const TarjetaBloque = ({
     return 'border-blue-200 hover:border-blue-400';
   };
 
-  // Determinar fondo según estado
   const getBgColor = () => {
     if (bloque.yaReservé) return 'bg-blue-50';
     if (esMiBloque) return 'bg-green-50';
@@ -54,6 +52,9 @@ export const TarjetaBloque = ({
     if (estaVencido) return 'bg-gray-50';
     return 'bg-white';
   };
+
+  const tareas = bloque.tareas ?? [];
+  const cantidadTareas = tareas.length;
 
   return (
     <div
@@ -65,25 +66,55 @@ export const TarjetaBloque = ({
         ${!bloque.puedoReservar && !bloque.yaReservé && !esMiBloque ? 'opacity-75' : ''}
       `}
     >
-      {/* Header */}
       <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-100 rounded-lg">
+        <div className="flex items-start gap-2 min-w-0 flex-1">
+          <div className="p-2 bg-blue-100 rounded-lg shrink-0">
             <Calendar className="w-5 h-5 text-blue-700" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="font-semibold text-blue-900">{formatearFecha(bloque.fecha)}</p>
-            <p className="text-sm text-blue-600">{bloque.creadoPor?.nombreCompleto ?? ''}</p>
+            <p className="text-sm text-blue-600 truncate">
+              {bloque.creadoPor?.nombreCompleto ?? ''}
+            </p>
+
+            {/* === NUEVO (Persona 1 / Semana 1) === */}
+            {bloque.nombreDependiente && (
+              <div className="flex items-center gap-1 mt-1 text-xs text-blue-700">
+                <User className="w-3 h-3 shrink-0" />
+                <span className="truncate">{bloque.nombreDependiente}</span>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              {/* Badge recurrencia */}
+              {bloque.tipoRecurrencia && bloque.tipoRecurrencia !== 'Unica' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[10px] font-medium">
+                  <Repeat className="w-3 h-3" />
+                  {bloque.tipoRecurrencia === 'Indefinida'
+                    ? 'Indefinido'
+                    : bloque.tipoRecurrencia === 'Semanas' && bloque.intervaloSemanas
+                      ? `Cada ${bloque.intervaloSemanas} sem.`
+                      : bloque.tipoRecurrencia}
+                </span>
+              )}
+
+              {/* Badge tareas */}
+              {cantidadTareas > 0 && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 text-[10px] font-medium">
+                  <ListChecks className="w-3 h-3" />
+                  {cantidadTareas} tarea{cantidadTareas === 1 ? '' : 's'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Badge de estado */}
-        <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-          bloque.yaReservé 
-            ? 'bg-blue-200 text-blue-800' 
-            : esMiBloque 
+        <div className={`shrink-0 ml-2 px-2 py-1 rounded-full text-xs font-medium ${
+          bloque.yaReservé
+            ? 'bg-blue-200 text-blue-800'
+            : esMiBloque
               ? 'bg-green-200 text-green-800'
-              : esCompleto 
+              : esCompleto
                 ? 'bg-gray-200 text-gray-600'
                 : 'bg-blue-100 text-blue-700'
         }`}>
@@ -91,7 +122,6 @@ export const TarjetaBloque = ({
         </div>
       </div>
 
-      {/* Hora */}
       <div className="flex items-center gap-2 mb-3">
         <Clock className="w-4 h-4 text-blue-500" />
         <span className="text-gray-700 font-medium">
@@ -99,7 +129,6 @@ export const TarjetaBloque = ({
         </span>
       </div>
 
-      {/* Cupos */}
       <div className="flex items-center gap-2 mb-3">
         <Users className="w-4 h-4 text-blue-500" />
         <span className="text-gray-600 text-sm">
@@ -119,12 +148,24 @@ export const TarjetaBloque = ({
         </div>
       </div>
 
-      {/* Descripción */}
       {bloque.descripcion && (
         <p className="text-sm text-gray-600 mb-3 italic">{bloque.descripcion}</p>
       )}
 
-      {/* Reservas */}
+      {/* Lista resumida de tareas (NUEVO) */}
+      {cantidadTareas > 0 && (
+        <details className="mb-3 text-xs text-gray-600">
+          <summary className="cursor-pointer font-medium text-blue-700 hover:underline">
+            Ver {cantidadTareas} tarea{cantidadTareas === 1 ? '' : 's'}
+          </summary>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            {tareas.map((t, i) => (
+              <li key={t.id ?? i}>{t.descripcion}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+
       {bloque.reservas && bloque.reservas.length > 0 && (
         <div className="mb-3">
           <p className="text-xs text-gray-500 mb-1">Reservas:</p>
@@ -133,7 +174,7 @@ export const TarjetaBloque = ({
               <span
                 key={i}
                 className={`text-xs px-2 py-0.5 rounded-full ${
-                  r.esMiReserva 
+                  r.esMiReserva
                     ? 'bg-blue-200 text-blue-800 font-medium'
                     : 'bg-gray-200 text-gray-600'
                 }`}
@@ -145,7 +186,6 @@ export const TarjetaBloque = ({
         </div>
       )}
 
-      {/* Acciones */}
       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
         {bloque.puedoReservar && (
           <Boton

@@ -8,7 +8,10 @@ import {
 } from '../../../api/generated/api/api';
 import useSWRMutation from 'swr/mutation';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../../api/generated/model';
-import type { RACPDBackendFeaturesAgendaCrearRequest, RACPDBackendFeaturesAgendaEditarRequest } from '../../../api/generated/model';
+import type {
+  RACPDBackendFeaturesAgendaCrearBloqueRequest,
+  RACPDBackendFeaturesAgendaEditarBloqueRequest,
+} from '../../../api/generated/model';
 
 export const useAgenda = () => {
   const { data, error, isLoading, mutate } = useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint({
@@ -30,18 +33,23 @@ export const useAgenda = () => {
 export const useCrearBloque = () => {
   return useSWRMutation(
     '/api/agenda',
-    async (_: string, { arg }: { arg: RACPDBackendFeaturesAgendaCrearRequest }) => {
+    async (_: string, { arg }: { arg: RACPDBackendFeaturesAgendaCrearBloqueRequest }) => {
       return rACPDBackendFeaturesAgendaCrearCrearBloqueEndpoint(arg);
     }
   );
 };
 
-// Hook para editar bloque (PUT con id en path)
+// Hook para editar bloque (PUT con id en path).
+// Orval firma la mutación con { data: EditarBloqueRequest }; nosotros
+// recibimos { id, data } para mayor claridad en el caller.
 export const useEditarBloque = () => {
   return useSWRMutation(
     '/api/agenda',
-    async (_: string, { arg }: { arg: { id: string; data: RACPDBackendFeaturesAgendaEditarRequest } }) => {
-      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(arg.id, arg.data);
+    async (
+      _: string,
+      { arg }: { arg: { id: string; data: RACPDBackendFeaturesAgendaEditarBloqueRequest } }
+    ) => {
+      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(arg.id, { data: arg.data });
     }
   );
 };
@@ -78,3 +86,4 @@ export const useCancelarReserva = () => {
 
 // Tipos re-exportados
 export type { RACPDBackendFeaturesAgendaBloqueTurnoDto };
+export type { RACPDBackendFeaturesAgendaCrearBloqueRequest, RACPDBackendFeaturesAgendaEditarBloqueRequest };
