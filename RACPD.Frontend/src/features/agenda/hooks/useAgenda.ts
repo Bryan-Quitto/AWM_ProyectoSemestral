@@ -40,16 +40,18 @@ export const useCrearBloque = () => {
 };
 
 // Hook para editar bloque (PUT con id en path).
-// Orval firma la mutación con { data: EditarBloqueRequest }; nosotros
-// recibimos { id, data } para mayor claridad en el caller.
+// El caller pasa el objeto plano del formulario más el `id` del bloque.
+// El hook desestructura para separar el path segment `id` del body
+// (la firma Orval es `editarBloqueEndpoint(id, body)`).
 export const useEditarBloque = () => {
   return useSWRMutation(
     '/api/agenda',
     async (
       _: string,
-      { arg }: { arg: { id: string; data: RACPDBackendFeaturesAgendaEditarBloqueRequest } }
+      { arg }: { arg: { id: string } & RACPDBackendFeaturesAgendaEditarBloqueRequest }
     ) => {
-      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(arg.id, { data: arg.data });
+      const { id, ...body } = arg;
+      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(id, body);
     }
   );
 };

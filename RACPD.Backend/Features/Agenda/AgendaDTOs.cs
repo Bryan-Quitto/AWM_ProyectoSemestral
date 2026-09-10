@@ -19,18 +19,26 @@ public record CrearBloqueRequest(
 
 /// <summary>
 /// Request para editar un bloque de turno.
+/// Definido como record NO posicional con setters mutables para que
+/// FastEndpoints pueda inyectar el path segment <c>{id}</c> en la propiedad
+/// <c>Id</c> tras la deserialización del body. Los records posicionales
+/// generan setters <c>init</c>-only incompatibles con este binding.
 /// </summary>
-public record EditarBloqueRequest(
-    string Fecha,
-    string HoraInicio,
-    string HoraFin,
-    int CuposMaximos,
-    string? Descripcion,
-    Guid PerfilDependienteId,
-    string TipoRecurrencia,
-    int? IntervaloSemanas,
-    List<TareaTurnoItemRequest>? Tareas
-);
+public record EditarBloqueRequest
+{
+    /// <summary>Identificador del bloque. Se bindea desde el path segment <c>{id}</c>.</summary>
+    public Guid Id { get; set; }
+
+    public string Fecha { get; set; } = default!;
+    public string HoraInicio { get; set; } = default!;
+    public string HoraFin { get; set; } = default!;
+    public int CuposMaximos { get; set; }
+    public string? Descripcion { get; set; }
+    public Guid PerfilDependienteId { get; set; }
+    public string TipoRecurrencia { get; set; } = "Unica";
+    public int? IntervaloSemanas { get; set; }
+    public List<TareaTurnoItemRequest>? Tareas { get; set; }
+}
 
 /// <summary>
 /// Ítem de tarea enviado por el frontend.

@@ -127,22 +127,20 @@ export const AgendaDesktop = () => {
     try {
       const respuesta = await editarBloque({
         id: bloqueEditando.id,
-        data: {
-          fecha: data.fecha,
-          horaInicio: data.horaInicio,
-          horaFin: data.horaFin,
-          cuposMaximos: data.cuposMaximos,
-          descripcion: data.descripcion ?? null,
-          perfilDependienteId: data.perfilDependienteId,
-          tipoRecurrencia: data.tipoRecurrencia,
-          intervaloSemanas: data.intervaloSemanas ?? null,
-          tareas: (data.tareas ?? []).map((t) => ({
-            id: t.id,
-            descripcion: t.descripcion,
-            orden: t.orden,
-          })),
-        },
-      }) as any;
+        fecha: data.fecha,
+        horaInicio: data.horaInicio,
+        horaFin: data.horaFin,
+        cuposMaximos: data.cuposMaximos,
+        descripcion: data.descripcion ?? null,
+        perfilDependienteId: data.perfilDependienteId,
+        tipoRecurrencia: data.tipoRecurrencia,
+        intervaloSemanas: data.intervaloSemanas ?? null,
+        tareas: (data.tareas ?? []).map((t) => ({
+          id: t.id,
+          descripcion: t.descripcion,
+          orden: t.orden,
+        })),
+      });
 
       if (respuesta?.status >= 400) {
         setApiError(extraerMensajeError(respuesta, 'Error al editar'));

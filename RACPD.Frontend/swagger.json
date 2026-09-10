@@ -1,0 +1,2112 @@
+{
+  "x-generator": "NSwag v14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))",
+  "openapi": "3.0.0",
+  "info": {
+    "title": "RACPD.Backend",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:55597"
+    }
+  ],
+  "paths": {
+    "/api/usuarios-de-apoyo": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosUsuariosDeApoyoListarUsuariosDeApoyoListarUsuariosDeApoyoEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosUsuariosDeApoyoListarUsuariosDeApoyoUsuarioApoyoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/mi-perfil/actualizar": {
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosMiPerfilActualizarPerfilEndpoint",
+        "requestBody": {
+          "x-name": "ActualizarPerfilRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilActualizarPerfilRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilMiPerfilResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/mi-perfil": {
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosMiPerfilCompletarPerfilEndpoint",
+        "requestBody": {
+          "x-name": "CompletarPerfilRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilCompletarPerfilRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilMiPerfilResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilMiPerfilResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/mi-perfil/contrasena": {
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosMiPerfilModificarContrasenaEndpoint",
+        "requestBody": {
+          "x-name": "ModificarContrasenaRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosMiPerfilModificarContrasenaRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/invitar": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosInvitarInvitarEndpoint",
+        "requestBody": {
+          "x-name": "InvitarUsuarioRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosInvitarInvitarUsuarioRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosInvitarInvitarUsuarioResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosAdministracionListarUsuariosListarUsuariosEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/{id}/rol": {
+      "patch": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosAdministracionCambiarRolCambiarRolEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "CambiarRolRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosAdministracionCambiarRolCambiarRolRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/usuarios/{id}/estado": {
+      "patch": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesUsuariosAdministracionCambiarEstadoCambiarEstadoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "CambiarEstadoRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosAdministracionCambiarEstadoCambiarEstadoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/ping": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesSystemPingEndpoint",
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
+    "/api/perfiles-dependientes/{id}/vinculos": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesVinculosListarVinculosListarVinculosEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesVinculosListarVinculosVinculoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesVinculosAgregarVinculoAgregarVinculoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "AgregarVinculoRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesVinculosAgregarVinculoAgregarVinculoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "guid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/perfiles-dependientes/{id}/vinculos/{vinculoId}": {
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesVinculosDesactivarVinculoDesactivarVinculoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vinculoId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/perfiles-dependientes/{id}": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesDesactivarPerfilDependienteDesactivarPerfilDependienteEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "ActualizarPerfilDependienteRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/perfiles-dependientes/mios": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesListarMisDependientesDependienteResumenResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/perfiles-dependientes": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint",
+        "requestBody": {
+          "x-name": "CrearPerfilDependienteRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "guid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/inicio-sesion": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesIdentidadInicioSesionInicioSesionEndpoint",
+        "requestBody": {
+          "x-name": "IniciarSesionRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesIdentidadInicioSesionIniciarSesionRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesIdentidadInicioSesionIniciarSesionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FastEndpointsErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/agenda/{id}/reservar": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaReservarReservarEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaReservarResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/agenda/{id}": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaObtenerObtenerBloqueEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaBloqueTurnoDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaEliminarEliminarBloqueEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaEliminarResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "guid"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "EditarBloqueRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaEditarBloqueRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaEditarBloqueResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/agenda": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaListarListarBloquesEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaListarResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaCrearCrearBloqueEndpoint",
+        "requestBody": {
+          "x-name": "CrearBloqueRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaCrearBloqueRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaCrearBloqueResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/agenda/{id}/reserva": {
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaCancelarReservaCancelarReservaEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaCancelarReservaResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "RACPDBackendFeaturesUsuariosUsuariosDeApoyoListarUsuariosDeApoyoUsuarioApoyoResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosMiPerfilMiPerfilResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosMiPerfilActualizarPerfilRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nombre",
+          "apellido"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "pattern": "^[\\p{L}\\s'-]+$",
+            "nullable": false
+          },
+          "apellido": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "pattern": "^[\\p{L}\\s'-]+$",
+            "nullable": false
+          }
+        }
+      },
+      "FastEndpointsErrorResponse": {
+        "type": "object",
+        "description": "the dto used to send an error response to the client",
+        "additionalProperties": false,
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "description": "the http status code sent to the client. default is 400.",
+            "format": "int32",
+            "default": 400
+          },
+          "message": {
+            "type": "string",
+            "description": "the message for the error response",
+            "default": "One or more errors occurred!"
+          },
+          "errors": {
+            "type": "object",
+            "description": "the collection of errors for the current context",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosMiPerfilCompletarPerfilRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nombre",
+          "apellido"
+        ],
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "pattern": "^[\\p{L}\\s'-]+$",
+            "nullable": false
+          },
+          "apellido": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 2,
+            "pattern": "^[\\p{L}\\s'-]+$",
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosMiPerfilModificarContrasenaRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contrasenaActual",
+          "nuevaContrasena"
+        ],
+        "properties": {
+          "contrasenaActual": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          },
+          "nuevaContrasena": {
+            "type": "string",
+            "minLength": 8,
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosInvitarInvitarUsuarioResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosInvitarInvitarUsuarioRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "correo"
+        ],
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1,
+            "pattern": "^[^@]+@[^@]+$",
+            "nullable": false
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RACPDBackendDomainEnumsRol"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "rolEnDependienteInicial": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RACPDBackendDomainEnumsRolEnDependiente"
+              }
+            ]
+          }
+        }
+      },
+      "RACPDBackendDomainEnumsRol": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "AdministradorSistema",
+          "CuidadorPrincipal",
+          "Apoyo"
+        ],
+        "enum": [
+          0,
+          1,
+          2
+        ]
+      },
+      "RACPDBackendDomainEnumsRolEnDependiente": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "CuidadorPrincipal",
+          "Apoyo"
+        ],
+        "enum": [
+          0,
+          1
+        ]
+      },
+      "RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "apellido": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosAdministracionCambiarRolCambiarRolRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "rol": {
+            "$ref": "#/components/schemas/RACPDBackendDomainEnumsRol"
+          }
+        }
+      },
+      "RACPDBackendFeaturesUsuariosAdministracionCambiarEstadoCambiarEstadoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "estado"
+        ],
+        "properties": {
+          "estado": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesVinculosListarVinculosVinculoResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "vinculoId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreCompletoUsuario": {
+            "type": "string"
+          },
+          "correoUsuario": {
+            "type": "string"
+          },
+          "rolEnDependiente": {
+            "type": "string"
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesVinculosAgregarVinculoAgregarVinculoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "perfilDependienteId",
+          "usuarioId",
+          "rolEnDependiente"
+        ],
+        "properties": {
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1,
+            "nullable": false
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "guid",
+            "minLength": 1,
+            "nullable": false
+          },
+          "rolEnDependiente": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "tipoSangre": {
+            "type": "string"
+          },
+          "condicionesCronicas": {
+            "type": "string"
+          },
+          "alergiasEstructuradas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contactosEmergencia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesObtenerDependienteContactoEmergenciaDto"
+            }
+          },
+          "version": {
+            "type": "integer"
+          },
+          "rolEnDependiente": {
+            "type": "string"
+          },
+          "puedeEditar": {
+            "type": "boolean"
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesObtenerDependienteContactoEmergenciaDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "relacion": {
+            "type": "string"
+          },
+          "telefonoWhatsApp": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesListarMisDependientesDependienteResumenResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "perfilId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "tipoSangre": {
+            "type": "string"
+          },
+          "rolEnDependiente": {
+            "type": "string"
+          },
+          "puedeEditar": {
+            "type": "boolean"
+          },
+          "fechaAsignacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "condicionesCronicas": {
+            "type": "string",
+            "nullable": true
+          },
+          "alergiasEstructuradas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nombreCompleto",
+          "tipoSangre",
+          "alergiasEstructuradas"
+        ],
+        "properties": {
+          "nombreCompleto": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "nullable": false
+          },
+          "tipoSangre": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          },
+          "condicionesCronicas": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "alergiasEstructuradas": {
+            "type": "array",
+            "maxLength": 100,
+            "minLength": 0,
+            "nullable": false,
+            "items": {
+              "type": "string"
+            }
+          },
+          "contactosEmergencia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteContactoEmergenciaDto"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteContactoEmergenciaDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "relacion": {
+            "type": "string"
+          },
+          "telefonoWhatsApp": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nombreCompleto",
+          "tipoSangre",
+          "alergiasEstructuradas",
+          "version"
+        ],
+        "properties": {
+          "nombreCompleto": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 3,
+            "nullable": false
+          },
+          "tipoSangre": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          },
+          "condicionesCronicas": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "alergiasEstructuradas": {
+            "type": "array",
+            "maxLength": 100,
+            "minLength": 0,
+            "nullable": false,
+            "items": {
+              "type": "string"
+            }
+          },
+          "contactosEmergencia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteContactoEmergenciaDto"
+            }
+          },
+          "version": {
+            "type": "integer",
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteContactoEmergenciaDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "relacion": {
+            "type": "string"
+          },
+          "telefonoWhatsApp": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesIdentidadInicioSesionIniciarSesionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/RACPDBackendFeaturesIdentidadInicioSesionUsuarioDto"
+          }
+        }
+      },
+      "RACPDBackendFeaturesIdentidadInicioSesionUsuarioDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesIdentidadInicioSesionIniciarSesionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "correo",
+          "contrasena"
+        ],
+        "properties": {
+          "correo": {
+            "type": "string",
+            "format": "email",
+            "minLength": 1,
+            "pattern": "^[^@]+@[^@]+$",
+            "nullable": false
+          },
+          "contrasena": {
+            "type": "string",
+            "minLength": 1,
+            "nullable": false
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaReservarResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaReservaExitosaDto"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaReservaExitosaDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "reservaId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "bloqueId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "confirmadoEn": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaBloqueTurnoDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "fecha": {
+            "type": "string"
+          },
+          "horaInicio": {
+            "type": "string"
+          },
+          "horaFin": {
+            "type": "string"
+          },
+          "cuposMaximos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cuposDisponibles": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "creadoPor": {
+            "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaUsuarioResumenDto"
+          },
+          "reservas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaReservaTurnoDto"
+            }
+          },
+          "puedoReservar": {
+            "type": "boolean"
+          },
+          "yaReservé": {
+            "type": "boolean"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreDependiente": {
+            "type": "string"
+          },
+          "tipoRecurrencia": {
+            "type": "string"
+          },
+          "intervaloSemanas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "tareas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaTareaTurnoDto"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaUsuarioResumenDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaReservaTurnoDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaUsuarioResumenDto"
+          },
+          "esMiReserva": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaTareaTurnoDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaListarResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaBloqueTurnoDto"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaEliminarResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaEditarBloqueResponseDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaEditarBloqueRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fecha": {
+            "type": "string"
+          },
+          "horaInicio": {
+            "type": "string"
+          },
+          "horaFin": {
+            "type": "string"
+          },
+          "cuposMaximos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "tipoRecurrencia": {
+            "type": "string"
+          },
+          "intervaloSemanas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "tareas": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaTareaTurnoItemRequest"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaTareaTurnoItemRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "orden": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaCrearBloqueResponseDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaCrearBloqueRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "fecha": {
+            "type": "string"
+          },
+          "horaInicio": {
+            "type": "string"
+          },
+          "horaFin": {
+            "type": "string"
+          },
+          "cuposMaximos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "tipoRecurrencia": {
+            "type": "string"
+          },
+          "intervaloSemanas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "tareas": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaTareaTurnoItemRequest"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaCancelarReservaResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "JWTBearerAuth": {
+        "type": "http",
+        "description": "Enter a JWT token to authorize the requests...",
+        "scheme": "Bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  }
+}

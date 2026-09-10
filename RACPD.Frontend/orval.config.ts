@@ -1,8 +1,15 @@
 import { defineConfig } from 'orval';
 
+// En entornos locales sin backend activo o en CI/CD (Vercel/GitHub Actions),
+// usamos el archivo swagger.json commiteado como Fuente Única de Verdad (SSoT).
+// Para actualizar este archivo cuando cambie el backend, ejecutar: npm run api:fetch
+const swaggerSource = './swagger.json';
+
 export default defineConfig({
   racpd: {
-    input: 'http://localhost:5000/swagger/v1/swagger.json',
+    input: {
+      target: swaggerSource,
+    },
     output: {
       mode: 'tags-split',
       target: 'src/api/generated/endpoints.ts',
@@ -20,3 +27,4 @@ export default defineConfig({
     },
   },
 });
+

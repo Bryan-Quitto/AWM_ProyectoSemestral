@@ -14,8 +14,11 @@ namespace RACPD.Backend.Features.Agenda.Editar;
 ///   <c>VinculoDependiente</c> activo con rol <see cref="RolEnDependiente.CuidadorPrincipal"/>
 ///   sobre el (nuevo o mismo) dependiente.
 /// - Recurrencia y Tareas: mismas reglas que en Crear.
+/// - El path segment <c>{id}</c> se bindea automáticamente en
+///   <see cref="EditarBloqueRequest.Id"/> por FastEndpoints (requiere
+///   DTO con propiedades <c>{ get; set; }</c>).
 /// </summary>
-public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResponseDto>
+public class EditarBloqueEndpoint : Endpoint<EditarBloqueRequest, EditarBloqueResponseDto>
 {
     private readonly AppDbContext _dbContext;
 
@@ -30,7 +33,7 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         Roles(Rol.CuidadorPrincipal.ToString());
     }
 
-    public override async Task HandleAsync(EditarBloqueConId req, CancellationToken ct)
+    public override async Task HandleAsync(EditarBloqueRequest req, CancellationToken ct)
     {
         var usuarioId = UsuarioActualHelper.ObtenerUsuarioId(User);
         if (usuarioId is null)
@@ -39,16 +42,15 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
             return;
         }
 
-        if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
+        // === Validación de Id (binding automático desde la ruta) ===
+        if (req.Id == Guid.Empty)
         {
             await ProblemDetailsHelper.EnviarErroresValidacionAsync(
                 HttpContext,
-                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El identificador del bloque es obligatorio."] },
                 "El identificador del bloque es inválido.");
             return;
         }
-
-        var body = req.Data;
 
         // === Parseo ===
         var erroresParseo = new Dictionary<string, IEnumerable<string>>();
@@ -56,17 +58,17 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         TimeOnly? horaInicio = null;
         TimeOnly? horaFin = null;
 
-        if (!DateOnly.TryParse(body.Fecha, out var f))
+        if (!DateOnly.TryParse(req.Fecha, out var f))
             erroresParseo["fecha"] = ["La fecha no tiene un formato válido (YYYY-MM-DD)."];
         else
             fecha = f;
 
-        if (!TimeOnly.TryParse(body.HoraInicio, out var hi))
+        if (!TimeOnly.TryParse(req.HoraInicio, out var hi))
             erroresParseo["horaInicio"] = ["La hora de inicio no tiene un formato válido (HH:mm)."];
         else
             horaInicio = hi;
 
-        if (!TimeOnly.TryParse(body.HoraFin, out var hf))
+        if (!TimeOnly.TryParse(req.HoraFin, out var hf))
             erroresParseo["horaFin"] = ["La hora de fin no tiene un formato válido (HH:mm)."];
         else
             horaFin = hf;
@@ -83,7 +85,7 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         // === Carga del bloque ===
         var bloque = await _dbContext.BloquesTurno
             .Include(b => b.Reservas.Where(r => r.Activa))
-            .FirstOrDefaultAsync(b => b.Id == bloqueId, ct);
+            .FirstOrDefaultAsync(b => b.Id == req.Id, ct);
 
         if (bloque == null)
         {
@@ -107,10 +109,10 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         // === Validación de PerfilDependienteId + Recurrencia + Tareas ===
         var erroresNegocio = new Dictionary<string, IEnumerable<string>>();
 
-        if (body.PerfilDependienteId == Guid.Empty)
+        if (req.PerfilDependienteId == Guid.Empty)
             erroresNegocio["perfilDependienteId"] = ["Debe seleccionar un dependiente válido."];
 
-        if (!Enum.TryParse<TipoRecurrencia>(body.TipoRecurrencia, ignoreCase: true, out var tipoRecurrencia))
+        if (!Enum.TryParse<TipoRecurrencia>(req.TipoRecurrencia, ignoreCase: true, out var tipoRecurrencia))
         {
             erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica, Indefinida o Semanas."];
             tipoRecurrencia = TipoRecurrencia.Unica;
@@ -118,28 +120,28 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
 
         if (tipoRecurrencia == TipoRecurrencia.Semanas)
         {
-            if (body.IntervaloSemanas is null || body.IntervaloSemanas < 1 || body.IntervaloSemanas > 24)
+            if (req.IntervaloSemanas is null || req.IntervaloSemanas < 1 || req.IntervaloSemanas > 24)
             {
                 erroresNegocio["intervaloSemanas"] = ["Debe especificar un intervalo entre 1 y 24 semanas."];
             }
         }
-        else if (body.IntervaloSemanas is not null)
+        else if (req.IntervaloSemanas is not null)
         {
             erroresNegocio["intervaloSemanas"] = ["El intervalo solo aplica para recurrencia semanal."];
         }
 
         var tareasNormalizadas = new List<TareaTurnoItem>();
-        if (body.Tareas is not null && body.Tareas.Count > 0)
+        if (req.Tareas is not null && req.Tareas.Count > 0)
         {
-            if (body.Tareas.Count > 20)
+            if (req.Tareas.Count > 20)
             {
                 erroresNegocio["tareas"] = ["Máximo 20 tareas permitidas por bloque."];
             }
             else
             {
-                for (var i = 0; i < body.Tareas.Count; i++)
+                for (var i = 0; i < req.Tareas.Count; i++)
                 {
-                    var t = body.Tareas[i];
+                    var t = req.Tareas[i];
                     var desc = (t.Descripcion ?? string.Empty).Trim();
                     if (desc.Length < 1 || desc.Length > 200)
                     {
@@ -164,18 +166,18 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         if (horaFin!.Value <= horaInicio!.Value)
             erroresNegocio["horaFin"] = ["La hora de fin debe ser posterior a la hora de inicio."];
 
-        if (body.CuposMaximos < 1 || body.CuposMaximos > 5)
+        if (req.CuposMaximos < 1 || req.CuposMaximos > 5)
             erroresNegocio["cuposMaximos"] = ["Los cupos deben estar entre 1 y 5."];
 
         var reservasActivas = bloque.Reservas.Count(r => r.Activa);
-        if (body.CuposMaximos < reservasActivas)
+        if (req.CuposMaximos < reservasActivas)
         {
             erroresNegocio["cuposMaximos"] = [
-                $"No se puede reducir los cupos a {body.CuposMaximos} porque ya hay {reservasActivas} reserva(s) activa(s)."
+                $"No se puede reducir los cupos a {req.CuposMaximos} porque ya hay {reservasActivas} reserva(s) activa(s)."
             ];
         }
 
-        if (!string.IsNullOrWhiteSpace(body.Descripcion) && body.Descripcion.Length > 200)
+        if (!string.IsNullOrWhiteSpace(req.Descripcion) && req.Descripcion.Length > 200)
             erroresNegocio["descripcion"] = ["La descripción no puede exceder 200 caracteres."];
 
         if (erroresNegocio.Count > 0)
@@ -193,7 +195,7 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
             .AsNoTracking()
             .AnyAsync(v =>
                 v.UsuarioId == usuarioId.Value &&
-                v.PerfilDependienteId == body.PerfilDependienteId &&
+                v.PerfilDependienteId == req.PerfilDependienteId &&
                 v.Activo &&
                 v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal &&
                 v.PerfilDependiente.Activo,
@@ -212,11 +214,11 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         bloque.Fecha = fecha!.Value;
         bloque.HoraInicio = horaInicio!.Value;
         bloque.HoraFin = horaFin!.Value;
-        bloque.CuposMaximos = body.CuposMaximos;
-        bloque.Descripcion = body.Descripcion?.Trim();
-        bloque.PerfilDependienteId = body.PerfilDependienteId;
+        bloque.CuposMaximos = req.CuposMaximos;
+        bloque.Descripcion = req.Descripcion?.Trim();
+        bloque.PerfilDependienteId = req.PerfilDependienteId;
         bloque.TipoRecurrencia = tipoRecurrencia;
-        bloque.IntervaloSemanas = tipoRecurrencia == TipoRecurrencia.Semanas ? body.IntervaloSemanas : null;
+        bloque.IntervaloSemanas = tipoRecurrencia == TipoRecurrencia.Semanas ? req.IntervaloSemanas : null;
         bloque.Tareas = tareasNormalizadas;
         bloque.FechaModificacion = DateTimeOffset.UtcNow;
 
@@ -225,9 +227,3 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueConId, EditarBloqueResp
         await Send.OkAsync(new EditarBloqueResponseDto("Bloque de turno actualizado exitosamente."), ct);
     }
 }
-
-/// <summary>
-/// Wrapper necesario porque FastEndpoints envía la request en <c>req.Data</c>
-/// cuando la ruta incluye path params.
-/// </summary>
-public record EditarBloqueConId(EditarBloqueRequest Data);
