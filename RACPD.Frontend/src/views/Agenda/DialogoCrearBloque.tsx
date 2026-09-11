@@ -1,6 +1,6 @@
 import { Controller, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { X } from 'lucide-react';
+import { X, Info } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import { Boton } from '../../components/Boton';
 import { BuscadorDinamico, type OpcionBuscador } from '../../components/BuscadorDinamico';
@@ -25,6 +25,25 @@ interface DialogoCrearBloqueProps {
 }
 
 const hoy = new Date().toISOString().split('T')[0];
+
+/**
+ * Convierte una fecha `YYYY-MM-DD` al nombre del día de la semana en
+ * español de Ecuador, evitando el clásico bug de desfase horario (UTC vs local).
+ *
+ * `new Date('2026-09-10')` se interpreta como UTC midnight, lo que en zonas
+ * horarias negativas como America/Guayaquil puede mostrar el día anterior.
+ * Por eso parseamos `[year, month, day]` y construimos la fecha con el mes
+ * en base 0 (como espera `Date`).
+ */
+const obtenerNombreDiaSemana = (fechaStr: string): string => {
+  if (!fechaStr) return 'días programados';
+  const [year, month, day] = fechaStr.split('-').map(Number);
+  if (!year || !month || !day) return 'días programados';
+  const date = new Date(year, month - 1, day);
+  const dia = date.toLocaleDateString('es-EC', { weekday: 'long' });
+  // Pluralización para sábados / domingos ("todos los sábado" -> "todos los sábados").
+  return dia.endsWith('s') ? dia : `${dia}s`;
+};
 
 export const DialogoCrearBloque = ({
   abierto,
@@ -82,6 +101,13 @@ export const DialogoCrearBloque = ({
   const tipoRecurrencia = useWatch({
     control: form.control,
     name: 'tipoRecurrencia',
+  });
+
+  // Fecha observada para calcular el día de la semana en el microcopy
+  // de "Indefinida" (se actualiza solo cuando el cuidador cambia la fecha).
+  const fechaForm = useWatch({
+    control: form.control,
+    name: 'fecha',
   });
 
   // Hidratar el form cuando se abre / cambia el bloque a editar.
@@ -320,8 +346,8 @@ export const DialogoCrearBloque = ({
                 <SelectorDinamico
                   id="tipoRecurrencia"
                   opciones={[
-                    { valor: 'Unica', etiqueta: 'Una sola vez' },
-                    { valor: 'Indefinida', etiqueta: 'Indefinida' },
+                    { valor: 'Unica', etiqueta: 'Una sola vez (sin repetición)' },
+                    { valor: 'Indefinida', etiqueta: 'Todas las semanas (continuo)' },
                     { valor: 'Semanas', etiqueta: 'Cada N semanas' },
                   ]}
                   value={field.value}
@@ -348,6 +374,22 @@ export const DialogoCrearBloque = ({
               </div>
             )}
           />
+
+          {/* Microcopy para "Indefinida": explica en lenguaje natural que el
+              turno se repetirá todos los <día> de forma continua. Se actualiza
+              automáticamente si el cuidador cambia la fecha. */}
+          {tipoRecurrencia === 'Indefinida' && (
+            <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                Este turno se repetirá todos los{' '}
+                <span className="font-medium">
+                  {obtenerNombreDiaSemana(fechaForm ?? '')}
+                </span>{' '}
+                de forma indefinida.
+              </span>
+            </p>
+          )}
 
           {/* Intervalo condicional */}
           {tipoRecurrencia === 'Semanas' && (
