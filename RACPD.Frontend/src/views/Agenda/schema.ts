@@ -53,11 +53,17 @@ export const bloqueFormSchema = z
       .or(z.literal('')),
     perfilDependienteId: z.string().uuid('Debe seleccionar un dependiente'),
     tipoRecurrencia: tipoRecurrenciaEnum,
-    intervaloSemanas: z.number().int().min(1).max(24).optional(),
+    intervaloSemanas: z
+      .number({ error: 'Debe ingresar un número de semanas válido' })
+      .int('Debe ser un número entero')
+      .min(1, 'Debe ser al menos 1 semana')
+      .max(24, 'No puede superar las 24 semanas')
+      .optional()
+      .or(z.nan()),
     tareas: z
       .array(tareaSchema)
-      .max(20, 'Máximo 20 tareas permitidas')
-      .optional(),
+      .min(1, 'Debe agregar al menos una tarea para el bloque de turno')
+      .max(20, 'Máximo 20 tareas permitidas'),
   })
   .superRefine((val, ctx) => {
     if (

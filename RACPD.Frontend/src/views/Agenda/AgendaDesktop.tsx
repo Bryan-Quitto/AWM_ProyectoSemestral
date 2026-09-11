@@ -48,6 +48,11 @@ export const AgendaDesktop = () => {
     bloqueId: null,
   });
 
+  const [confirmEliminar, setConfirmEliminar] = useState<{ abierto: boolean; bloqueId: string | null }>({
+    abierto: false,
+    bloqueId: null,
+  });
+
   const { data: perfilData } = useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint();
   const esPrincipal = perfilData?.data?.rol === 'CuidadorPrincipal';
   const usuarioId = perfilData?.data?.id;
@@ -156,10 +161,14 @@ export const AgendaDesktop = () => {
     }
   };
 
-  const handleEliminar = async (id: string) => {
-    if (!window.confirm('¿Eliminar este bloque?')) return;
+  const handleEliminar = (id: string) => {
+    setConfirmEliminar({ abierto: true, bloqueId: id });
+  };
+
+  const handleConfirmarEliminar = async () => {
+    if (!confirmEliminar.bloqueId) return;
     try {
-      const respuesta = await eliminarBloque(id) as any;
+      const respuesta = await eliminarBloque(confirmEliminar.bloqueId) as any;
       if (respuesta?.status >= 400) {
         mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
@@ -168,6 +177,8 @@ export const AgendaDesktop = () => {
       mostrarToast('Bloque eliminado', 'exito');
     } catch {
       mostrarToast('Error de conexión', 'error');
+    } finally {
+      setConfirmEliminar({ abierto: false, bloqueId: null });
     }
   };
 
@@ -335,6 +346,16 @@ export const AgendaDesktop = () => {
         onConfirmar={handleConfirmarCancelar}
         onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null })}
         cargando={cancelando}
+        tipo="peligro"
+      />
+
+      <ConfirmarAccion
+        abierto={confirmEliminar.abierto}
+        titulo="Eliminar bloque de turno"
+        mensaje="¿Estás seguro de que deseas eliminar este bloque? Esta acción no se puede deshacer."
+        onConfirmar={handleConfirmarEliminar}
+        onCancelar={() => setConfirmEliminar({ abierto: false, bloqueId: null })}
+        cargando={eliminando}
         tipo="peligro"
       />
 

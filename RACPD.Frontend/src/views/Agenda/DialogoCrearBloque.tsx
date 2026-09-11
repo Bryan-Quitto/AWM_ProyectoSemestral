@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import { Boton } from '../../components/Boton';
 import { BuscadorDinamico, type OpcionBuscador } from '../../components/BuscadorDinamico';
+import { SelectorDinamico } from '../../components/SelectorDinamico';
 import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint } from '../../api/generated/api/api';
 import {
   bloqueFormSchema,
@@ -38,6 +39,8 @@ export const DialogoCrearBloque = ({
 
   const form = useForm<BloqueFormData>({
     resolver: zodResolver(bloqueFormSchema),
+    mode: 'onBlur',
+    reValidateMode: 'onChange',
     defaultValues: {
       fecha: hoy,
       horaInicio: '08:00',
@@ -136,9 +139,12 @@ export const DialogoCrearBloque = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Overlay decorativo: NO cierra el diálogo al hacer clic fuera.
+          Solo se cierra por la X, el botón "Cancelar" o el submit.
+          Esto evita pérdida accidental de datos del cuidador. */}
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onCerrar}
+        aria-hidden="true"
       />
 
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-hidden flex flex-col">
@@ -180,7 +186,11 @@ export const DialogoCrearBloque = ({
                   id="perfilDependienteId"
                   opciones={opcionesDependientes}
                   value={field.value ?? ''}
-                  onChange={(v) => field.onChange(String(v))}
+                  onChange={(v) => {
+                    field.onChange(String(v));
+                    void form.trigger('perfilDependienteId');
+                  }}
+                  onBlur={field.onBlur}
                   placeholder="Buscar dependiente…"
                   disabled={isMutating}
                   error={fieldState.error?.message}
@@ -190,6 +200,11 @@ export const DialogoCrearBloque = ({
                       : 'Sin coincidencias.'
                   }
                 />
+                {fieldState.error?.message && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {fieldState.error.message}
+                  </p>
+                )}
               </div>
             )}
           />
@@ -204,7 +219,11 @@ export const DialogoCrearBloque = ({
               {...form.register('fecha')}
               min={hoy}
               disabled={isMutating}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer ${
+                form.formState.errors.fecha
+                  ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                  : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+              }`}
             />
             {form.formState.errors.fecha && (
               <p className="text-red-500 text-sm mt-1">
@@ -223,7 +242,11 @@ export const DialogoCrearBloque = ({
                 type="time"
                 {...form.register('horaInicio')}
                 disabled={isMutating}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer ${
+                  form.formState.errors.horaInicio
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                }`}
               />
               {form.formState.errors.horaInicio && (
                 <p className="text-red-500 text-sm mt-1">
@@ -239,7 +262,11 @@ export const DialogoCrearBloque = ({
                 type="time"
                 {...form.register('horaFin')}
                 disabled={isMutating}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer ${
+                  form.formState.errors.horaFin
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                }`}
               />
               {form.formState.errors.horaFin && (
                 <p className="text-red-500 text-sm mt-1">
@@ -250,60 +277,77 @@ export const DialogoCrearBloque = ({
           </div>
 
           {/* Cupos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Cupos disponibles
-            </label>
-            <select
-              {...form.register('cuposMaximos', { valueAsNumber: true })}
-              disabled={isMutating}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
-            >
-              <option value={1}>1 cupo</option>
-              <option value={2}>2 cupos</option>
-              <option value={3}>3 cupos</option>
-              <option value={4}>4 cupos</option>
-              <option value={5}>5 cupos</option>
-            </select>
-            {form.formState.errors.cuposMaximos && (
-              <p className="text-red-500 text-sm mt-1">
-                {form.formState.errors.cuposMaximos.message as string}
-              </p>
+          <Controller
+            control={form.control}
+            name="cuposMaximos"
+            render={({ field, fieldState }) => (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cupos disponibles
+                </label>
+                <SelectorDinamico
+                  id="cuposMaximos"
+                  opciones={[
+                    { valor: 1, etiqueta: '1 cupo' },
+                    { valor: 2, etiqueta: '2 cupos' },
+                    { valor: 3, etiqueta: '3 cupos' },
+                    { valor: 4, etiqueta: '4 cupos' },
+                    { valor: 5, etiqueta: '5 cupos' },
+                  ]}
+                  value={field.value}
+                  onChange={(v) => field.onChange(Number(v))}
+                  disabled={isMutating}
+                  error={fieldState.error?.message}
+                />
+                {fieldState.error?.message && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          />
 
           {/* Recurrencia */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recurrencia
-            </label>
-            <select
-              {...form.register('tipoRecurrencia', {
-                onChange: (e) => {
-                  // Evita bloqueo: si el usuario sale de "Semanas" mientras
-                  // había un valor en `intervaloSemanas`, el input se desmonta
-                  // pero RHF retiene el valor en memoria → Zod marcaría error
-                  // sobre un campo invisible. Limpiamos al cambiar.
-                  if (e.target.value !== 'Semanas') {
-                    form.setValue('intervaloSemanas', undefined, {
-                      shouldValidate: true,
-                    });
-                  }
-                },
-              })}
-              disabled={isMutating}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
-            >
-              <option value="Unica">Una sola vez</option>
-              <option value="Indefinida">Indefinida</option>
-              <option value="Semanas">Cada N semanas</option>
-            </select>
-            {form.formState.errors.tipoRecurrencia && (
-              <p className="text-red-500 text-sm mt-1">
-                {form.formState.errors.tipoRecurrencia.message as string}
-              </p>
+          <Controller
+            control={form.control}
+            name="tipoRecurrencia"
+            render={({ field, fieldState }) => (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Recurrencia
+                </label>
+                <SelectorDinamico
+                  id="tipoRecurrencia"
+                  opciones={[
+                    { valor: 'Unica', etiqueta: 'Una sola vez' },
+                    { valor: 'Indefinida', etiqueta: 'Indefinida' },
+                    { valor: 'Semanas', etiqueta: 'Cada N semanas' },
+                  ]}
+                  value={field.value}
+                  onChange={(v) => {
+                    field.onChange(String(v));
+                    // Evita bloqueo: si el usuario sale de "Semanas" mientras
+                    // había un valor en `intervaloSemanas`, el input se desmonta
+                    // pero RHF retiene el valor en memoria → Zod marcaría error
+                    // sobre un campo invisible. Limpiamos al cambiar.
+                    if (v !== 'Semanas') {
+                      form.setValue('intervaloSemanas', undefined, {
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                  disabled={isMutating}
+                  error={fieldState.error?.message}
+                />
+                {fieldState.error?.message && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {fieldState.error.message}
+                  </p>
+                )}
+              </div>
             )}
-          </div>
+          />
 
           {/* Intervalo condicional */}
           {tipoRecurrencia === 'Semanas' && (
@@ -317,7 +361,11 @@ export const DialogoCrearBloque = ({
                 max={24}
                 {...form.register('intervaloSemanas', { valueAsNumber: true })}
                 disabled={isMutating}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer"
+                className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer ${
+                  form.formState.errors.intervaloSemanas
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                    : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+                }`}
               />
               {form.formState.errors.intervaloSemanas && (
                 <p className="text-red-500 text-sm mt-1">
@@ -353,7 +401,10 @@ export const DialogoCrearBloque = ({
             render={({ field }) => (
               <ChecklistTareas
                 tareas={(field.value ?? []) as TareaFormValue[]}
-                onChange={(tareas) => field.onChange(tareas)}
+                onChange={(tareas) => {
+                  field.onChange(tareas);
+                  void form.trigger('tareas');
+                }}
                 disabled={isMutating}
               />
             )}

@@ -124,7 +124,7 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     PuedoReservar: puedoReservar,
                     YaReservé: miReserva != null,
                     // === NUEVO (Persona 1 / Semana 1) ===
-                    PerfilDependienteId: b.PerfilDependienteId ?? Guid.Empty,
+                    PerfilDependienteId: b.PerfilDependienteId,
                     NombreDependiente: b.PerfilDependiente?.NombreCompleto ?? string.Empty,
                     TipoRecurrencia: b.TipoRecurrencia.ToString(),
                     IntervaloSemanas: b.IntervaloSemanas,

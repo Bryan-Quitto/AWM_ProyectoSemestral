@@ -95,7 +95,7 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
             )).ToList(),
             PuedoReservar: puedoReservar,
             YaReservé: miReserva != null,
-            PerfilDependienteId: bloque.PerfilDependienteId ?? Guid.Empty,
+            PerfilDependienteId: bloque.PerfilDependienteId,
             NombreDependiente: bloque.PerfilDependiente?.NombreCompleto ?? string.Empty,
             TipoRecurrencia: bloque.TipoRecurrencia.ToString(),
             IntervaloSemanas: bloque.IntervaloSemanas,

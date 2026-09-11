@@ -15,9 +15,8 @@ public class BloqueTurno
     public int CuposMaximos { get; set; } = 1;
 
     // === Persona 1 / Semana 1 ===
-    // Nullable en Fase A de la migración. Se consolidará a NOT NULL en Fase C.
-    // El handler rechaza requests sin este valor (RF-1).
-    public Guid? PerfilDependienteId { get; set; }
+    // NOT NULL desde Fase C. El handler rechaza requests sin este valor (RF-1).
+    public Guid PerfilDependienteId { get; set; }
     public TipoRecurrencia TipoRecurrencia { get; set; } = TipoRecurrencia.Unica;
     public int? IntervaloSemanas { get; set; }
     public List<TareaTurnoItem> Tareas { get; set; } = [];
