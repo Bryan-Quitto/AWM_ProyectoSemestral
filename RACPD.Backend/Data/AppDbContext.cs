@@ -111,12 +111,30 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Descripcion)
                 .HasMaxLength(200);
 
+            // Enum persistido como string para legibilidad y consistencia
+            entity.Property(e => e.TipoRecurrencia)
+                .HasConversion<string>();
+
+            // Mapeo JSON nativo de EF Core (PostgreSQL jsonb)
+            entity.OwnsMany(e => e.Tareas, builder =>
+            {
+                builder.ToJson();
+            });
+
+            // Relación con PerfilDependiente (null permitido en Fase A).
+            // Se consolidará a NOT NULL + FK Restrict en Fase C tras poblado de datos legacy.
+            entity.HasOne(e => e.PerfilDependiente)
+                .WithMany()
+                .HasForeignKey(e => e.PerfilDependienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(e => e.CreadoPor)
                 .WithMany()
                 .HasForeignKey(e => e.CreadoPorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.Fecha);
+            entity.HasIndex(e => e.PerfilDependienteId);
         });
 
         // === ReservaTurno ===

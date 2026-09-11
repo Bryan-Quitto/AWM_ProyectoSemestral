@@ -23,7 +23,8 @@ ESTRICTAMENTE PROHIBIDO devolver errores HTTP como texto plano o cuerpos vacíos
 
 ### 🖥️ Frontend y Red (Orval-Only & Patrón Mapper)
 - Todo consumo HTTP debe hacerse mediante los hooks autogenerados por Orval vía `fetch` nativo y SWR.
-- **Generación de Contratos:** Para hidratar `src/api/generated`, asegúrate de que el Backend esté corriendo (para que exponga Swagger) y ejecuta `npm run api:generate` en el Frontend.
+- **Generación de Contratos 100% Automatizada:** Ejecuta `npm run api:generate`. Este comando ejecuta automáticamente `npm run swagger:export` (que invoca `RACPD.Backend` con `--export-swagger` en un puerto efímero sin requerir que el backend esté corriendo previamente ni bloquear puertos) y luego corre `orval`.
+- Si solo deseas regenerar los tipos TypeScript sin tocar `swagger.json`, puedes usar `npm run api:gen`.
 - **PROHIBIDO** modificar los archivos generados por Orval. Usa el flujo automatizado para actualizar.
 - **ZERO-INDULGENCE EN TIPOS:** Prohibidas las aserciones destructivas (`as any`). Usa el Patrón Mapper (`mappers.ts`) si la UI necesita un formato distinto al DTO.
 

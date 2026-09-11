@@ -2,7 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { routeTree } from './routeTree.gen'
+import { inicializarZodEs } from './lib/zodEs'
 import './index.css'
+
+// Configurar traducciones en español globales para Zod
+inicializarZodEs()
 
 // `isAuthenticated` se consulta de forma síncrona para evitar redirects
 // adicionales durante la inicialización del router. La verificación real y

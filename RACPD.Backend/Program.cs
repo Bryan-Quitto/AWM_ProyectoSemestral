@@ -93,6 +93,7 @@ builder.Services.AddProblemDetails();
 
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
+DocumentOptions.SwaggerExportPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "RACPD.Frontend"));
 builder.Services.AddHttpClient();
 
 // Configurar Supabase Client.
@@ -139,4 +140,28 @@ app.UseAuthorization();
 app.UseFastEndpoints();
 app.UseSwaggerGen();
 
+// Si se ejecuta con el flag '--export-swagger', exporta el esquema OpenAPI sin bloquear puertos fijos y finaliza
+if (args.Contains("--export-swagger"))
+{
+    var rutaFrontend = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", "RACPD.Frontend", "swagger.json"));
+    Console.WriteLine($"[swagger:export] Generando esquema OpenAPI en: {rutaFrontend}...");
+
+    // Iniciar en puerto efímero (0 = el SO asigna puerto libre disponible)
+    app.Urls.Clear();
+    app.Urls.Add("http://127.0.0.1:0");
+    await app.StartAsync();
+
+    var direccionEfectiva = app.Urls.First();
+    using var httpClient = new HttpClient { BaseAddress = new Uri(direccionEfectiva) };
+    var respuestaSwagger = await httpClient.GetStringAsync("/swagger/v1/swagger.json");
+
+    await app.StopAsync();
+    await File.WriteAllTextAsync(rutaFrontend, respuestaSwagger);
+
+    Console.WriteLine("[swagger:export] ✔ Esquema OpenAPI exportado exitosamente.");
+    return;
+}
+
 app.Run();
+
+

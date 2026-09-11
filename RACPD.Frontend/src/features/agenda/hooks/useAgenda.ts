@@ -8,7 +8,10 @@ import {
 } from '../../../api/generated/api/api';
 import useSWRMutation from 'swr/mutation';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../../api/generated/model';
-import type { RACPDBackendFeaturesAgendaCrearRequest, RACPDBackendFeaturesAgendaEditarRequest } from '../../../api/generated/model';
+import type {
+  RACPDBackendFeaturesAgendaCrearBloqueRequest,
+  RACPDBackendFeaturesAgendaEditarBloqueRequest,
+} from '../../../api/generated/model';
 
 export const useAgenda = () => {
   const { data, error, isLoading, mutate } = useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint({
@@ -30,18 +33,25 @@ export const useAgenda = () => {
 export const useCrearBloque = () => {
   return useSWRMutation(
     '/api/agenda',
-    async (_: string, { arg }: { arg: RACPDBackendFeaturesAgendaCrearRequest }) => {
+    async (_: string, { arg }: { arg: RACPDBackendFeaturesAgendaCrearBloqueRequest }) => {
       return rACPDBackendFeaturesAgendaCrearCrearBloqueEndpoint(arg);
     }
   );
 };
 
-// Hook para editar bloque (PUT con id en path)
+// Hook para editar bloque (PUT con id en path).
+// El caller pasa el objeto plano del formulario más el `id` del bloque.
+// El hook desestructura para separar el path segment `id` del body
+// (la firma Orval es `editarBloqueEndpoint(id, body)`).
 export const useEditarBloque = () => {
   return useSWRMutation(
     '/api/agenda',
-    async (_: string, { arg }: { arg: { id: string; data: RACPDBackendFeaturesAgendaEditarRequest } }) => {
-      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(arg.id, arg.data);
+    async (
+      _: string,
+      { arg }: { arg: { id: string } & RACPDBackendFeaturesAgendaEditarBloqueRequest }
+    ) => {
+      const { id, ...body } = arg;
+      return rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint(id, body);
     }
   );
 };
@@ -78,3 +88,4 @@ export const useCancelarReserva = () => {
 
 // Tipos re-exportados
 export type { RACPDBackendFeaturesAgendaBloqueTurnoDto };
+export type { RACPDBackendFeaturesAgendaCrearBloqueRequest, RACPDBackendFeaturesAgendaEditarBloqueRequest };

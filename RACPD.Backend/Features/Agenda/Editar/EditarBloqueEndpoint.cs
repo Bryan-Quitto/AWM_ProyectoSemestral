@@ -1,24 +1,24 @@
-using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
+using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
 using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Features.Agenda.Editar;
 
-// Usamos strings para recibir del frontend y parseamos manualmente
-public record Request(
-    string Fecha,
-    string HoraInicio,
-    string HoraFin,
-    int CuposMaximos,
-    string? Descripcion
-);
-
-public record Response(string Mensaje);
-
-public class EditarBloqueEndpoint : Endpoint<Request, Response>
+/// <summary>
+/// Endpoint PUT /api/agenda/{id} — Edita un bloque de turno.
+/// Persona 1 / Semana 1:
+/// - Tenancy clínica: el usuario debe ser creador del bloque Y tener un
+///   <c>VinculoDependiente</c> activo con rol <see cref="RolEnDependiente.CuidadorPrincipal"/>
+///   sobre el (nuevo o mismo) dependiente.
+/// - Recurrencia y Tareas: mismas reglas que en Crear.
+/// - El path segment <c>{id}</c> se bindea automáticamente en
+///   <see cref="EditarBloqueRequest.Id"/> por FastEndpoints (requiere
+///   DTO con propiedades <c>{ get; set; }</c>).
+/// </summary>
+public class EditarBloqueEndpoint : Endpoint<EditarBloqueRequest, EditarBloqueResponseDto>
 {
     private readonly AppDbContext _dbContext;
 
@@ -33,56 +33,45 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
         Roles(Rol.CuidadorPrincipal.ToString());
     }
 
-    public override async Task HandleAsync(Request req, CancellationToken ct)
+    public override async Task HandleAsync(EditarBloqueRequest req, CancellationToken ct)
     {
-        var usuarioIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
-            ?? User.FindFirstValue("sub");
-
-        if (string.IsNullOrEmpty(usuarioIdString) || !Guid.TryParse(usuarioIdString, out var usuarioId))
+        var usuarioId = UsuarioActualHelper.ObtenerUsuarioId(User);
+        if (usuarioId is null)
         {
             await ProblemDetailsHelper.EnviarNoAutenticadoAsync(HttpContext);
             return;
         }
 
-        if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
+        // === Validación de Id (binding automático desde la ruta) ===
+        if (req.Id == Guid.Empty)
         {
             await ProblemDetailsHelper.EnviarErroresValidacionAsync(
                 HttpContext,
-                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El ID del bloque no es válido."] },
+                new Dictionary<string, IEnumerable<string>> { ["id"] = ["El identificador del bloque es obligatorio."] },
                 "El identificador del bloque es inválido.");
             return;
         }
 
-        // Parsear campos
+        // === Parseo ===
         var erroresParseo = new Dictionary<string, IEnumerable<string>>();
         DateOnly? fecha = null;
         TimeOnly? horaInicio = null;
         TimeOnly? horaFin = null;
 
         if (!DateOnly.TryParse(req.Fecha, out var f))
-        {
             erroresParseo["fecha"] = ["La fecha no tiene un formato válido (YYYY-MM-DD)."];
-        }
         else
-        {
             fecha = f;
-        }
+
         if (!TimeOnly.TryParse(req.HoraInicio, out var hi))
-        {
             erroresParseo["horaInicio"] = ["La hora de inicio no tiene un formato válido (HH:mm)."];
-        }
         else
-        {
             horaInicio = hi;
-        }
+
         if (!TimeOnly.TryParse(req.HoraFin, out var hf))
-        {
             erroresParseo["horaFin"] = ["La hora de fin no tiene un formato válido (HH:mm)."];
-        }
         else
-        {
             horaFin = hf;
-        }
 
         if (erroresParseo.Count > 0)
         {
@@ -93,9 +82,10 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
             return;
         }
 
+        // === Carga del bloque ===
         var bloque = await _dbContext.BloquesTurno
             .Include(b => b.Reservas.Where(r => r.Activa))
-            .FirstOrDefaultAsync(b => b.Id == bloqueId, ct);
+            .FirstOrDefaultAsync(b => b.Id == req.Id, ct);
 
         if (bloque == null)
         {
@@ -106,8 +96,8 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
             return;
         }
 
-        // R: Solo el creador puede editar
-        if (bloque.CreadoPorId != usuarioId)
+        // Solo el creador puede editar
+        if (bloque.CreadoPorId != usuarioId.Value)
         {
             await ProblemDetailsHelper.EnviarProhibidoAsync(
                 HttpContext,
@@ -116,16 +106,68 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
             return;
         }
 
-        // Validaciones de negocio
+        // === Validación de PerfilDependienteId + Recurrencia + Tareas ===
         var erroresNegocio = new Dictionary<string, IEnumerable<string>>();
+
+        if (req.PerfilDependienteId == Guid.Empty)
+            erroresNegocio["perfilDependienteId"] = ["Debe seleccionar un dependiente válido."];
+
+        if (!Enum.TryParse<TipoRecurrencia>(req.TipoRecurrencia, ignoreCase: true, out var tipoRecurrencia))
+        {
+            erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica, Indefinida o Semanas."];
+            tipoRecurrencia = TipoRecurrencia.Unica;
+        }
+
+        if (tipoRecurrencia == TipoRecurrencia.Semanas)
+        {
+            if (req.IntervaloSemanas is null || req.IntervaloSemanas < 1 || req.IntervaloSemanas > 24)
+            {
+                erroresNegocio["intervaloSemanas"] = ["Debe especificar un intervalo entre 1 y 24 semanas."];
+            }
+        }
+        else if (req.IntervaloSemanas is not null)
+        {
+            erroresNegocio["intervaloSemanas"] = ["El intervalo solo aplica para recurrencia semanal."];
+        }
+
+        var tareasNormalizadas = new List<TareaTurnoItem>();
+        if (req.Tareas is not null && req.Tareas.Count > 0)
+        {
+            if (req.Tareas.Count > 20)
+            {
+                erroresNegocio["tareas"] = ["Máximo 20 tareas permitidas por bloque."];
+            }
+            else
+            {
+                for (var i = 0; i < req.Tareas.Count; i++)
+                {
+                    var t = req.Tareas[i];
+                    var desc = (t.Descripcion ?? string.Empty).Trim();
+                    if (desc.Length < 1 || desc.Length > 200)
+                    {
+                        erroresNegocio["tareas"] = [$"La tarea #{i + 1} debe tener una descripción entre 1 y 200 caracteres."];
+                        continue;
+                    }
+                    if (t.Orden < 0)
+                    {
+                        erroresNegocio["tareas"] = [$"La tarea #{i + 1} tiene un orden inválido (debe ser >= 0)."];
+                        continue;
+                    }
+                    tareasNormalizadas.Add(new TareaTurnoItem(
+                        t.Id ?? Guid.NewGuid(),
+                        desc,
+                        t.Orden
+                    ));
+                }
+            }
+        }
+
+        // === Validaciones de negocio clásicas ===
         if (horaFin!.Value <= horaInicio!.Value)
-        {
             erroresNegocio["horaFin"] = ["La hora de fin debe ser posterior a la hora de inicio."];
-        }
+
         if (req.CuposMaximos < 1 || req.CuposMaximos > 5)
-        {
             erroresNegocio["cuposMaximos"] = ["Los cupos deben estar entre 1 y 5."];
-        }
 
         var reservasActivas = bloque.Reservas.Count(r => r.Activa);
         if (req.CuposMaximos < reservasActivas)
@@ -136,9 +178,7 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
         }
 
         if (!string.IsNullOrWhiteSpace(req.Descripcion) && req.Descripcion.Length > 200)
-        {
             erroresNegocio["descripcion"] = ["La descripción no puede exceder 200 caracteres."];
-        }
 
         if (erroresNegocio.Count > 0)
         {
@@ -150,16 +190,40 @@ public class EditarBloqueEndpoint : Endpoint<Request, Response>
             return;
         }
 
-        // Actualizar
+        // === Tenancy clínica sobre el dependiente (nuevo o el mismo) ===
+        var tienePermiso = await _dbContext.VinculosDependientes
+            .AsNoTracking()
+            .AnyAsync(v =>
+                v.UsuarioId == usuarioId.Value &&
+                v.PerfilDependienteId == req.PerfilDependienteId &&
+                v.Activo &&
+                v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal &&
+                v.PerfilDependiente.Activo,
+                ct);
+
+        if (!tienePermiso)
+        {
+            await ProblemDetailsHelper.EnviarProhibidoAsync(
+                HttpContext,
+                "No tienes permisos de Cuidador Principal sobre este dependiente.",
+                tipoProhibido: "dependiente-no-autorizado");
+            return;
+        }
+
+        // === Aplicar cambios ===
         bloque.Fecha = fecha!.Value;
         bloque.HoraInicio = horaInicio!.Value;
         bloque.HoraFin = horaFin!.Value;
         bloque.CuposMaximos = req.CuposMaximos;
         bloque.Descripcion = req.Descripcion?.Trim();
+        bloque.PerfilDependienteId = req.PerfilDependienteId;
+        bloque.TipoRecurrencia = tipoRecurrencia;
+        bloque.IntervaloSemanas = tipoRecurrencia == TipoRecurrencia.Semanas ? req.IntervaloSemanas : null;
+        bloque.Tareas = tareasNormalizadas;
         bloque.FechaModificacion = DateTimeOffset.UtcNow;
 
         await _dbContext.SaveChangesAsync(ct);
 
-        await Send.OkAsync(new Response("Bloque de turno actualizado exitosamente."), ct);
+        await Send.OkAsync(new EditarBloqueResponseDto("Bloque de turno actualizado exitosamente."), ct);
     }
 }

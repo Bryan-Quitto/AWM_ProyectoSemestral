@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Plus, Calendar } from 'lucide-react';
 import { Boton } from '../../components/Boton';
 import { TarjetaBloque } from './TarjetaBloque';
-import { DialogoBloque } from './DialogoBloque';
+import { DialogoCrearBloque } from './DialogoCrearBloque';
 import { CalendarioAgenda } from './CalendarioAgenda';
 import { ConfirmarAccion } from './ConfirmarAccion';
 import {
@@ -15,16 +15,26 @@ import {
 } from '../../features/agenda/hooks/useAgenda';
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
-
-interface FormData {
-  fecha: string;
-  horaInicio: string;
-  horaFin: string;
-  cuposMaximos: number;
-  descripcion?: string;
-}
+import type { BloqueFormData } from './schema';
 
 type Filtro = 'Todos' | 'Disponibles' | 'MisReservas';
+
+/**
+ * Extrae un mensaje legible desde una respuesta RFC 7807 de FastEndpoints.
+ * Orden de preferencia:
+ *   1. `detail`  → ProblemDetails simple (401, 403, 404, 409, etc.)
+ *   2. `errors[campo][0]` → ValidationProblemDetails (400 de validación)
+ *   3. fallback genérico.
+ */
+const extraerMensajeError = (respuesta: any, fallback: string): string => {
+  const data = respuesta?.data;
+  if (data?.detail) return String(data.detail);
+  if (data?.errors && typeof data.errors === 'object') {
+    const mensajes = Object.values(data.errors as Record<string, string[]>).flat();
+    if (mensajes.length > 0) return String(mensajes[0]);
+  }
+  return fallback;
+};
 
 export const AgendaMobile = () => {
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
@@ -36,6 +46,11 @@ export const AgendaMobile = () => {
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
   
   const [confirmCancelar, setConfirmCancelar] = useState<{ abierto: boolean; bloqueId: string | null }>({
+    abierto: false,
+    bloqueId: null,
+  });
+
+  const [confirmEliminar, setConfirmEliminar] = useState<{ abierto: boolean; bloqueId: string | null }>({
     abierto: false,
     bloqueId: null,
   });
@@ -81,7 +96,7 @@ export const AgendaMobile = () => {
     return resultado;
   }, [bloques, filtro, fechaSeleccionada]);
 
-  const handleCrear = async (data: FormData) => {
+  const handleCrear = async (data: BloqueFormData) => {
     setApiError(null);
     try {
       const respuesta = await crearBloque({
@@ -89,17 +104,19 @@ export const AgendaMobile = () => {
         horaInicio: data.horaInicio,
         horaFin: data.horaFin,
         cuposMaximos: data.cuposMaximos,
-        descripcion: data.descripcion,
+        descripcion: data.descripcion ?? null,
+        perfilDependienteId: data.perfilDependienteId,
+        tipoRecurrencia: data.tipoRecurrencia,
+        intervaloSemanas: data.intervaloSemanas ?? null,
+        tareas: (data.tareas ?? []).map((t) => ({
+          id: t.id,
+          descripcion: t.descripcion,
+          orden: t.orden,
+        })),
       }) as any;
 
       if (respuesta?.status >= 400) {
-        const errores = respuesta.data?.errors;
-        if (errores && typeof errores === 'object') {
-          const mensajes = Object.values(errores as Record<string, string[]>).flat();
-          setApiError(mensajes[0] || 'Error al crear');
-        } else {
-          setApiError('Error al crear');
-        }
+        setApiError(extraerMensajeError(respuesta, 'Error al crear'));
         return;
       }
 
@@ -112,20 +129,29 @@ export const AgendaMobile = () => {
     }
   };
 
-  const handleEditar = async (data: FormData) => {
+  const handleEditar = async (data: BloqueFormData) => {
     if (!bloqueEditando?.id) return;
     setApiError(null);
     try {
-      const respuesta = await editarBloque({ id: bloqueEditando.id, data: {
+      const respuesta = await editarBloque({
+        id: bloqueEditando.id,
         fecha: data.fecha,
         horaInicio: data.horaInicio,
         horaFin: data.horaFin,
         cuposMaximos: data.cuposMaximos,
-        descripcion: data.descripcion,
-      } }) as any;
+        descripcion: data.descripcion ?? null,
+        perfilDependienteId: data.perfilDependienteId,
+        tipoRecurrencia: data.tipoRecurrencia,
+        intervaloSemanas: data.intervaloSemanas ?? null,
+        tareas: (data.tareas ?? []).map((t) => ({
+          id: t.id,
+          descripcion: t.descripcion,
+          orden: t.orden,
+        })),
+      });
 
       if (respuesta?.status >= 400) {
-        setApiError(respuesta.data?.errors?.[0] || 'Error al editar');
+        setApiError(extraerMensajeError(respuesta, 'Error al editar'));
         return;
       }
 
@@ -138,18 +164,24 @@ export const AgendaMobile = () => {
     }
   };
 
-  const handleEliminar = async (id: string) => {
-    if (!confirm('¿Eliminar?')) return;
+  const handleEliminar = (id: string) => {
+    setConfirmEliminar({ abierto: true, bloqueId: id });
+  };
+
+  const handleConfirmarEliminar = async () => {
+    if (!confirmEliminar.bloqueId) return;
     try {
-      const respuesta = await eliminarBloque(id) as any;
+      const respuesta = await eliminarBloque(confirmEliminar.bloqueId) as any;
       if (respuesta?.status >= 400) {
-        mostrarToast(respuesta.data?.errors?.[0] || 'Error', 'error');
+        mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
       }
       mutate();
       mostrarToast('Bloque eliminado', 'exito');
     } catch {
       mostrarToast('Error de conexión', 'error');
+    } finally {
+      setConfirmEliminar({ abierto: false, bloqueId: null });
     }
   };
 
@@ -157,7 +189,7 @@ export const AgendaMobile = () => {
     try {
       const respuesta = await reservar(id) as any;
       if (respuesta?.status >= 400) {
-        mostrarToast(respuesta.data?.errors?.[0] || 'Error', 'error');
+        mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
       }
       mutate();
@@ -169,11 +201,11 @@ export const AgendaMobile = () => {
 
   const handleConfirmarCancelar = async () => {
     if (!confirmCancelar.bloqueId) return;
-    
+
     try {
       const respuesta = await cancelarReserva(confirmCancelar.bloqueId) as any;
       if (respuesta?.status >= 400) {
-        mostrarToast(respuesta.data?.errors?.[0] || 'Error', 'error');
+        mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
       }
       mutate();
@@ -299,16 +331,18 @@ export const AgendaMobile = () => {
           siguiendo tu indicación. Mejor accesibilidad en móvil para
           cuidadores con una mano ocupada. */}
 
-      <DialogoBloque
+      <DialogoCrearBloque
         abierto={dialogoAbierto}
+        modo="crear"
         onCerrar={() => setDialogoAbierto(false)}
         onSubmit={handleCrear}
         isMutating={creando}
         apiError={apiError}
       />
 
-      <DialogoBloque
+      <DialogoCrearBloque
         abierto={!!bloqueEditando}
+        modo="editar"
         bloque={bloqueEditando}
         onCerrar={() => setBloqueEditando(null)}
         onSubmit={handleEditar}
@@ -323,6 +357,16 @@ export const AgendaMobile = () => {
         onConfirmar={handleConfirmarCancelar}
         onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null })}
         cargando={cancelando}
+        tipo="peligro"
+      />
+
+      <ConfirmarAccion
+        abierto={confirmEliminar.abierto}
+        titulo="Eliminar bloque de turno"
+        mensaje="¿Estás seguro de que deseas eliminar este bloque? Esta acción no se puede deshacer."
+        onConfirmar={handleConfirmarEliminar}
+        onCancelar={() => setConfirmEliminar({ abierto: false, bloqueId: null })}
+        cargando={eliminando}
         tipo="peligro"
       />
 

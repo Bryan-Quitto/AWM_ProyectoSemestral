@@ -40,7 +40,7 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
 
         var rolClaim = User.FindFirstValue(ClaimTypes.Role)
             ?? User.FindFirstValue("role");
-        
+
         var esPrincipal = rolClaim?.Equals(Rol.CuidadorPrincipal.ToString(), StringComparison.OrdinalIgnoreCase) == true;
 
         // Parámetros de filtro (todos opcionales)
@@ -63,10 +63,11 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             fechaHasta = parsedHasta;
         }
 
-        // Consultar bloques
+        // Consultar bloques — Single-trip con Include para evitar N+1.
         var bloques = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
+            .Include(b => b.PerfilDependiente)
             .Include(b => b.Reservas)
                 .ThenInclude(r => r.Usuario)
             .Where(b => b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
@@ -95,9 +96,9 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                 var miReserva = reservasActivas.FirstOrDefault(r => r.UsuarioId == usuarioId);
                 var esMiBloque = b.CreadoPorId == usuarioId;
                 var cuposDisponibles = b.CuposMaximos - reservasActivas.Count;
-                var puedoReservar = !esMiBloque 
-                    && !b.EstaVencido 
-                    && cuposDisponibles > 0 
+                var puedoReservar = !esMiBloque
+                    && !b.EstaVencido
+                    && cuposDisponibles > 0
                     && miReserva == null;
 
                 return new BloqueTurnoDto(
@@ -121,7 +122,16 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                         r.UsuarioId == usuarioId
                     )).ToList(),
                     PuedoReservar: puedoReservar,
-                    YaReservé: miReserva != null
+                    YaReservé: miReserva != null,
+                    // === NUEVO (Persona 1 / Semana 1) ===
+                    PerfilDependienteId: b.PerfilDependienteId,
+                    NombreDependiente: b.PerfilDependiente?.NombreCompleto ?? string.Empty,
+                    TipoRecurrencia: b.TipoRecurrencia.ToString(),
+                    IntervaloSemanas: b.IntervaloSemanas,
+                    Tareas: (b.Tareas ?? new List<RACPD.Backend.Domain.Entities.TareaTurnoItem>())
+                        .OrderBy(t => t.Orden)
+                        .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
+                        .ToList()
                 );
             }).ToList();
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RACPD.Backend.Data;
@@ -12,9 +13,11 @@ using RACPD.Backend.Data;
 namespace RACPD.Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260910131906_AgregarRecurrenciaYTareasBloqueTurno")]
+    partial class AgregarRecurrenciaYTareasBloqueTurno
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,7 +92,7 @@ namespace RACPD.Backend.Migrations
                     b.Property<int?>("IntervaloSemanas")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("PerfilDependienteId")
+                    b.Property<Guid?>("PerfilDependienteId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("TipoRecurrencia")
@@ -286,8 +289,7 @@ namespace RACPD.Backend.Migrations
                     b.HasOne("RACPD.Backend.Domain.Entities.PerfilDependiente", "PerfilDependiente")
                         .WithMany()
                         .HasForeignKey("PerfilDependienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.OwnsMany("RACPD.Backend.Domain.Entities.TareaTurnoItem", "Tareas", b1 =>
                         {
