@@ -95,6 +95,38 @@ export const bloqueFormSchema = z
         path: ['horaFin'],
       });
     }
+
+    // === Regla: si la fecha es HOY, horaInicio debe ser > hora actual del cliente ===
+    // new Date() se evalua aqui (en cada submit), no como constante al cargar el modulo,
+    // para evitar valores stale si el usuario tarda en llenar el formulario.
+    // El huso horario es el del navegador del usuario, coherente con
+    // "Huso Horario Estricto America/Guayaquil" (regla del SKILLS.md).
+    if (val.fecha && val.horaInicio) {
+      const hoyCliente = new Date();
+      const fechaCliente = new Date();
+      const [anio, mes, dia] = val.fecha.split('-').map(Number);
+      fechaCliente.setFullYear(anio, mes - 1, dia);
+
+      const esHoy =
+        fechaCliente.getFullYear() === hoyCliente.getFullYear() &&
+        fechaCliente.getMonth() === hoyCliente.getMonth() &&
+        fechaCliente.getDate() === hoyCliente.getDate();
+
+      if (esHoy) {
+        const [hh, mm] = val.horaInicio.split(':').map(Number);
+        const horaInicioMinutos = hh * 60 + mm;
+        const horaActualMinutos =
+          hoyCliente.getHours() * 60 + hoyCliente.getMinutes();
+
+        if (horaInicioMinutos <= horaActualMinutos) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'La hora de inicio debe ser posterior a la hora actual',
+            path: ['horaInicio'],
+          });
+        }
+      }
+    }
   });
 
 export type BloqueFormData = z.infer<typeof bloqueFormSchema>;
