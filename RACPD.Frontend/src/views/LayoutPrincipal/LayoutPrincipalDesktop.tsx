@@ -5,8 +5,10 @@ import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
+import { CampanaNotificaciones } from './CampanaNotificaciones'
 
 type UsuarioSesion = {
+  id?: string
   correo?: string
   rol?: string
 }
@@ -37,7 +39,7 @@ export const LayoutPrincipalDesktop = () => {
       } catch {
         rol = undefined
       }
-      setUsuario({ correo: user.email, rol })
+      setUsuario({ id: user.id, correo: user.email, rol })
     }
     void cargarUsuario()
   }, [])
@@ -53,7 +55,16 @@ export const LayoutPrincipalDesktop = () => {
     <div className="flex h-screen bg-blue-50">
       <aside className="w-64 bg-white border-r border-blue-200 flex flex-col">
         <div className="p-6 border-b border-blue-200">
-          <h1 className="text-2xl font-bold text-blue-900">RACPD</h1>
+          <div className="flex items-start justify-between gap-2">
+            <h1 className="text-2xl font-bold text-blue-900">RACPD</h1>
+            <CampanaNotificaciones
+              tamanoIcono={20}
+              alineacionPopover="izquierda"
+              variante="desktop"
+              usuarioId={usuario?.id}
+              rolUsuario={usuario?.rol as 'CuidadorPrincipal' | 'Apoyo' | 'AdministradorSistema' | undefined}
+            />
+          </div>
           {perfilData?.data ? (
             <div className="mt-1">
               <p className="text-sm font-semibold text-blue-800 truncate" title={`${perfilData.data.nombre} ${perfilData.data.apellido}`}>
