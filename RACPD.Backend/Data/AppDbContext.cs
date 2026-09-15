@@ -195,6 +195,7 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => e.PerfilDependienteId);
             entity.HasIndex(e => e.UsuarioApoyoId);
+    });
         // === BitacoraTurno ===
         modelBuilder.Entity<BitacoraTurno>(entity =>
         {
