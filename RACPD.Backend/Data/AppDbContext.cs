@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<BloqueTurno> BloquesTurno { get; set; } = null!;
     public DbSet<ReservaTurno> ReservasTurno { get; set; } = null!;
     public DbSet<DirectorioRelevo> DirectorioRelevos { get; set; } = null!;
+    public DbSet<BitacoraTurno> BitacorasTurno { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -194,6 +195,46 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => e.PerfilDependienteId);
             entity.HasIndex(e => e.UsuarioApoyoId);
+        // === BitacoraTurno ===
+        modelBuilder.Entity<BitacoraTurno>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.EstadoAnimo)
+                .HasConversion<string>();
+
+            entity.Property(e => e.Sintomas)
+                .HasMaxLength(1000);
+
+            entity.Property(e => e.ObservacionesGenerales)
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.HorasSueno)
+                .HasPrecision(4, 2);
+
+            // TareasRealizadasIds: Postgres UUID[] vía Primitive Collection (EF Core 8+).
+            // Si la colección está vacía se persiste como array vacío, nunca null.
+
+            entity.Property(e => e.Version)
+                .IsRowVersion();
+
+            entity.HasOne(e => e.BloqueTurno)
+                .WithMany()
+                .HasForeignKey(e => e.BloqueTurnoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.RegistradoPor)
+                .WithMany()
+                .HasForeignKey(e => e.RegistradoPorUsuarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Idempotencia: a lo sumo una bitácora activa por bloque.
+            entity.HasIndex(e => e.BloqueTurnoId)
+                .IsUnique()
+                .HasFilter("\"Activa\" = true")
+                .HasDatabaseName("IX_BitacorasTurno_UnSoloCierreActivoPorBloque");
+
+            entity.HasIndex(e => e.FechaCierre);
         });
     }
 }

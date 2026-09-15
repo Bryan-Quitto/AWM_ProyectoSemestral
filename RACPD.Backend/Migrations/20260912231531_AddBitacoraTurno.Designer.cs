@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RACPD.Backend.Data;
@@ -12,9 +13,11 @@ using RACPD.Backend.Data;
 namespace RACPD.Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260912231531_AddBitacoraTurno")]
+    partial class AddBitacoraTurno
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -129,6 +132,9 @@ namespace RACPD.Backend.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
+                    b.Property<bool>("EsRecurrente")
+                        .HasColumnType("boolean");
+
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
 
@@ -144,90 +150,13 @@ namespace RACPD.Backend.Migrations
                     b.Property<TimeOnly>("HoraInicio")
                         .HasColumnType("time without time zone");
 
-                    b.Property<int?>("IntervaloSemanas")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("PerfilDependienteId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("TipoRecurrencia")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CreadoPorId");
 
                     b.HasIndex("Fecha");
 
-                    b.HasIndex("PerfilDependienteId");
-
                     b.ToTable("BloquesTurno");
-                });
-
-            modelBuilder.Entity("RACPD.Backend.Domain.Entities.DirectorioRelevo", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Activo")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Estado")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("text")
-                        .HasDefaultValue("Disponible");
-
-                    b.Property<bool>("Listado")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Nombre")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("Notas")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<Guid>("PerfilDependienteId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Telefono")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UsuarioApoyoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Nombre");
-
-                    b.HasIndex("PerfilDependienteId");
-
-                    b.HasIndex("UsuarioApoyoId");
-
-                    b.HasIndex("PerfilDependienteId", "UsuarioApoyoId")
-                        .IsUnique()
-                        .HasFilter("\"Activo\" = true");
-
-                    b.ToTable("DirectorioRelevos");
                 });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.PerfilDependiente", b =>
@@ -425,62 +354,7 @@ namespace RACPD.Backend.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("RACPD.Backend.Domain.Entities.PerfilDependiente", "PerfilDependiente")
-                        .WithMany()
-                        .HasForeignKey("PerfilDependienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.OwnsMany("RACPD.Backend.Domain.Entities.TareaTurnoItem", "Tareas", b1 =>
-                        {
-                            b1.Property<Guid>("BloqueTurnoId");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd();
-
-                            b1.Property<string>("Descripcion")
-                                .IsRequired();
-
-                            b1.Property<Guid>("Id");
-
-                            b1.Property<int>("Orden");
-
-                            b1.HasKey("BloqueTurnoId", "__synthesizedOrdinal");
-
-                            b1.ToTable("BloquesTurno");
-
-                            b1
-                                .ToJson("Tareas")
-                                .HasColumnType("jsonb");
-
-                            b1.WithOwner()
-                                .HasForeignKey("BloqueTurnoId");
-                        });
-
                     b.Navigation("CreadoPor");
-
-                    b.Navigation("PerfilDependiente");
-
-                    b.Navigation("Tareas");
-                });
-
-            modelBuilder.Entity("RACPD.Backend.Domain.Entities.DirectorioRelevo", b =>
-                {
-                    b.HasOne("RACPD.Backend.Domain.Entities.PerfilDependiente", "PerfilDependiente")
-                        .WithMany()
-                        .HasForeignKey("PerfilDependienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RACPD.Backend.Domain.Entities.Usuario", "UsuarioApoyo")
-                        .WithMany()
-                        .HasForeignKey("UsuarioApoyoId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("PerfilDependiente");
-
-                    b.Navigation("UsuarioApoyo");
                 });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.PerfilDependiente", b =>

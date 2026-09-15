@@ -5,8 +5,10 @@ import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
+import { CampanaNotificaciones } from './CampanaNotificaciones'
 
 type UsuarioSesion = {
+  id?: string
   correo?: string
   rol?: string
 }
@@ -35,7 +37,7 @@ export const LayoutPrincipalMobile = () => {
       } catch {
         rol = undefined
       }
-      setUsuario({ correo: user.email, rol })
+      setUsuario({ id: user.id, correo: user.email, rol })
     }
     void cargarUsuario()
   }, [])
@@ -63,6 +65,13 @@ export const LayoutPrincipalMobile = () => {
           ) : null}
         </div>
         <div className="flex items-center gap-2">
+          <CampanaNotificaciones
+            tamanoIcono={20}
+            alineacionPopover="derecha"
+            variante="mobile"
+            usuarioId={usuario?.id}
+            rolUsuario={usuario?.rol as 'CuidadorPrincipal' | 'Apoyo' | 'AdministradorSistema' | undefined}
+          />
           <Link
             to="/configuracion"
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer active:scale-95"
