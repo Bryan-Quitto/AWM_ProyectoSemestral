@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
-import { Home, Users, CalendarDays, LogOut, Settings } from 'lucide-react'
+import { Home, Users, CalendarDays, LogOut, Settings, UsersRound } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
@@ -104,6 +104,15 @@ export const LayoutPrincipalDesktop = () => {
             >
               <CalendarDays size={20} />
               <span>Agenda</span>
+            </Link>
+          )}
+          {!esAdmin && (
+            <Link
+              to="/directorio-relevos"
+              className="flex items-center gap-3 px-4 py-3 text-blue-900 hover:bg-blue-50 rounded-lg [&.active]:bg-blue-100 [&.active]:font-semibold transition-colors cursor-pointer"
+            >
+              <UsersRound size={20} />
+              <span>Directorio</span>
             </Link>
           )}
           {esAdmin && (

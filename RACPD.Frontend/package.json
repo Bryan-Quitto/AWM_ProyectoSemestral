@@ -8,7 +8,11 @@
     "build": "npm run lint && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "api:generate": "orval"
+    "swagger:export": "node scripts/swagger-export.mjs",
+    "api:clean": "node -e \"fs.rmSync('src/api/generated', { recursive: true, force: true })\"",
+    "api:fetch": "node scripts/swagger-fetch.mjs",
+    "api:gen": "npm run api:clean && orval",
+    "api:generate": "npm run swagger:export && npm run api:gen"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

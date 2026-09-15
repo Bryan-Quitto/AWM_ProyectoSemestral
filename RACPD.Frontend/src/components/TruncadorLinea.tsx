@@ -14,14 +14,9 @@ export interface TruncadorLineaProps {
 
 /**
  * TruncadorLinea: muestra `texto` truncado a `maxLineas` líneas con elipsis "…"
- * en negrita y con cursor-pointer. Al hacer clic en "…" se invoca `onExpand`.
- *
- * Detecta overflow comparando scrollHeight/clientHeight (o scrollWidth/clientWidth
- * cuando maxLineas === 1) tras cada cambio de tamaño del contenedor.
- *
- * - No depende de librerías externas.
- * - Estilo coherente con la paleta azul/celeste del proyecto.
- * - `cursor-pointer` y `font-bold` en el "…" para indicar interactividad.
+ * - Soporta palabras continuas largas sin espacios (break-word / anywhere).
+ * - Utiliza `-webkit-line-clamp` con CSS inline para no depender de clases inexistentes.
+ * - Muestra `…` clickable si se pasa `onExpand` y se detecta overflow.
  */
 export const TruncadorLinea = ({
   texto,
@@ -33,17 +28,20 @@ export const TruncadorLinea = ({
   const ref = useRef<HTMLSpanElement>(null);
   const [tieneOverflow, setTieneOverflow] = useState(false);
 
-  // Detecta overflow usando ResizeObserver (cubre cambios de viewport y de contenido).
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !onExpand) return;
 
     const checkOverflow = () => {
-      const overflow =
-        maxLineas === 1
-          ? el.scrollWidth > el.clientWidth
-          : el.scrollHeight > el.clientHeight;
-      setTieneOverflow(overflow);
+      // Si el elemento o un ancestro como <details> está oculto/cerrado, clientWidth es 0
+      if (el.clientWidth === 0) return;
+
+      if (maxLineas === 1) {
+        setTieneOverflow(el.scrollWidth > el.clientWidth);
+        return;
+      }
+
+      setTieneOverflow(el.scrollHeight > el.clientHeight);
     };
 
     checkOverflow();
@@ -51,11 +49,7 @@ export const TruncadorLinea = ({
     const observer = new ResizeObserver(checkOverflow);
     observer.observe(el);
     return () => observer.disconnect();
-  }, [texto, maxLineas]);
-
-  const handleExpand = () => {
-    if (tieneOverflow && onExpand) onExpand();
-  };
+  }, [texto, maxLineas, onExpand]);
 
   if (!texto) {
     if (!placeholderVacio) return null;
@@ -64,29 +58,43 @@ export const TruncadorLinea = ({
     );
   }
 
-  const clampClass =
+  const multiLineaStyle: React.CSSProperties =
     maxLineas === 1
-      ? 'truncate whitespace-nowrap overflow-hidden'
-      : `overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:${maxLineas}]`;
+      ? {
+          display: 'block',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
+        }
+      : {
+          display: '-webkit-box',
+          WebkitBoxOrient: 'vertical',
+          WebkitLineClamp: maxLineas,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          overflowWrap: 'anywhere',
+          wordBreak: 'break-word',
+        };
 
-  // Renderizamos el "…" FUERA del span truncado para garantizar que sea visible
-  // y clickable. Cuando hay overflow, queda justo a la derecha (o debajo, según
-  // line-clamp) del texto recortado.
-  //
-  // IMPORTANTE: el wrapper es `block min-w-0 flex-1` (no inline) para que respete
-  // el ancho disponible del padre flex y no desborde horizontalmente. `min-w-0`
-  // es necesario porque por defecto los flex items tienen `min-width: auto`,
-  // lo que permite al hijo crecer más allá del contenedor y romper el card.
   return (
-    <span className={`block min-w-0 flex-1 ${className}`}>
-      <span ref={ref} className={`${clampClass} block`}>
+    <span
+      className={`block min-w-0 flex-1 ${className}`}
+      onClick={onExpand}
+      style={{ cursor: onExpand ? 'pointer' : undefined }}
+    >
+      <span ref={ref} style={multiLineaStyle} title={texto}>
         {texto}
       </span>
-      {tieneOverflow && (
+      {tieneOverflow && onExpand && (
         <button
           type="button"
-          onClick={handleExpand}
-          className="cursor-pointer font-bold text-blue-700 hover:text-blue-900 ml-0.5 align-baseline"
+          onClick={(e) => {
+            e.stopPropagation();
+            onExpand();
+          }}
+          className="cursor-pointer font-bold text-blue-700 hover:text-blue-900 ml-0.5 inline-block"
           aria-label="Ver contenido completo"
         >
           …

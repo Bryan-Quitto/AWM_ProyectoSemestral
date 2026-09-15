@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using RACPD.Backend.Data;
@@ -12,9 +13,11 @@ using RACPD.Backend.Data;
 namespace RACPD.Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260913180224_AgregarDirectorioRelevo")]
+    partial class AgregarDirectorioRelevo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,64 +25,6 @@ namespace RACPD.Backend.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("RACPD.Backend.Domain.Entities.BitacoraTurno", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("Activa")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("BloqueTurnoId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("EstadoAnimo")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("FechaCierre")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<decimal?>("HorasSueno")
-                        .HasPrecision(4, 2)
-                        .HasColumnType("numeric(4,2)");
-
-                    b.Property<string>("ObservacionesGenerales")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<Guid>("RegistradoPorUsuarioId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Sintomas")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.PrimitiveCollection<List<Guid>>("TareasRealizadasIds")
-                        .IsRequired()
-                        .HasColumnType("uuid[]");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BloqueTurnoId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_BitacorasTurno_UnSoloCierreActivoPorBloque")
-                        .HasFilter("\"Activa\" = true");
-
-                    b.HasIndex("FechaCierre");
-
-                    b.HasIndex("RegistradoPorUsuarioId");
-
-                    b.ToTable("BitacorasTurno");
-                });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.BloqueRelevo", b =>
                 {
@@ -385,25 +330,6 @@ namespace RACPD.Backend.Migrations
                         .HasFilter("\"Activo\" = true");
 
                     b.ToTable("VinculosDependientes");
-                });
-
-            modelBuilder.Entity("RACPD.Backend.Domain.Entities.BitacoraTurno", b =>
-                {
-                    b.HasOne("RACPD.Backend.Domain.Entities.BloqueTurno", "BloqueTurno")
-                        .WithMany()
-                        .HasForeignKey("BloqueTurnoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("RACPD.Backend.Domain.Entities.Usuario", "RegistradoPor")
-                        .WithMany()
-                        .HasForeignKey("RegistradoPorUsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("BloqueTurno");
-
-                    b.Navigation("RegistradoPor");
                 });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.BloqueRelevo", b =>

@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<BloqueRelevo> BloquesRelevo { get; set; } = null!;
     public DbSet<BloqueTurno> BloquesTurno { get; set; } = null!;
     public DbSet<ReservaTurno> ReservasTurno { get; set; } = null!;
+    public DbSet<DirectorioRelevo> DirectorioRelevos { get; set; } = null!;
     public DbSet<BitacoraTurno> BitacorasTurno { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -112,12 +113,30 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Descripcion)
                 .HasMaxLength(200);
 
+            // Enum persistido como string para legibilidad y consistencia
+            entity.Property(e => e.TipoRecurrencia)
+                .HasConversion<string>();
+
+            // Mapeo JSON nativo de EF Core (PostgreSQL jsonb)
+            entity.OwnsMany(e => e.Tareas, builder =>
+            {
+                builder.ToJson();
+            });
+
+            // Relación con PerfilDependiente (null permitido en Fase A).
+            // Se consolidará a NOT NULL + FK Restrict en Fase C tras poblado de datos legacy.
+            entity.HasOne(e => e.PerfilDependiente)
+                .WithMany()
+                .HasForeignKey(e => e.PerfilDependienteId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             entity.HasOne(e => e.CreadoPor)
                 .WithMany()
                 .HasForeignKey(e => e.CreadoPorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasIndex(e => e.Fecha);
+            entity.HasIndex(e => e.PerfilDependienteId);
         });
 
         // === ReservaTurno ===
@@ -142,6 +161,40 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.UsuarioId);
         });
 
+        // === DirectorioRelevo ===
+        modelBuilder.Entity<DirectorioRelevo>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.Nombre).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Telefono).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notas).HasMaxLength(500);
+
+            // Enum persistido como string (legibilidad + consistencia con el resto del dominio)
+            entity.Property(e => e.Estado)
+                .HasConversion<string>()
+                .HasDefaultValue(EstadoDirectorioRelevo.Disponible);
+
+            entity.HasOne(e => e.PerfilDependiente)
+                .WithMany()
+                .HasForeignKey(e => e.PerfilDependienteId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.UsuarioApoyo)
+                .WithMany()
+                .HasForeignKey(e => e.UsuarioApoyoId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // RF: un cuidador no puede aparecer dos veces en el mismo directorio.
+            entity.HasIndex(e => new { e.PerfilDependienteId, e.UsuarioApoyoId })
+                .IsUnique()
+                .HasFilter("\"Activo\" = true");
+
+            // Búsqueda rápida por nombre (case-insensitive con ILIKE).
+            entity.HasIndex(e => e.Nombre);
+
+            entity.HasIndex(e => e.PerfilDependienteId);
+            entity.HasIndex(e => e.UsuarioApoyoId);
         // === BitacoraTurno ===
         modelBuilder.Entity<BitacoraTurno>(entity =>
         {

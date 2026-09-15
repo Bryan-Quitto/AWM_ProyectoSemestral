@@ -14,6 +14,7 @@ export interface BuscadorDinamicoProps {
   opciones: OpcionBuscador[];
   value?: string | number;
   onChange?: (valor: string | number) => void;
+  onBlur?: () => void;
   error?: string;
   disabled?: boolean;
   className?: string;
@@ -56,6 +57,7 @@ export const BuscadorDinamico = ({
   opciones,
   value,
   onChange,
+  onBlur,
   error,
   disabled,
   className = '',
@@ -102,7 +104,7 @@ export const BuscadorDinamico = ({
       .map((res) => res.item);
   }, [fuse, opciones, query]);
 
-  // Cierra al hacer clic afuera
+  // Cierra al hacer clic afuera y notifica blur
   useEffect(() => {
     const handleClickFuera = (event: MouseEvent) => {
       if (
@@ -110,11 +112,12 @@ export const BuscadorDinamico = ({
         !containerRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        onBlur?.();
       }
     };
     document.addEventListener('mousedown', handleClickFuera);
     return () => document.removeEventListener('mousedown', handleClickFuera);
-  }, []);
+  }, [onBlur]);
 
   // Cierra con Escape
   useEffect(() => {

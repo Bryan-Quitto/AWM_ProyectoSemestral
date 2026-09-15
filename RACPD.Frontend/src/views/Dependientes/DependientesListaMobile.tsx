@@ -31,7 +31,8 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
   const [modalContenido, setModalContenido] = useState<{
     tipo: 'condiciones' | 'alergias';
     nombre: string;
-    texto: string;
+    texto?: string;
+    items?: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -198,7 +199,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                         setModalContenido({
                           tipo: 'alergias',
                           nombre: d.nombreCompleto ?? 'Sin nombre',
-                          texto: (d.alergiasEstructuradas ?? []).join(', '),
+                          items: d.alergiasEstructuradas ?? [],
                         })
                       }
                     />
@@ -240,7 +241,48 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
             )
           }
         >
-          {modalContenido?.texto}
+          <div className="space-y-4 p-1">
+            {modalContenido?.tipo === 'condiciones' ? (
+              <div className="space-y-2.5">
+                <p className="text-xs text-gray-500">
+                  Historial de patologías y condiciones crónicas:
+                </p>
+                <div className="p-3.5 bg-rose-50/70 rounded-xl border border-rose-200/80 shadow-xs">
+                  <div className="flex items-center gap-1.5 mb-1.5 text-rose-800 font-semibold text-xs uppercase tracking-wide">
+                    <HeartPulse className="w-4 h-4 text-rose-600" />
+                    <span>Diagnósticos y Cuidados</span>
+                  </div>
+                  <p className="text-gray-800 leading-relaxed text-sm whitespace-pre-wrap font-sans">
+                    {modalContenido.texto}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                <p className="text-xs text-gray-500">
+                  Sustancias o medicamentos con reacción adversa:
+                </p>
+                <div className="flex flex-col gap-2">
+                  {(modalContenido?.items && modalContenido.items.length > 0
+                    ? modalContenido.items
+                    : (modalContenido?.texto ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+                  ).map((alergia, i) => (
+                    <div
+                      key={i}
+                      className="p-3 bg-white border border-amber-200/90 rounded-xl shadow-xs flex items-center gap-2.5"
+                    >
+                      <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-3.5 h-3.5 text-amber-700" />
+                      </div>
+                      <span className="text-sm font-semibold text-gray-800 leading-tight">
+                        {alergia}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </ModalDetalle>
       </main>
     </div>

@@ -98,6 +98,12 @@ export function PerfilDependienteDesktop({
     );
 
   useEffect(() => {
+    if (modoInicialEditar && puedeEditarBackend) {
+      setModoEditar(true);
+    }
+  }, [modoInicialEditar, puedeEditarBackend]);
+
+  useEffect(() => {
     if (perfilExistente) {
       form.reset(valoresIniciales);
     }

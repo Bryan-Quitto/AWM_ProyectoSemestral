@@ -4,7 +4,6 @@ import { PerfilDependienteDesktop } from '../../../views/PerfilDependiente/Perfi
 import { PerfilDependienteMobile } from '../../../views/PerfilDependiente/PerfilDependienteMobile';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import { protegerRutaPorRol } from '../../../autenticacion/politicas';
-import { useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint } from '../../../api/generated/api/api';
 import { ChevronLeft } from 'lucide-react';
 
 const perfilIdSearchSchema = z.object({
@@ -24,19 +23,9 @@ export const Route = createFileRoute('/_protegidas/dependientes/$perfilId')({
     const { perfilId } = Route.useParams();
     const { editar } = Route.useSearch();
 
-    // SWR para conocer el rolEnDependiente y si puedeEditar
-    const { data } =
-      useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint(
-        perfilId,
-        { swr: { enabled: Boolean(perfilId) } }
-      );
-
-    const perfil = data?.data;
-    const puedeEditar = perfil?.puedeEditar === true;
-    // El componente arrancará en modo edición solo si:
-    //   - el usuario pidió editar (?editar=1)
-    //   - el backend autoriza (puedeEditar)
-    const arrancarEnEdicion = editar === '1' && puedeEditar;
+    // Pasamos la intención del usuario (?editar=1). El componente se encarga
+    // de activar el formulario en cuanto el perfil confirme `puedeEditar`.
+    const arrancarEnEdicion = editar === '1';
 
     const irALista = () => navigate({ to: '/dependientes' });
 

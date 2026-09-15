@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Outlet } from '@tanstack/react-router'
-import { Home, Users, CalendarDays, LogOut, AlertTriangle, Settings } from 'lucide-react'
+import { Home, Users, CalendarDays, LogOut, AlertTriangle, Settings, UsersRound } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
@@ -123,6 +123,15 @@ export const LayoutPrincipalMobile = () => {
           >
             <CalendarDays size={24} />
             <span className="text-[10px] mt-1 font-medium">Agenda</span>
+          </Link>
+        )}
+        {!esAdmin && (
+          <Link
+            to="/directorio-relevos"
+            className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
+          >
+            <UsersRound size={24} />
+            <span className="text-[10px] mt-1 font-medium">Directorio</span>
           </Link>
         )}
         {esAdmin && (
