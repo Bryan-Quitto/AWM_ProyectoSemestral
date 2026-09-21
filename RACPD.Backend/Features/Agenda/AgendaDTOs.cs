@@ -52,9 +52,19 @@ public record TareaTurnoItemRequest(Guid? Id, string Descripcion, int Orden);
 /// DTO para retornar la información de un bloque de turno.
 /// Usa strings para fecha/hora para compatibilidad con JSON del frontend.
 /// Persona 1 / Semana 1: incluye tenancy clínica, recurrencia y tareas.
+/// Persona 1 / Semana 2: incluye identificadores de maestro y de ocurrencia
+/// proyectada para soportar recurrencias sin duplicar registros en BD.
 /// </summary>
+/// <remarks>
+/// - <c>Id</c>: conservado por compatibilidad. Apunta al bloque maestro.
+/// - <c>IdBloqueMaestro</c>: explícito y semántico. Acciones sobre el maestro.
+/// - <c>IdOcurrencia</c>: GUID determinista (SHA-1) del par (IdBloqueMaestro, Fecha).
+///   Identifica una instancia proyectada específica dentro del rango consultado.
+/// </remarks>
 public record BloqueTurnoDto(
     Guid Id,
+    Guid IdBloqueMaestro,
+    Guid IdOcurrencia,
     string Fecha,        // "YYYY-MM-DD"
     string HoraInicio,   // "HH:mm:ss"
     string HoraFin,      // "HH:mm:ss"

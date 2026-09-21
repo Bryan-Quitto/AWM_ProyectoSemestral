@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
+using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
 using RACPD.Backend.Infrastructure;
 
@@ -9,8 +10,33 @@ namespace RACPD.Backend.Features.Agenda.Listar;
 
 public record Response(IReadOnlyList<BloqueTurnoDto> Data);
 
+/// <summary>
+/// Endpoint GET /api/agenda — Lista bloques de turno con proyección de ocurrencias.
+/// Persona 1 / Semana 2:
+/// - Algoritmo de proyección en memoria para tipos <see cref="TipoRecurrencia.Indefinida"/>
+///   y <see cref="TipoRecurrencia.Semanas"/> (rango válido: 1..24).
+/// - Sin duplicar registros en Postgres: un único bloque maestro puede materializar
+///   múltiples ocurrencias dentro del rango <c>[fechaDesde, fechaHasta]</c>.
+/// - Filtros <c>MisBloques</c> / <c>MisReservas</c> / <c>Disponibles</c> se aplican
+///   sobre la lista ya proyectada (en memoria).
+/// - Identificadores expuestos: <c>Id</c> (compat, apunta al maestro),
+///   <c>IdBloqueMaestro</c> (explícito) y <c>IdOcurrencia</c> (determinista).
+/// Errores: RFC 7807 estricto vía <see cref="ProblemDetailsHelper"/>.
+/// </summary>
 public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
 {
+    /// <summary>
+    /// Tope defensivo de iteraciones para evitar bucles infinitos accidentales
+    /// si una fecha base errónea pasa los filtros. Cubre ≈ 7 años de
+    /// repeticiones semanales (52 × 7 = 364).
+    /// </summary>
+    private const int TopeOcurrenciasIndefinida = 366;
+
+    /// <summary>
+    /// Tope defensivo para recurrencia <c>Semanas</c>: 24 semanas × 4 años.
+    /// </summary>
+    private const int TopeOcurrenciasSemanas = 96;
+
     private readonly AppDbContext _dbContext;
 
     public ListarBloquesEndpoint(AppDbContext dbContext)
@@ -63,35 +89,109 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             fechaHasta = parsedHasta;
         }
 
-        // Consultar bloques — Single-trip con Include para evitar N+1.
-        var bloques = await _dbContext.BloquesTurno
+        // Garantizar coherencia del rango.
+        if (fechaHasta < fechaDesde)
+        {
+            (fechaDesde, fechaHasta) = (fechaHasta, fechaDesde);
+        }
+
+        // === Trip único a Postgres: candidatas para proyección ===
+        // - Unica dentro de [fechaDesde, fechaHasta]
+        // - Recurrentes (Indefinida | Semanas) cuya fecha base <= fechaHasta
+        var candidatas = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
             .Include(b => b.PerfilDependiente)
             .Include(b => b.Reservas)
                 .ThenInclude(r => r.Usuario)
-            .Where(b => b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
+            .Where(b =>
+                (b.TipoRecurrencia == TipoRecurrencia.Unica
+                    && b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
+                || (b.TipoRecurrencia != TipoRecurrencia.Unica
+                    && b.Fecha <= fechaHasta))
             .ToListAsync(ct);
 
-        // Aplicar filtro en memoria
+        // === Proyección en memoria ===
+        var ocurrencias = new List<(BloqueTurno Maestro, DateOnly FechaOc)>();
+
+        foreach (var b in candidatas)
+        {
+            switch (b.TipoRecurrencia)
+            {
+                case TipoRecurrencia.Unica:
+                    if (b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
+                    {
+                        ocurrencias.Add((b, b.Fecha));
+                    }
+                    break;
+
+                case TipoRecurrencia.Indefinida:
+                    {
+                        var iter = 0;
+                        for (var d = b.Fecha; d <= fechaHasta; d = d.AddDays(7))
+                        {
+                            if (d >= fechaDesde)
+                            {
+                                ocurrencias.Add((b, d));
+                            }
+                            if (++iter > TopeOcurrenciasIndefinida)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    break;
+
+                case TipoRecurrencia.Semanas
+                    when b.IntervaloSemanas is int n && n >= 1 && n <= 24:
+                    {
+                        var paso = n * 7;
+                        var iter = 0;
+                        for (var d = b.Fecha; d <= fechaHasta; d = d.AddDays(paso))
+                        {
+                            if (d >= fechaDesde)
+                            {
+                                ocurrencias.Add((b, d));
+                            }
+                            if (++iter > TopeOcurrenciasSemanas)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    break;
+
+                // TipoRecurrencia.Semanas con IntervaloSemanas fuera de rango:
+                // ignorado silenciosamente. La validación en Crear/Editar ya
+                // garantiza el rango 1..24; defensa por si llega dato sucio.
+            }
+        }
+
+        // === Filtros en memoria sobre la lista proyectada ===
         if (filtro == "MisBloques" && esPrincipal)
         {
-            bloques = bloques.Where(b => b.CreadoPorId == usuarioId).ToList();
+            ocurrencias = ocurrencias.Where(o => o.Maestro.CreadoPorId == usuarioId).ToList();
         }
         else if (filtro == "MisReservas")
         {
-            bloques = bloques.Where(b => b.Reservas.Any(r => r.UsuarioId == usuarioId && r.Activa)).ToList();
+            ocurrencias = ocurrencias
+                .Where(o => o.Maestro.Reservas.Any(r => r.Activa && r.UsuarioId == usuarioId))
+                .ToList();
         }
         else if (filtro == "Disponibles")
         {
-            bloques = bloques.Where(b => b.CuposMaximos > b.Reservas.Count(r => r.Activa)).ToList();
+            ocurrencias = ocurrencias
+                .Where(o => o.Maestro.CuposMaximos > o.Maestro.Reservas.Count(r => r.Activa))
+                .ToList();
         }
 
-        var bloquesDto = bloques
-            .OrderBy(b => b.Fecha)
-            .ThenBy(b => b.HoraInicio)
-            .Select(b =>
+        // === Mapeo a DTO con orden estable ===
+        var bloquesDto = ocurrencias
+            .OrderBy(o => o.FechaOc)
+            .ThenBy(o => o.Maestro.HoraInicio)
+            .Select(o =>
             {
+                var b = o.Maestro;
                 var reservasActivas = b.Reservas.Where(r => r.Activa).ToList();
                 var miReserva = reservasActivas.FirstOrDefault(r => r.UsuarioId == usuarioId);
                 var esMiBloque = b.CreadoPorId == usuarioId;
@@ -100,10 +200,13 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     && !b.EstaVencido
                     && cuposDisponibles > 0
                     && miReserva == null;
+                var idOcurrencia = OcurrenciaIdHelper.CalcularIdOcurrencia(b.Id, o.FechaOc);
 
                 return new BloqueTurnoDto(
                     Id: b.Id,
-                    Fecha: b.Fecha.ToString("yyyy-MM-dd"),
+                    IdBloqueMaestro: b.Id,
+                    IdOcurrencia: idOcurrencia,
+                    Fecha: o.FechaOc.ToString("yyyy-MM-dd"),
                     HoraInicio: b.HoraInicio.ToString("HH:mm:ss"),
                     HoraFin: b.HoraFin.ToString("HH:mm:ss"),
                     CuposMaximos: b.CuposMaximos,
@@ -123,12 +226,12 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     )).ToList(),
                     PuedoReservar: puedoReservar,
                     YaReservé: miReserva != null,
-                    // === NUEVO (Persona 1 / Semana 1) ===
+                    // === Persona 1 / Semana 1 ===
                     PerfilDependienteId: b.PerfilDependienteId,
                     NombreDependiente: b.PerfilDependiente?.NombreCompleto ?? string.Empty,
                     TipoRecurrencia: b.TipoRecurrencia.ToString(),
                     IntervaloSemanas: b.IntervaloSemanas,
-                    Tareas: (b.Tareas ?? new List<RACPD.Backend.Domain.Entities.TareaTurnoItem>())
+                    Tareas: (b.Tareas ?? new List<TareaTurnoItem>())
                         .OrderBy(t => t.Orden)
                         .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
                         .ToList()

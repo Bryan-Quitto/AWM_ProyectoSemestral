@@ -6,6 +6,14 @@ interface ChecklistTareasProps {
   tareas: TareaFormValue[];
   onChange: (tareas: TareaFormValue[]) => void;
   disabled?: boolean;
+  error?: string;
+  /**
+   * Se activa cuando el usuario ya intentó enviar el formulario al menos
+   * una vez. Mientras sea `false`, evitamos falsos positivos visuales
+   * (borde rojo en el primer render aunque el usuario aún no haya
+   * interactuado con la lista).
+   */
+  intentoEnviar?: boolean;
 }
 
 /**
@@ -24,6 +32,8 @@ export const ChecklistTareas = ({
   tareas,
   onChange,
   disabled = false,
+  error,
+  intentoEnviar = false,
 }: ChecklistTareasProps) => {
   const [borrador, setBorrador] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
@@ -99,10 +109,15 @@ export const ChecklistTareas = ({
     }
   };
 
+  // Estado derivado: solo mostramos el error de "lista vacía" cuando el
+  // usuario ya intentó enviar el formulario. Mientras tanto, mantenemos
+  // el borde neutro para no castigar al cuidador antes de que interactúe.
+  const mostrarErrorVacio = intentoEnviar && tareas.length === 0;
+
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-        <ListChecks className="w-4 h-4 text-blue-500" />
+        <ListChecks className={`w-4 h-4 ${error || mostrarErrorVacio ? 'text-red-500' : 'text-blue-500'}`} />
         Tareas del bloque
         <span className="text-xs text-gray-500 font-normal">
           ({tareas.length}/20)
@@ -119,7 +134,11 @@ export const ChecklistTareas = ({
           disabled={disabled || tareas.length >= 20}
           maxLength={200}
           placeholder="Ej: Administrar medicación de las 08:00"
-          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed text-sm"
+          className={`flex-1 px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed text-sm ${
+            mostrarErrorVacio
+              ? 'border-red-300 focus:ring-red-500 focus:border-red-500'
+              : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
+          }`}
         />
         <button
           type="button"
@@ -131,6 +150,13 @@ export const ChecklistTareas = ({
           <Plus className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Mensaje de error visible sólo cuando el usuario intentó enviar. */}
+      {mostrarErrorVacio && (
+        <p className="text-red-500 text-sm mt-1" role="alert">
+          Debe agregar al menos una tarea para el bloque de turno
+        </p>
+      )}
 
       {/* Lista */}
       {tareas.length > 0 && (

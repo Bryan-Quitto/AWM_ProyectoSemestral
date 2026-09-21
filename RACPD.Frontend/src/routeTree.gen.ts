@@ -18,6 +18,7 @@ import { Route as ProtegidasIndexRouteImport } from './routes/_protegidas/index'
 import { Route as ProtegidasAgendaRouteImport } from './routes/_protegidas/agenda'
 import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegidas/configuracion'
 import { Route as ProtegidasDependientesRouteImport } from './routes/_protegidas/dependientes'
+import { Route as ProtegidasDirectorioRelevosRouteImport } from './routes/_protegidas/directorio-relevos'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
 import { Route as ProtegidasDependientesIndexRouteImport } from './routes/_protegidas/dependientes/index'
 import { Route as ProtegidasDependientesPerfilIdRouteImport } from './routes/_protegidas/dependientes/$perfilId'
@@ -70,6 +71,12 @@ const ProtegidasDependientesRoute = ProtegidasDependientesRouteImport.update({
   path: '/dependientes',
   getParentRoute: () => ProtegidasRoute,
 } as any)
+const ProtegidasDirectorioRelevosRoute =
+  ProtegidasDirectorioRelevosRouteImport.update({
+    id: '/directorio-relevos',
+    path: '/directorio-relevos',
+    getParentRoute: () => ProtegidasRoute,
+  } as any)
 const ProtegidasFichaPacienteRoute = ProtegidasFichaPacienteRouteImport.update({
   id: '/ficha-paciente',
   path: '/ficha-paciente',
@@ -120,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/agenda': typeof ProtegidasAgendaRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/dependientes': typeof ProtegidasDependientesRouteWithChildren
+  '/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
   '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
@@ -135,6 +143,7 @@ export interface FileRoutesByTo {
   '/restablecer-contrasena': typeof RestablecerContrasenaRoute
   '/agenda': typeof ProtegidasAgendaRoute
   '/configuracion': typeof ProtegidasConfiguracionRoute
+  '/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/': typeof ProtegidasIndexRoute
   '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
@@ -154,6 +163,7 @@ export interface FileRoutesById {
   '/_protegidas/agenda': typeof ProtegidasAgendaRoute
   '/_protegidas/configuracion': typeof ProtegidasConfiguracionRoute
   '/_protegidas/dependientes': typeof ProtegidasDependientesRouteWithChildren
+  '/_protegidas/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
   '/_protegidas/': typeof ProtegidasIndexRoute
   '/_protegidas/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
@@ -174,6 +184,7 @@ export interface FileRouteTypes {
     | '/agenda'
     | '/configuracion'
     | '/dependientes'
+    | '/directorio-relevos'
     | '/ficha-paciente'
     | '/dependientes/$perfilId'
     | '/dependientes/nuevo'
@@ -189,6 +200,7 @@ export interface FileRouteTypes {
     | '/restablecer-contrasena'
     | '/agenda'
     | '/configuracion'
+    | '/directorio-relevos'
     | '/ficha-paciente'
     | '/'
     | '/dependientes/$perfilId'
@@ -207,6 +219,7 @@ export interface FileRouteTypes {
     | '/_protegidas/agenda'
     | '/_protegidas/configuracion'
     | '/_protegidas/dependientes'
+    | '/_protegidas/directorio-relevos'
     | '/_protegidas/ficha-paciente'
     | '/_protegidas/'
     | '/_protegidas/dependientes/$perfilId'
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasDependientesRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/directorio-relevos': {
+      id: '/_protegidas/directorio-relevos'
+      path: '/directorio-relevos'
+      fullPath: '/directorio-relevos'
+      preLoaderRoute: typeof ProtegidasDirectorioRelevosRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
     '/_protegidas/ficha-paciente': {
       id: '/_protegidas/ficha-paciente'
       path: '/ficha-paciente'
@@ -367,6 +387,7 @@ interface ProtegidasRouteChildren {
   ProtegidasAgendaRoute: typeof ProtegidasAgendaRoute
   ProtegidasConfiguracionRoute: typeof ProtegidasConfiguracionRoute
   ProtegidasDependientesRoute: typeof ProtegidasDependientesRouteWithChildren
+  ProtegidasDirectorioRelevosRoute: typeof ProtegidasDirectorioRelevosRoute
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
   ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
@@ -377,6 +398,7 @@ const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasAgendaRoute: ProtegidasAgendaRoute,
   ProtegidasConfiguracionRoute: ProtegidasConfiguracionRoute,
   ProtegidasDependientesRoute: ProtegidasDependientesRouteWithChildren,
+  ProtegidasDirectorioRelevosRoute: ProtegidasDirectorioRelevosRoute,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
   ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,

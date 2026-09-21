@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:24397"
+      "url": "http://127.0.0.1:44271"
     }
   ],
   "paths": {
@@ -917,6 +917,94 @@
         }
       }
     },
+    "/api/directorio-relevos/sembrar": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesDirectorioRelevosSembrarSembrarDirectorioRelevosEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosSembrarSembrarDirectorioRelevosResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/directorio-relevos": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesDirectorioRelevosListarListarDirectorioRelevosEndpoint",
+        "parameters": [
+          {
+            "name": "terminoBusqueda",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          },
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosListarRelevoItemResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
     "/api/agenda/{id}/reservar": {
       "post": {
         "tags": [
@@ -1805,6 +1893,54 @@
           }
         }
       },
+      "RACPDBackendFeaturesDirectorioRelevosSembrarSembrarDirectorioRelevosResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "insertados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensaje": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesDirectorioRelevosListarRelevoItemResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+          }
+        }
+      },
+      "RACPDBackendDomainEnumsEstadoDirectorioRelevo": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Disponible",
+          "NoDisponible"
+        ],
+        "enum": [
+          "Disponible",
+          "NoDisponible"
+        ]
+      },
+      "RACPDBackendFeaturesDirectorioRelevosListarListarDirectorioRelevosRequest": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "RACPDBackendFeaturesAgendaReservarResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -1837,6 +1973,14 @@
         "additionalProperties": false,
         "properties": {
           "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "idBloqueMaestro": {
+            "type": "string",
+            "format": "guid"
+          },
+          "idOcurrencia": {
             "type": "string",
             "format": "guid"
           },

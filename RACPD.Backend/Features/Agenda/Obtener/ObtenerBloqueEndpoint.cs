@@ -73,8 +73,15 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
             && cuposDisponibles > 0
             && miReserva == null;
 
+        // Cuando se consulta un bloque por id se devuelve la entidad maestra.
+        // Coherente con el algoritmo de proyección: IdOcurrencia de la fecha
+        // base es determinista y coincide con IdBloqueMaestro sólo si el id
+        // solicitado ya fue proyectado para esa misma fecha. Aquí devolvemos
+        // el Guid del maestro como ambos campos para mantener el contrato.
         var dto = new BloqueTurnoDto(
             Id: bloque.Id,
+            IdBloqueMaestro: bloque.Id,
+            IdOcurrencia: bloque.Id,
             Fecha: bloque.Fecha.ToString("yyyy-MM-dd"),
             HoraInicio: bloque.HoraInicio.ToString("HH:mm:ss"),
             HoraFin: bloque.HoraFin.ToString("HH:mm:ss"),

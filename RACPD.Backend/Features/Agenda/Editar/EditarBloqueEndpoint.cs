@@ -131,34 +131,35 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueRequest, EditarBloqueRe
         }
 
         var tareasNormalizadas = new List<TareaTurnoItem>();
-        if (req.Tareas is not null && req.Tareas.Count > 0)
+        if (req.Tareas is null || req.Tareas.Count == 0)
         {
-            if (req.Tareas.Count > 20)
+            erroresNegocio["tareas"] = ["Debe agregar al menos una tarea para el bloque de turno."];
+        }
+        else if (req.Tareas.Count > 20)
+        {
+            erroresNegocio["tareas"] = ["Máximo 20 tareas permitidas por bloque."];
+        }
+        else
+        {
+            for (var i = 0; i < req.Tareas.Count; i++)
             {
-                erroresNegocio["tareas"] = ["Máximo 20 tareas permitidas por bloque."];
-            }
-            else
-            {
-                for (var i = 0; i < req.Tareas.Count; i++)
+                var t = req.Tareas[i];
+                var desc = (t.Descripcion ?? string.Empty).Trim();
+                if (desc.Length < 1 || desc.Length > 200)
                 {
-                    var t = req.Tareas[i];
-                    var desc = (t.Descripcion ?? string.Empty).Trim();
-                    if (desc.Length < 1 || desc.Length > 200)
-                    {
-                        erroresNegocio["tareas"] = [$"La tarea #{i + 1} debe tener una descripción entre 1 y 200 caracteres."];
-                        continue;
-                    }
-                    if (t.Orden < 0)
-                    {
-                        erroresNegocio["tareas"] = [$"La tarea #{i + 1} tiene un orden inválido (debe ser >= 0)."];
-                        continue;
-                    }
-                    tareasNormalizadas.Add(new TareaTurnoItem(
-                        t.Id ?? Guid.NewGuid(),
-                        desc,
-                        t.Orden
-                    ));
+                    erroresNegocio["tareas"] = [$"La tarea #{i + 1} debe tener una descripción entre 1 y 200 caracteres."];
+                    continue;
                 }
+                if (t.Orden < 0)
+                {
+                    erroresNegocio["tareas"] = [$"La tarea #{i + 1} tiene un orden inválido (debe ser >= 0)."];
+                    continue;
+                }
+                tareasNormalizadas.Add(new TareaTurnoItem(
+                    t.Id ?? Guid.NewGuid(),
+                    desc,
+                    t.Orden
+                ));
             }
         }
 

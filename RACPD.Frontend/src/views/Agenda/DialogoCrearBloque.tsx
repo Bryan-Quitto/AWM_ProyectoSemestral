@@ -103,6 +103,12 @@ export const DialogoCrearBloque = ({
     name: 'tipoRecurrencia',
   });
 
+  // Intervalo observado para el microcopy de "Semanas".
+  const intervaloSemanas = useWatch({
+    control: form.control,
+    name: 'intervaloSemanas',
+  });
+
   // Fecha observada para calcular el día de la semana en el microcopy
   // de "Indefinida" (se actualiza solo cuando el cuidador cambia la fecha).
   const fechaForm = useWatch({
@@ -391,6 +397,28 @@ export const DialogoCrearBloque = ({
             </p>
           )}
 
+          {/* Microcopy para "Semanas": explica en lenguaje natural cada cuántas
+              semanas y qué día. Se actualiza si cambian la fecha o el intervalo.
+              Cálculo de fecha seguro (sin desfase UTC) reutilizando el helper. */}
+          {tipoRecurrencia === 'Semanas' && (
+            <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                Se repetirá cada{' '}
+                <span className="font-medium">
+                  {Number.isFinite(intervaloSemanas) && (intervaloSemanas ?? 0) > 0
+                    ? `${intervaloSemanas} ${intervaloSemanas === 1 ? 'semana' : 'semanas'}`
+                    : '— semanas'}
+                </span>
+                , los{' '}
+                <span className="font-medium">
+                  {obtenerNombreDiaSemana(fechaForm ?? '')}
+                </span>
+                .
+              </span>
+            </p>
+          )}
+
           {/* Intervalo condicional */}
           {tipoRecurrencia === 'Semanas' && (
             <div>
@@ -440,7 +468,7 @@ export const DialogoCrearBloque = ({
           <Controller
             control={form.control}
             name="tareas"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <ChecklistTareas
                 tareas={(field.value ?? []) as TareaFormValue[]}
                 onChange={(tareas) => {
@@ -448,14 +476,11 @@ export const DialogoCrearBloque = ({
                   void form.trigger('tareas');
                 }}
                 disabled={isMutating}
+                error={fieldState.error?.message}
+                intentoEnviar={form.formState.submitCount > 0}
               />
             )}
           />
-          {form.formState.errors.tareas && (
-            <p className="text-red-500 text-sm mt-1">
-              {form.formState.errors.tareas.message as string}
-            </p>
-          )}
         </form>
 
         <div className="flex gap-3 p-4 border-t border-gray-100 bg-gray-50">
