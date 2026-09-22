@@ -56,10 +56,9 @@ interface RespuestaEnvoltorio {
 /**
  * Fetcher manual que SI respeta los query params.
  *
- * Importante: NO usamos `useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint`
- * generado por Orval porque su helper `getRACPDBackendFeaturesAgendaListarListarBloquesEndpointUrl`
- * devuelve la URL hardcodeada `/api/agenda` sin params (ver api.ts:1931).
- * Por eso SWR nunca llegaba a mandar `?filtro=MisBloques` al backend.
+ * Importante: NO usamos el hook `useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint`
+ * generado por Orval porque su helper de URL está hardcodeado a `/api/agenda`
+ * sin aceptar query params. Por eso SWR nunca mandaba `?filtro=MisBloques` al backend.
  */
 const fetcherAgenda = async (url: string): Promise<RACPDBackendFeaturesAgendaBloqueTurnoDto[]> => {
   const res = await customFetch<RespuestaEnvoltorio>(url, { method: 'GET' });
@@ -122,22 +121,47 @@ export const useEliminarBloque = () => {
   );
 };
 
-// Hook para reservar turno (POST con id en path)
+// Hook para reservar turno (POST con id en path).
+// Persona 2 / Semana 2: envía el body { fecha? } para que las reglas
+// temporales (R3 vencido y antena 72h) operen contra la fecha de la
+// OCURRENCIA concreta, no contra la fecha base del maestro.
+//
+// Importante: el backend (`ReservarEndpoint` -> `ReservarRequest`)
+// declara `requestBody.required = true` (ver swagger.json). NO basta
+// con el path `id`: hay que enviar el JSON con al menos `{}` (objeto
+// vacío válido). De lo contrario FastEndpoints responde 415.
+//
+// El id va en el path; el body sólo lleva la fecha opcional de la
+// ocurrencia, exactamente como define el tipo Orval generado
+// `RACPDBackendFeaturesAgendaReservarReservarRequest = { fecha?: string | null }`.
+//
+// Se usa el hook nativo de Orval para garantizar:
+//   - `Content-Type: application/json` correcto
+//   - `body: JSON.stringify({ fecha })` ya serializado
+//   - Bearer token inyectado por customFetch (mutator Orval)
+//
+// Retro-compatibilidad: aceptar `string` (solo id) además de objeto,
+// para callers legacy que no tienen fecha de ocurrencia (bloques Unica).
 export const useReservarTurno = () => {
   return useSWRMutation(
     '/api/agenda/reservar',
-    async (_: string, { arg }: { arg: string }) => {
-      return rACPDBackendFeaturesAgendaReservarReservarEndpoint(arg);
+    async (_: string, { arg }: { arg: string | { id: string; fecha?: string } }) => {
+      const id = typeof arg === 'string' ? arg : arg.id;
+      const fecha = typeof arg === 'string' ? undefined : arg.fecha;
+      return rACPDBackendFeaturesAgendaReservarReservarEndpoint(id, { fecha });
     }
   );
 };
 
-// Hook para cancelar reserva (DELETE con id en path)
+// Hook para cancelar reserva (DELETE con id en path).
+// Persona 2 / Semana 2: misma logica que arriba.
 export const useCancelarReserva = () => {
   return useSWRMutation(
     '/api/agenda/reserva',
-    async (_: string, { arg }: { arg: string }) => {
-      return rACPDBackendFeaturesAgendaCancelarReservaCancelarReservaEndpoint(arg);
+    async (_: string, { arg }: { arg: string | { id: string; fecha?: string } }) => {
+      const id = typeof arg === 'string' ? arg : arg.id;
+      const fecha = typeof arg === 'string' ? undefined : arg.fecha;
+      return rACPDBackendFeaturesAgendaCancelarReservaCancelarReservaEndpoint(id, { fecha });
     }
   );
 };

@@ -10,7 +10,7 @@ namespace RACPD.Backend.Features.Agenda.Reservar;
 
 public record Response(ReservaExitosaDto Data);
 
-public class ReservarEndpoint : EndpointWithoutRequest<Response>
+public class ReservarEndpoint : Endpoint<ReservarRequest, Response>
 {
     private readonly AppDbContext _dbContext;
 
@@ -28,7 +28,7 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
             Rol.Apoyo.ToString());
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(ReservarRequest req, CancellationToken ct)
     {
         var usuarioIdString = User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? User.FindFirstValue("sub");
@@ -39,7 +39,7 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
             return;
         }
 
-        if (!Guid.TryParse(Route<string>("id"), out var bloqueId))
+        if (!Guid.TryParse(req.Id, out var bloqueId))
         {
             await ProblemDetailsHelper.EnviarErroresValidacionAsync(
                 HttpContext,
@@ -71,12 +71,34 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
             return;
         }
 
-        // R3: No bloques pasadas
-        if (bloque.EstaVencido)
+        // === Persona 2 / Semana 2: fecha de la OCURRENCIA (no del maestro) ===
+        // Para reglas temporales (R3 bloque vencido), evaluamos contra la fecha
+        // de la OCURRENCIA concreta que el usuario quiere reservar. Si el
+        // cliente no envía la fecha, usamos la fecha base (modo legacy).
+        DateOnly fechaOc;
+        if (!string.IsNullOrWhiteSpace(req.Fecha))
+        {
+            if (!DateOnly.TryParseExact(req.Fecha, "yyyy-MM-dd", out fechaOc))
+            {
+                await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                    HttpContext,
+                    new Dictionary<string, IEnumerable<string>> { ["fecha"] = ["Formato YYYY-MM-dd esperado."] },
+                    "La fecha de la ocurrencia es inválida.");
+                return;
+            }
+        }
+        else
+        {
+            fechaOc = bloque.Fecha;
+        }
+
+        // R3: No bloques pasados (evaluado contra la fecha de la OCURRENCIA).
+        var inicioOcurrenciaUtc = bloque.CalcularInicioDeOcurrenciaEnEcuador(fechaOc);
+        if (inicioOcurrenciaUtc < DateTimeOffset.UtcNow)
         {
             await ProblemDetailsHelper.EnviarConflictoAsync(
                 HttpContext,
-                "No se puede reservar un bloque en fecha pasada.",
+                "No se puede reservar una ocurrencia en fecha pasada.",
                 tipoConflicto: "bloque-vencido");
             return;
         }
@@ -136,4 +158,16 @@ public class ReservarEndpoint : EndpointWithoutRequest<Response>
 
         await Send.OkAsync(new Response(respuesta), ct);
     }
+}
+
+/// <summary>
+/// Request para reservar una ocurrencia de bloque (Persona 2 / Semana 2).
+/// <c>Fecha</c> es la fecha de la OCURRENCIA que se quiere reservar (YYYY-MM-dd).
+/// Opcional: si no se envía, se usa la fecha base del maestro (modo legacy,
+/// válido únicamente para bloques Unica).
+/// </summary>
+public class ReservarRequest
+{
+    public string Id { get; set; } = default!;
+    public string? Fecha { get; set; }
 }

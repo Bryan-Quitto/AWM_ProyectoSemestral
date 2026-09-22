@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Plus, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
-import { TarjetaBloque } from './TarjetaBloque';
+import { TarjetaBloque } from './TarjetaBloque';  
 import { DialogoCrearBloque } from './DialogoCrearBloque';
 import { CalendarioAgenda } from './CalendarioAgenda';
 import { ConfirmarAccion } from './ConfirmarAccion';
@@ -13,9 +14,14 @@ import {
   useReservarTurno,
   useCancelarReserva,
 } from '../../features/agenda/hooks/useAgenda';
+import {
+  calcularAntelacionMinima,
+  MENSAJE_BLOQUEO_72H,
+} from '../../features/agenda/lib/calcularAntelacionMinima';
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 import type { BloqueFormData } from './schema';
+import type { OcurrenciaRef } from './TarjetaBloque';
 
 type Filtro = 'Todos' | 'Disponibles' | 'MisReservas' | 'MisBloques';
 
@@ -85,13 +91,21 @@ export const AgendaDesktop = () => {
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [bloqueEditando, setBloqueEditando] = useState<RACPDBackendFeaturesAgendaBloqueTurnoDto | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error' } | null>(null);
+  // Toast local legado del proyecto. Convive con el `toast` de sonner
+  // (importado arriba): aquí se renderiza el cuadro verde/rojo de la UI
+  // y para evitar colisión de nombres se llama `toastLocal`.
+  const [toastLocal, setToastLocal] = useState<{ mensaje: string; tipo: 'exito' | 'error' } | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('Todos');
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
 
-  const [confirmCancelar, setConfirmCancelar] = useState<{ abierto: boolean; bloqueId: string | null }>({
+  const [confirmCancelar, setConfirmCancelar] = useState<{
+    abierto: boolean;
+    bloqueId: string | null;
+    fechaOc: string | undefined;
+  }>({
     abierto: false,
     bloqueId: null,
+    fechaOc: undefined,
   });
 
   const [confirmEliminar, setConfirmEliminar] = useState<{ abierto: boolean; bloqueId: string | null }>({
@@ -100,8 +114,15 @@ export const AgendaDesktop = () => {
   });
 
   const { data: perfilData } = useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint();
-  const esPrincipal = perfilData?.data?.rol === 'CuidadorPrincipal';
-  const usuarioId = perfilData?.data?.id;
+  // Narrowing para que TS strict no proteste: el hook puede devolver
+  // Success (data con MiPerfilResponse) o Error (data: void). Solo
+  // accedemos a `rol`/`id` si la respuesta es satisfactoria.
+  const perfilExitoso =
+    perfilData?.status === 200 && perfilData.data
+      ? (perfilData.data as { id?: string; rol?: string })
+      : null;
+  const esPrincipal = perfilExitoso?.rol === 'CuidadorPrincipal';
+  const usuarioId = perfilExitoso?.id;
 
   const { bloques, mutate } = useAgenda({ filtro });
   const { trigger: crearBloque, isMutating: creando } = useCrearBloque();
@@ -113,8 +134,8 @@ export const AgendaDesktop = () => {
   const isMutating = creando || editando || eliminando || reservando || cancelando;
 
   const mostrarToast = (mensaje: string, tipo: 'exito' | 'error') => {
-    setToast({ mensaje, tipo });
-    setTimeout(() => setToast(null), 3000);
+    setToastLocal({ mensaje, tipo });
+    setTimeout(() => setToastLocal(null), 3000);
   };
 
   const bloquesFiltrados = useMemo(() => {
@@ -220,9 +241,11 @@ export const AgendaDesktop = () => {
     }
   };
 
-  const handleReservar = async (id: string) => {
+  const handleReservar = async (ocurrencia: OcurrenciaRef | string) => {
     try {
-      const respuesta = await reservar(id) as any;
+      const respuesta = await reservar(
+        typeof ocurrencia === 'string' ? { id: ocurrencia } : ocurrencia
+      ) as any;
       if (respuesta?.status >= 400) {
         mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
@@ -238,7 +261,10 @@ export const AgendaDesktop = () => {
     if (!confirmCancelar.bloqueId) return;
 
     try {
-      const respuesta = await cancelarReserva(confirmCancelar.bloqueId) as any;
+      const respuesta = await cancelarReserva({
+        id: confirmCancelar.bloqueId,
+        fecha: confirmCancelar.fechaOc,
+      }) as any;
       if (respuesta?.status >= 400) {
         mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
@@ -248,12 +274,25 @@ export const AgendaDesktop = () => {
     } catch {
       mostrarToast('Error de conexión', 'error');
     } finally {
-      setConfirmCancelar({ abierto: false, bloqueId: null });
+      setConfirmCancelar({ abierto: false, bloqueId: null, fechaOc: undefined });
     }
   };
 
-  const handleCancelar = (id: string) => {
-    setConfirmCancelar({ abierto: true, bloqueId: id });
+  const handleCancelar = (ocurrencia: OcurrenciaRef | string) => {
+    // Aceptar string retro-compatible u objeto { id, fecha }.
+    const id = typeof ocurrencia === 'string' ? ocurrencia : ocurrencia.id;
+    const fechaOc = typeof ocurrencia === 'string' ? undefined : ocurrencia.fecha;
+
+    // Defensa redundante del guard 72h (Persona 2 / Semana 2).
+    // TarjetaBloque ya bloquea el botón visualmente, pero si por re-render
+    // o uso programático llegara aquí un id bloqueado, abortamos ANTES de
+    // abrir el modal. El backend sigue siendo la verdad y responderá 400.
+    const bloque = bloques.find((b) => b.id === id);
+    if (bloque && calcularAntelacionMinima(bloque.fecha, bloque.horaInicio)) {
+      toast.error(MENSAJE_BLOQUEO_72H, { duration: 6000 });
+      return;
+    }
+    setConfirmCancelar({ abierto: true, bloqueId: id, fechaOc });
   };
 
   const limpiarFiltros = () => {
@@ -345,10 +384,21 @@ export const AgendaDesktop = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {bloquesFiltrados.map(bloque => (
                 <TarjetaBloque
-                  // Usamos idOcurrencia (determinista por par maestro+fecha)
-                  // para que las proyecciones del mismo bloque tengan keys
-                  // unicas. Fallback a id para bloques sin recurrencia.
-                  key={bloque.idOcurrencia ?? bloque.id}
+                  // Key compuesta: el backend emite el mismo `bloque.id` (Guid
+                  // maestro) para todas las ocurrencias recurrentes de un
+                  // mismo bloque, lo que provocaba el warning de React
+                  // "Encountered two children with the same key" al renderizar
+                  // dos o más tarjetas del mismo maestro.
+                  //
+                  // Sintesis minima en cliente: par {maestroId, fechaOc} que
+                  // coincide con el algoritmo servidor
+                  // `OcurrenciaIdHelper.CalcularIdOcurrencia(b.Id, fechaOc)` en
+                  // `RACPD.Backend/Features/Agenda/Listar/ListarBloquesEndpoint.cs`.
+                  //
+                  // Pendiente: regenerar Orval para que el DTO incluya
+                  // `idBloqueMaestro` / `idOcurrencia` ya validados por el
+                  // backend. Cuando exista, migrar a `bloque.idOcurrencia`.
+                  key={bloque.fecha ? `${bloque.id}-${bloque.fecha}` : bloque.id}
                   bloque={bloque}
                   esMiBloque={bloque.creadoPor?.id === usuarioId}
                   puedeEditar={esPrincipal}
@@ -388,7 +438,7 @@ export const AgendaDesktop = () => {
         titulo="Cancelar Reserva"
         mensaje="¿Estás seguro de que deseas cancelar esta reserva?"
         onConfirmar={handleConfirmarCancelar}
-        onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null })}
+        onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null, fechaOc: undefined })}
         cargando={cancelando}
         tipo="peligro"
       />
@@ -403,11 +453,11 @@ export const AgendaDesktop = () => {
         tipo="peligro"
       />
 
-      {toast && (
+      {toastLocal && (
         <div className={`fixed bottom-6 right-6 p-4 rounded-xl shadow-lg z-50 flex items-center gap-3 ${
-          toast.tipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          toastLocal.tipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         }`}>
-          <span className="font-medium">{toast.mensaje}</span>
+          <span className="font-medium">{toastLocal.mensaje}</span>
         </div>
       )}
     </div>
