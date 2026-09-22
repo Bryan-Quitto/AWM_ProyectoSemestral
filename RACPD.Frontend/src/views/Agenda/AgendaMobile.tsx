@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
 import { TarjetaBloque } from './TarjetaBloque';
 import { DialogoCrearBloque } from './DialogoCrearBloque';
@@ -13,9 +14,14 @@ import {
   useReservarTurno,
   useCancelarReserva,
 } from '../../features/agenda/hooks/useAgenda';
+import {
+  calcularAntelacionMinima,
+  MENSAJE_BLOQUEO_72H,
+} from '../../features/agenda/lib/calcularAntelacionMinima';
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 import type { BloqueFormData } from './schema';
+import type { OcurrenciaRef } from './TarjetaBloque';
 
 type Filtro = 'Todos' | 'Disponibles' | 'MisReservas' | 'MisBloques';
 
@@ -80,14 +86,22 @@ export const AgendaMobile = () => {
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [bloqueEditando, setBloqueEditando] = useState<RACPDBackendFeaturesAgendaBloqueTurnoDto | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error' } | null>(null);
+  // Toast local legado del proyecto. Convive con el `toast` de sonner
+  // (importado arriba): aquí se renderiza el cuadro verde/rojo de la UI
+  // y para evitar colisión de nombres se llama `toastLocal`.
+  const [toastLocal, setToastLocal] = useState<{ mensaje: string; tipo: 'exito' | 'error' } | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('Todos');
   const [mostrarCalendario, setMostrarCalendario] = useState(true);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
   
-  const [confirmCancelar, setConfirmCancelar] = useState<{ abierto: boolean; bloqueId: string | null }>({
+  const [confirmCancelar, setConfirmCancelar] = useState<{
+    abierto: boolean;
+    bloqueId: string | null;
+    fechaOc: string | undefined;
+  }>({
     abierto: false,
     bloqueId: null,
+    fechaOc: undefined,
   });
 
   const [confirmEliminar, setConfirmEliminar] = useState<{ abierto: boolean; bloqueId: string | null }>({
@@ -96,10 +110,17 @@ export const AgendaMobile = () => {
   });
 
   const { data: perfilData } = useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint();
-  const esPrincipal = perfilData?.data?.rol === 'CuidadorPrincipal';
-  const usuarioId = perfilData?.data?.id;
+  // El hook puede devolver Success (data con MiPerfilResponse) o Error
+  // (data: void). Narrowing: solo accedemos a `rol`/`id` si la respuesta
+  // es satisfactoria (status === 200) y `data` no es void.
+  const perfilExitoso =
+    perfilData?.status === 200 && perfilData.data
+      ? (perfilData.data as { id?: string; rol?: string })
+      : null;
+  const esPrincipal = perfilExitoso?.rol === 'CuidadorPrincipal';
+  const usuarioId = perfilExitoso?.id;
 
-  const { bloques, mutate } = useAgenda();
+  const { bloques, mutate } = useAgenda({ filtro });
   const { trigger: crearBloque, isMutating: creando } = useCrearBloque();
   const { trigger: editarBloque, isMutating: editando } = useEditarBloque();
   const { trigger: eliminarBloque, isMutating: eliminando } = useEliminarBloque();
@@ -109,8 +130,8 @@ export const AgendaMobile = () => {
   const isMutating = creando || editando || eliminando || reservando || cancelando;
 
   const mostrarToast = (mensaje: string, tipo: 'exito' | 'error') => {
-    setToast({ mensaje, tipo });
-    setTimeout(() => setToast(null), 3000);
+    setToastLocal({ mensaje, tipo });
+    setTimeout(() => setToastLocal(null), 3000);
   };
 
   // Filtrar bloques - CORREGIDO
@@ -217,9 +238,11 @@ export const AgendaMobile = () => {
     }
   };
 
-  const handleReservar = async (id: string) => {
+  const handleReservar = async (ocurrencia: OcurrenciaRef | string) => {
     try {
-      const respuesta = await reservar(id) as any;
+      const respuesta = await reservar(
+        typeof ocurrencia === 'string' ? { id: ocurrencia } : ocurrencia
+      ) as any;
       if (respuesta?.status >= 400) {
         mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
@@ -235,7 +258,10 @@ export const AgendaMobile = () => {
     if (!confirmCancelar.bloqueId) return;
 
     try {
-      const respuesta = await cancelarReserva(confirmCancelar.bloqueId) as any;
+      const respuesta = await cancelarReserva({
+        id: confirmCancelar.bloqueId,
+        fecha: confirmCancelar.fechaOc,
+      }) as any;
       if (respuesta?.status >= 400) {
         mostrarToast(extraerMensajeError(respuesta, 'Error'), 'error');
         return;
@@ -245,12 +271,22 @@ export const AgendaMobile = () => {
     } catch {
       mostrarToast('Error de conexión', 'error');
     } finally {
-      setConfirmCancelar({ abierto: false, bloqueId: null });
+      setConfirmCancelar({ abierto: false, bloqueId: null, fechaOc: undefined });
     }
   };
 
-  const handleCancelar = (id: string) => {
-    setConfirmCancelar({ abierto: true, bloqueId: id });
+  const handleCancelar = (ocurrencia: OcurrenciaRef | string) => {
+    const id = typeof ocurrencia === 'string' ? ocurrencia : ocurrencia.id;
+    const fechaOc = typeof ocurrencia === 'string' ? undefined : ocurrencia.fecha;
+
+    // Defensa redundante del guard 72h (Persona 2 / Semana 2).
+    // Ver notas en AgendaDesktop.tsx — el backend sigue siendo la verdad.
+    const bloque = bloques.find((b) => b.id === id);
+    if (bloque && calcularAntelacionMinima(bloque.fecha, bloque.horaInicio)) {
+      toast.error(MENSAJE_BLOQUEO_72H, { duration: 6000 });
+      return;
+    }
+    setConfirmCancelar({ abierto: true, bloqueId: id, fechaOc });
   };
 
   const filtros: { id: Filtro; label: string }[] = [
@@ -345,10 +381,20 @@ export const AgendaMobile = () => {
         ) : (
           bloquesFiltrados.map(bloque => (
             <TarjetaBloque
-              // Usamos idOcurrencia (determinista por par maestro+fecha)
-              // para que las proyecciones del mismo bloque tengan keys
-              // unicas. Fallback a id para bloques sin recurrencia.
-              key={bloque.idOcurrencia ?? bloque.id}
+              // Key compuesta: el backend emite el mismo `bloque.id` (Guid
+              // maestro) para todas las ocurrencias recurrentes de un mismo
+              // bloque, lo que provocaba el warning de React "Encountered two
+              // children with the same key" al renderizar dos o más tarjetas
+              // del mismo maestro.
+              //
+              // Sintesis minima en cliente: par {maestroId, fechaOc} que
+              // coincide con `OcurrenciaIdHelper.CalcularIdOcurrencia` en el
+              // servidor (`ListarBloquesEndpoint.cs`).
+              //
+              // Pendiente: regenerar Orval para que el DTO incluya
+              // `idBloqueMaestro` / `idOcurrencia`. Cuando exista, migrar a
+              // `bloque.idOcurrencia`.
+              key={bloque.fecha ? `${bloque.id}-${bloque.fecha}` : bloque.id}
               bloque={bloque}
               esMiBloque={bloque.creadoPor?.id === usuarioId}
               puedeEditar={esPrincipal}
@@ -391,7 +437,7 @@ export const AgendaMobile = () => {
         titulo="Cancelar Reserva"
         mensaje="¿Cancelar esta reserva?"
         onConfirmar={handleConfirmarCancelar}
-        onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null })}
+        onCancelar={() => setConfirmCancelar({ abierto: false, bloqueId: null, fechaOc: undefined })}
         cargando={cancelando}
         tipo="peligro"
       />
@@ -406,11 +452,11 @@ export const AgendaMobile = () => {
         tipo="peligro"
       />
 
-      {toast && (
+      {toastLocal && (
         <div className={`fixed bottom-24 left-4 right-4 p-3 rounded-xl shadow-lg text-center font-medium ${
-          toast.tipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          toastLocal.tipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         }`}>
-          {toast.mensaje}
+          {toastLocal.mensaje}
         </div>
       )}
     </div>

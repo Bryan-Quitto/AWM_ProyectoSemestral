@@ -1,16 +1,32 @@
 import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
 import { ModalDetalle } from '../../components/ModalDetalle';
+import {
+  calcularAntelacionMinima,
+  MENSAJE_BLOQUEO_72H,
+} from '../../features/agenda/lib/calcularAntelacionMinima';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
+
+/**
+ * Argumento que pueden recibir los handlers onReservar / onCancelar.
+ * Persona 2 / Semana 2: además del id del bloque maestro, se envía la fecha
+ * de la OCURRENCIA concreta (YYYY-MM-dd) para que el backend aplique reglas
+ * temporales sobre la proyección recurrente correcta.
+ */
+export type OcurrenciaRef = {
+  id: string;
+  fecha?: string;
+};
 
 interface TarjetaBloqueProps {
   bloque: RACPDBackendFeaturesAgendaBloqueTurnoDto;
   esMiBloque: boolean;
   puedeEditar: boolean;
-  onReservar?: (id: string) => void;
-  onCancelar?: (id: string) => void;
+  onReservar?: (ocurrencia: OcurrenciaRef | string) => void;
+  onCancelar?: (ocurrencia: OcurrenciaRef | string) => void;
   onEditar?: (bloque: RACPDBackendFeaturesAgendaBloqueTurnoDto) => void;
   onEliminar?: (id: string) => void;
   isMutating?: boolean;
@@ -216,20 +232,50 @@ export const TarjetaBloque = ({
       <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
         {bloque.puedoReservar && (
           <Boton
-            onClick={() => bloque.id && onReservar?.(bloque.id)}
+            onClick={() => {
+              // === Persona 2 / Semana 2: enviar fecha de la OCURRENCIA ===
+              // Con la proyección de ocurrencias (Persona 1), un bloque recurrente
+              // genera múltiples turnos. Enviamos la fecha concreta de esta
+              // ocurrencia para que las reglas temporales del backend operen
+              // sobre el instante correcto (no sobre la fecha base del maestro).
+              if (!bloque.id) return;
+              onReservar?.({ id: bloque.id, fecha: bloque.fecha });
+            }}
             cargando={isMutating}
             className="flex-1 py-2 cursor-pointer"
+            title="Tomar este turno de apoyo"
           >
-            Reservar
+            Tomar turno
           </Boton>
         )}
 
         {bloque.yaReservé && (
           <Boton
-            onClick={() => bloque.id && onCancelar?.(bloque.id)}
+            onClick={() => {
+              // === REGLA DURA 72h (Persona 2 / Semana 2) ===
+              // Bloqueamos en cliente para evitar round-trip cuando
+              // faltarían menos de 72h. La verdad sigue siendo el servidor
+              // (CancelarReservaEndpoint), que también valida y devuelve
+              // 400 ProblemDetails; defensa redundante ver
+              // AgendaDesktop.tsx / AgendaMobile.tsx.
+              if (calcularAntelacionMinima(bloque.fecha, bloque.horaInicio)) {
+                toast.error(MENSAJE_BLOQUEO_72H, { duration: 6000 });
+                return;
+              }
+              if (!bloque.id) return;
+              // Enviar id + fecha de la OCURRENCIA para que la antena 72h
+              // evalúe el instante correcto.
+              onCancelar?.({ id: bloque.id, fecha: bloque.fecha });
+            }}
             variante="secundario"
             cargando={isMutating}
+            disabled={calcularAntelacionMinima(bloque.fecha, bloque.horaInicio)}
             className="flex-1 py-2 cursor-pointer"
+            title={
+              calcularAntelacionMinima(bloque.fecha, bloque.horaInicio)
+                ? 'No puedes cancelar con menos de 72h de antelación'
+                : 'Cancelar tu reserva en este turno'
+            }
           >
             Cancelar Reserva
           </Boton>
