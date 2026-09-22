@@ -1,28 +1,84 @@
 import {
-  useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint,
   rACPDBackendFeaturesAgendaCrearCrearBloqueEndpoint,
   rACPDBackendFeaturesAgendaEditarEditarBloqueEndpoint,
   rACPDBackendFeaturesAgendaEliminarEliminarBloqueEndpoint,
   rACPDBackendFeaturesAgendaReservarReservarEndpoint,
   rACPDBackendFeaturesAgendaCancelarReservaCancelarReservaEndpoint,
 } from '../../../api/generated/api/api';
+import useSWR from 'swr';
 import useSWRMutation from 'swr/mutation';
+import { customFetch } from '../../../api/custom-fetch';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../../api/generated/model';
 import type {
   RACPDBackendFeaturesAgendaCrearBloqueRequest,
   RACPDBackendFeaturesAgendaEditarBloqueRequest,
 } from '../../../api/generated/model';
 
-export const useAgenda = () => {
-  const { data, error, isLoading, mutate } = useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint({
-    swr: {
+const URL_BASE_API: string =
+  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000';
+
+/**
+ * Parametros que AgendaDesktop/Mobile pasan al hook para que el BACKEND
+ * aplique el filtro (MisBloques/Disponibles/MisReservas/Todos) y la
+ * delimitacion de fechas (fechaDesde/fechaHasta).
+ *
+ * Esto evita depender de usuarioId en el cliente para filtrar y elimina
+ * la condicion de carrera donde React pinta tarjetas antes de que el
+ * perfil resuelva.
+ */
+export interface AgendaParams {
+  filtro?: 'Todos' | 'Disponibles' | 'MisBloques' | 'MisReservas';
+  fechaDesde?: string;
+  fechaHasta?: string;
+}
+
+const construirUrl = (params: AgendaParams | undefined): string => {
+  const qs = new URLSearchParams();
+  if (params?.filtro) qs.set('filtro', params.filtro);
+  if (params?.fechaDesde) qs.set('fechaDesde', params.fechaDesde);
+  if (params?.fechaHasta) qs.set('fechaHasta', params.fechaHasta);
+  const tail = qs.toString();
+  return tail ? `${URL_BASE_API}/api/agenda?${tail}` : `${URL_BASE_API}/api/agenda`;
+};
+
+/**
+ * Tipo real de la respuesta tras pasar por customFetch:
+ * customFetch anida el body JSON bajo .data y agrega status/headers.
+ * A su vez, el backend FastEndpoints envuelve la lista bajo .data.data.
+ * Por eso la extraccion final es data.data?.data.
+ */
+interface RespuestaEnvoltorio {
+  data?: {
+    data?: RACPDBackendFeaturesAgendaBloqueTurnoDto[];
+  };
+}
+
+/**
+ * Fetcher manual que SI respeta los query params.
+ *
+ * Importante: NO usamos `useRACPDBackendFeaturesAgendaListarListarBloquesEndpoint`
+ * generado por Orval porque su helper `getRACPDBackendFeaturesAgendaListarListarBloquesEndpointUrl`
+ * devuelve la URL hardcodeada `/api/agenda` sin params (ver api.ts:1931).
+ * Por eso SWR nunca llegaba a mandar `?filtro=MisBloques` al backend.
+ */
+const fetcherAgenda = async (url: string): Promise<RACPDBackendFeaturesAgendaBloqueTurnoDto[]> => {
+  const res = await customFetch<RespuestaEnvoltorio>(url, { method: 'GET' });
+  return res?.data?.data ?? [];
+};
+
+export const useAgenda = (params?: AgendaParams) => {
+  const url = construirUrl(params);
+  const { data, error, isLoading, mutate } = useSWR<RACPDBackendFeaturesAgendaBloqueTurnoDto[]>(
+    url,
+    fetcherAgenda,
+    {
       revalidateOnFocus: true,
       dedupingInterval: 5000,
     }
-  });
+  );
 
   return {
-    bloques: data?.data?.data ?? [],
+    bloques: data ?? [],
     isLoading,
     error,
     mutate,

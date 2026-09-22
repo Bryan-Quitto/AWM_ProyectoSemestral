@@ -1,4 +1,5 @@
 import { useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 export interface ModalDetalleProps {
@@ -46,7 +47,13 @@ export const ModalDetalle = ({
 
   if (!abierto) return null;
 
-  return (
+  // Renderizamos el modal en un Portal hacia document.body para escapar de
+  // cualquier ancestor con `transform`, `filter`, `backdrop-filter`,
+  // `will-change` o `contain: paint` que cree un nuevo containing block y
+  // rompa `position: fixed`. Asi garantizamos que el overlay cubra el
+  // viewport completo (incluyendo el sidebar y el calendario) sin verse
+  // confinado dentro de la tarjeta que lo disparo.
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -76,7 +83,8 @@ export const ModalDetalle = ({
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
