@@ -13,8 +13,9 @@ public record Response(IReadOnlyList<BloqueTurnoDto> Data);
 /// <summary>
 /// Endpoint GET /api/agenda — Lista bloques de turno con proyección de ocurrencias.
 /// Persona 1 / Semana 2:
-/// - Algoritmo de proyección en memoria para tipos <see cref="TipoRecurrencia.Indefinida"/>
-///   y <see cref="TipoRecurrencia.Semanas"/> (rango válido: 1..24).
+/// - Algoritmo de proyección en memoria para <see cref="TipoRecurrencia.Semanas"/>
+///   (rango válido: 1..24 semanas). <see cref="TipoRecurrencia.Indefinida"/>
+///   eliminado del enum en spec-007 §10.
 /// - Sin duplicar registros en Postgres: un único bloque maestro puede materializar
 ///   múltiples ocurrencias dentro del rango <c>[fechaDesde, fechaHasta]</c>.
 /// - Filtros <c>MisBloques</c> / <c>MisReservas</c> / <c>Disponibles</c> se aplican
@@ -36,6 +37,22 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
     /// Tope defensivo para recurrencia <c>Semanas</c>: 24 semanas × 4 años.
     /// </summary>
     private const int TopeOcurrenciasSemanas = 96;
+
+    /// <summary>
+    /// Rango por defecto cuando el cliente no envía `fechaDesde` / `fechaHasta`.
+    /// Elegido en 90 días (≈13 semanas) para que un bloque recurrente semanal
+    /// o indefinido tenga suficiente proyección visible sin que el cliente
+    /// tenga que pedirlo explícitamente. Coherente con el principio "Zero-Wait
+    /// Policy" del SKILLS.md: que el cuidador vea el patrón completo de su
+    /// agenda con un solo GET.
+    /// </summary>
+    private const int RangoPorDefectoDias = 90;
+
+    /// <summary>
+    /// Tope absoluto del rango permitido en una una request. Evita que un cliente
+    /// malicioso o despistado pida 10 años y reciba miles de ocurrencias.
+    /// </summary>
+    private const int RangoMaximoDias = 365;
 
     private readonly AppDbContext _dbContext;
 
@@ -72,9 +89,12 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
         // Parámetros de filtro (todos opcionales)
         var filtro = Query<string>("filtro", isRequired: false) ?? "Todos";
 
-        var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
+        // SKILLS.md §3: rango de búsqueda en huso Ecuador.
+        // Por defecto, 90 días para que un bloque recurrente semanal o
+        // indefinido sea visible al cuidador sin pedirlo explícito.
+        var hoy = ZonaEcuador.HoyLocal;
         var fechaDesde = hoy;
-        var fechaHasta = hoy.AddDays(30);
+        var fechaHasta = hoy.AddDays(RangoPorDefectoDias);
 
         // Intentar parsear fechas si vienen como query params
         var fechaDesdeStr = Query<string>("fechaDesde", isRequired: false);
@@ -95,9 +115,19 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             (fechaDesde, fechaHasta) = (fechaHasta, fechaDesde);
         }
 
+        // Tope absoluto: un cliente no puede pedir más de 365 días para evitar
+        // respuestas gigantes. Si pide más, recortamos silenciosamente al tope.
+        // La paginación real del lado cliente (lazy render / scroll) manejará
+        // el excedente.
+        if (fechaHasta.DayNumber - fechaDesde.DayNumber > RangoMaximoDias)
+        {
+            fechaHasta = fechaDesde.AddDays(RangoMaximoDias);
+        }
+
         // === Trip único a Postgres: candidatas para proyección ===
         // - Unica dentro de [fechaDesde, fechaHasta]
-        // - Recurrentes (Indefinida | Semanas) cuya fecha base <= fechaHasta
+        // - Semanas cuya fecha base <= fechaHasta
+        // (TipoRecurrencia.Indefinida eliminado del enum en spec-007 §10)
         var candidatas = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
@@ -107,7 +137,7 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             .Where(b =>
                 (b.TipoRecurrencia == TipoRecurrencia.Unica
                     && b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
-                || (b.TipoRecurrencia != TipoRecurrencia.Unica
+                || (b.TipoRecurrencia == TipoRecurrencia.Semanas
                     && b.Fecha <= fechaHasta))
             .ToListAsync(ct);
 
@@ -122,23 +152,6 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     if (b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
                     {
                         ocurrencias.Add((b, b.Fecha));
-                    }
-                    break;
-
-                case TipoRecurrencia.Indefinida:
-                    {
-                        var iter = 0;
-                        for (var d = b.Fecha; d <= fechaHasta; d = d.AddDays(7))
-                        {
-                            if (d >= fechaDesde)
-                            {
-                                ocurrencias.Add((b, d));
-                            }
-                            if (++iter > TopeOcurrenciasIndefinida)
-                            {
-                                break;
-                            }
-                        }
                     }
                     break;
 
@@ -164,6 +177,12 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                 // TipoRecurrencia.Semanas con IntervaloSemanas fuera de rango:
                 // ignorado silenciosamente. La validación en Crear/Editar ya
                 // garantiza el rango 1..24; defensa por si llega dato sucio.
+                //
+                // TipoRecurrencia.Indefinida eliminado del enum (spec-007 §10).
+                // Si llegara un valor legacy desde la BD por una migración pendiente,
+                // simplemente no se proyecta (cae en default del switch). El TOPE de
+                // iteraciones anterior (TopeOcurrenciasIndefinida) ya no se usa pero
+                // se conserva en el código como defensa histórica.
             }
         }
 

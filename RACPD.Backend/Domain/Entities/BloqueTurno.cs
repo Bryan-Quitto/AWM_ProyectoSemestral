@@ -1,4 +1,5 @@
 using RACPD.Backend.Domain.Enums;
+using RACPD.Backend.Infrastructure;
 
 namespace RACPD.Backend.Domain.Entities;
 
@@ -42,7 +43,8 @@ public class BloqueTurno
     public int CuposDisponibles => CuposMaximos - Reservas.Count(r => r.Activa);
 
     /// <summary>
-    /// Verifica si el bloque está en el pasado.
+    /// Verifica si el bloque está en el pasado según el huso horario de Ecuador.
+    /// SKILLS.md §3: huso horario estricto Ecuador para reglas de negocio.
     /// </summary>
-    public bool EstaVencido => Fecha < DateOnly.FromDateTime(DateTime.UtcNow);
+    public bool EstaVencido => Fecha < ZonaEcuador.HoyLocal;
 }

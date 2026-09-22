@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus, Trash2, ListChecks, Pencil, Check, X as XIcon } from 'lucide-react';
 import type { TareaFormValue } from './schema';
 
@@ -38,6 +38,24 @@ export const ChecklistTareas = ({
   const [borrador, setBorrador] = useState('');
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [borradorEdicion, setBorradorEdicion] = useState('');
+
+  // Normalización defensiva del array:
+  // 1. Garantiza que cada tarea tenga un `id` válido (autogenera si falta).
+  // 2. De-duplica por id (conserva la primera aparición).
+  // Esto protege contra respuestas del backend o estados de form
+  // intermedios que generen keys duplicadas en React (warning "two
+  // children with the same key") y mantiene la identidad de cada <li>.
+  const tareasNormalizadas = useMemo<TareaFormValue[]>(() => {
+    const vistos = new Set<string>();
+    const resultado: TareaFormValue[] = [];
+    for (const t of tareas) {
+      const id = t.id ?? `local-${crypto.randomUUID()}`;
+      if (vistos.has(id)) continue;
+      vistos.add(id);
+      resultado.push({ ...t, id });
+    }
+    return resultado;
+  }, [tareas]);
 
   const handleAgregar = () => {
     const descripcion = borrador.trim();
@@ -159,13 +177,16 @@ export const ChecklistTareas = ({
       )}
 
       {/* Lista */}
-      {tareas.length > 0 && (
+      {tareasNormalizadas.length > 0 && (
         <ul className="space-y-1.5 mt-2">
-          {tareas.map((tarea, idx) => {
+          {tareasNormalizadas.map((tarea) => {
+            // Tras la normalización cada tarea tiene id válido. Esto
+            // garantiza keys únicas y estables para React.
+            const idEstable = tarea.id as string;
             const enEdicion = tarea.id != null && editandoId === tarea.id;
             return (
               <li
-                key={tarea.id ?? `tarea-${idx}`}
+                key={idEstable}
                 className="flex items-center gap-2 p-2 bg-blue-50/50 border border-blue-100 rounded-lg text-sm"
               >
                 {enEdicion ? (

@@ -2,7 +2,36 @@ import { z } from 'zod';
 
 const horaRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const hoy = new Date().toISOString().split('T')[0];
+/**
+ * Devuelve la fecha actual en formato "YYYY-MM-DD" en el huso horario
+ * oficial de Ecuador (America/Guayaquil, UTC-5), independientemente de
+ * la zona horaria configurada en el navegador del usuario.
+ *
+ * Regla SKILLS.md §3: "Huso Horario Estricto: operar bajo America/Guayaquil".
+ * Crítico porque los cuidadores pueden tener Windows, navegador o
+ * contenedor con zonas distintas (UTC, UTC-3, etc.) y aun así esperar
+ * que la app respete el día calendario ecuatoriano.
+ *
+ * Esta función se debe invocar **en cada validación** (no al cargar el
+ * módulo), porque de lo contrario el valor queda stale y vuelve a fallar
+ * cuando el cuidador deja el formulario abierto cruzando medianoche.
+ *
+ * Implementación: `Intl.DateTimeFormat` con la opción `timeZone` permite
+ * formatear un instante UTC arbitrario al huso Ecuador. Tomamos el
+ * instante `new Date()` (UTC interno) y lo proyectamos a Ecuador. Esto
+ * funciona en todos los navegadores modernos y en SSR-safe (no usa APIs
+ * exclusivas del navegador).
+ */
+export const fechaLocalEcuadorIso = (): string => {
+  const formateador = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Guayaquil',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  // en-CA produce formato YYYY-MM-DD de forma estable.
+  return formateador.format(new Date());
+};
 
 /**
  * Ítem individual de la checklist de tareas del bloque.
@@ -26,8 +55,14 @@ export type TareaFormValue = z.infer<typeof tareaSchema>;
 /**
  * Tipos de recurrencia válidos. Coinciden con el enum backend
  * `RACPD.Backend.Domain.Enums.TipoRecurrencia`.
+ *
+ * Spec-007 §10: se eliminó `Indefinida` porque el sistema no puede
+ * prometer recurrencia infinita en un contexto clínico (la proyección
+ * está acotada por el rango de la request). Solo dos opciones reales:
+ * - 'Unica': un solo turno.
+ * - 'Semanas': cada N semanas (1..24). El cuidador elige siempre un tope.
  */
-export const tipoRecurrenciaEnum = z.enum(['Unica', 'Indefinida', 'Semanas']);
+export const tipoRecurrenciaEnum = z.enum(['Unica', 'Semanas']);
 export type TipoRecurrencia = z.infer<typeof tipoRecurrenciaEnum>;
 
 /**
@@ -42,7 +77,7 @@ export const bloqueFormSchema = z
     fecha: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD inválido')
-      .refine((d) => d >= hoy, 'No se pueden crear bloques en fechas pasadas'),
+      .refine((d) => d >= fechaLocalEcuadorIso(), 'No se pueden crear bloques en fechas pasadas'),
     horaInicio: z.string().regex(horaRegex, 'Formato HH:mm inválido'),
     horaFin: z.string().regex(horaRegex, 'Formato HH:mm inválido'),
     cuposMaximos: z.number().int().min(1).max(5),
@@ -96,11 +131,14 @@ export const bloqueFormSchema = z
       });
     }
 
-    // === Regla: si la fecha es HOY, horaInicio debe ser > hora actual del cliente ===
-    // new Date() se evalua aqui (en cada submit), no como constante al cargar el modulo,
-    // para evitar valores stale si el usuario tarda en llenar el formulario.
-    // El huso horario es el del navegador del usuario, coherente con
-    // "Huso Horario Estricto America/Guayaquil" (regla del SKILLS.md).
+    // === Regla: si la fecha es HOY (Ecuador), horaInicio debe ser > hora actual ===
+    // Se evalúa en cada submit (no como constante al cargar el módulo) para
+    // evitar valores stale si el cuidador tarda en llenar el formulario.
+    // Huso horario: hora local del navegador, que es la que usa el date picker
+    // HTML5 nativo. El cuidador en Ecuador verá esta restricción contra su
+    // hora local, que es coherente con el principio "Huso Horario Estricto
+    // America/Guayaquil" del SKILLS.md §3 (la BD y el backend también operan
+    // en ese huso).
     if (val.fecha && val.horaInicio) {
       const hoyCliente = new Date();
       const fechaCliente = new Date();

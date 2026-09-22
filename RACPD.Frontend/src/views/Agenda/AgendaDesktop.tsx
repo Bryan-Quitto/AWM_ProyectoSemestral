@@ -17,21 +17,67 @@ import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 import type { BloqueFormData } from './schema';
 
-type Filtro = 'Todos' | 'Disponibles' | 'MisReservas';
+type Filtro = 'Todos' | 'Disponibles' | 'MisReservas' | 'MisBloques';
 
 /**
  * Extrae un mensaje legible desde una respuesta RFC 7807 de FastEndpoints.
- * 1. `detail` (ProblemDetails simple: 401/403/404/409)
- * 2. `errors[campo][0]` (ValidationProblemDetails: 400 de validación)
- * 3. fallback genérico.
+ *
+ * Orden de preferencia (pensado para el cuidador):
+ * 1. Si hay `errors[campo][i]` con mensajes específicos por campo, devolvemos
+ *    el primero legible. Esto es lo habitual en ValidationProblemDetails (400).
+ * 2. Si NO hay `errors` pero sí `detail` específico (no genérico), lo usamos.
+ *    Se descartan `detail` genéricos como "Los datos no cumplen las reglas de
+ *    negocio del turno." porque no dicen al cuidador qué campo falló.
+ * 3. Fallback.
  */
+const DETALLES_GENERICOS_BACKEND = new Set<string>([
+  'Los datos no cumplen las reglas de negocio del turno.',
+  'Los campos enviados no cumplen el formato esperado.',
+]);
+
+const esDetalleGenerico = (detalle: unknown): boolean => {
+  if (typeof detalle !== 'string') return false;
+  const normalizado = detalle.trim();
+  if (normalizado.length === 0) return true;
+  return DETALLES_GENERICOS_BACKEND.has(normalizado);
+};
+
+const formatearErroresValidacion = (errors: Record<string, string[]>): string | null => {
+  const entradas = Object.entries(errors);
+  if (entradas.length === 0) return null;
+  // Tomamos el primer error de cada campo (suelen ser los más relevantes).
+  const mensajes = entradas
+    .map(([campo, lista]) => {
+      const primero = Array.isArray(lista) && lista.length > 0 ? lista[0] : null;
+      return primero ? `${campo}: ${primero}` : null;
+    })
+    .filter((m): m is string => m !== null);
+  if (mensajes.length === 0) return null;
+  if (mensajes.length === 1) return mensajes[0];
+  // Mostrar hasta 3 errores en línea para no saturar al cuidador.
+  const visibles = mensajes.slice(0, 3).join(' • ');
+  return mensajes.length > 3 ? `${visibles} • (+${mensajes.length - 3} más)` : visibles;
+};
+
 const extraerMensajeError = (respuesta: any, fallback: string): string => {
   const data = respuesta?.data;
-  if (data?.detail) return String(data.detail);
+
+  // 1) Errores específicos por campo.
   if (data?.errors && typeof data.errors === 'object') {
-    const mensajes = Object.values(data.errors as Record<string, string[]>).flat();
-    if (mensajes.length > 0) return String(mensajes[0]);
+    const formateado = formatearErroresValidacion(data.errors as Record<string, string[]>);
+    if (formateado) return formateado;
   }
+
+  // 2) Detail útil (no genérico).
+  if (data?.detail && !esDetalleGenerico(data.detail)) {
+    return String(data.detail);
+  }
+
+  // 3) Si tenemos title sin ser genérico, también sirve.
+  if (data?.title && !esDetalleGenerico(data.title)) {
+    return String(data.title);
+  }
+
   return fallback;
 };
 
@@ -57,7 +103,7 @@ export const AgendaDesktop = () => {
   const esPrincipal = perfilData?.data?.rol === 'CuidadorPrincipal';
   const usuarioId = perfilData?.data?.id;
 
-  const { bloques, mutate } = useAgenda();
+  const { bloques, mutate } = useAgenda({ filtro });
   const { trigger: crearBloque, isMutating: creando } = useCrearBloque();
   const { trigger: editarBloque, isMutating: editando } = useEditarBloque();
   const { trigger: eliminarBloque, isMutating: eliminando } = useEliminarBloque();
@@ -72,26 +118,18 @@ export const AgendaDesktop = () => {
   };
 
   const bloquesFiltrados = useMemo(() => {
+    // El backend ya entrega el resultado del filtro seleccionado
+    // (Todos / MisBloques / Disponibles / MisReservas) gracias al hook
+    // useAgenda({ filtro }). Aqui solo aplicamos el sub-filtro de UI:
+    // la fecha seleccionada en el calendario.
     let resultado = [...bloques];
 
     if (fechaSeleccionada) {
       resultado = resultado.filter(b => b.fecha === fechaSeleccionada);
     }
 
-    switch (filtro) {
-      case 'Disponibles':
-        resultado = resultado.filter(b =>
-          (b.cuposDisponibles ?? 0) > 0 &&
-          !b.yaReservé
-        );
-        break;
-      case 'MisReservas':
-        resultado = resultado.filter(b => b.yaReservé);
-        break;
-    }
-
     return resultado;
-  }, [bloques, filtro, fechaSeleccionada]);
+  }, [bloques, fechaSeleccionada]);
 
   const handleCrear = async (data: BloqueFormData) => {
     setApiError(null);
@@ -225,6 +263,7 @@ export const AgendaDesktop = () => {
 
   const filtros: { id: Filtro; label: string }[] = [
     { id: 'Todos', label: 'Todos' },
+    { id: 'MisBloques', label: 'Mis Bloques' },
     { id: 'Disponibles', label: 'Disponibles' },
     { id: 'MisReservas', label: 'Mis Reservas' },
   ];
@@ -296,6 +335,8 @@ export const AgendaDesktop = () => {
                   ? 'No hay turnos disponibles'
                   : filtro === 'MisReservas'
                   ? 'No has reservado ningún turno'
+                  : filtro === 'MisBloques'
+                  ? 'No tienes bloques creados en este rango'
                   : 'No hay turnos programados'
                 }
               </p>
@@ -304,7 +345,10 @@ export const AgendaDesktop = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
               {bloquesFiltrados.map(bloque => (
                 <TarjetaBloque
-                  key={bloque.id}
+                  // Usamos idOcurrencia (determinista por par maestro+fecha)
+                  // para que las proyecciones del mismo bloque tengan keys
+                  // unicas. Fallback a id para bloques sin recurrencia.
+                  key={bloque.idOcurrencia ?? bloque.id}
                   bloque={bloque}
                   esMiBloque={bloque.creadoPor?.id === usuarioId}
                   puedeEditar={esPrincipal}

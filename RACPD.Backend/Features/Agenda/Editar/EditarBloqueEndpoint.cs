@@ -114,8 +114,21 @@ public class EditarBloqueEndpoint : Endpoint<EditarBloqueRequest, EditarBloqueRe
 
         if (!Enum.TryParse<TipoRecurrencia>(req.TipoRecurrencia, ignoreCase: true, out var tipoRecurrencia))
         {
-            erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica, Indefinida o Semanas."];
-            tipoRecurrencia = TipoRecurrencia.Unica;
+            // Si el cliente envía 'Indefinida' (legacy, removido del enum en spec-007 §10),
+            // Enum.TryParse devuelve false. Lo identificamos explícitamente para
+            // dar un mensaje útil y orientar al cuidador al modelo actual.
+            // Mantenemos el mismo comportamiento que CrearBloqueEndpoint.
+            if (string.Equals(req.TipoRecurrencia, "Indefinida", StringComparison.OrdinalIgnoreCase))
+            {
+                erroresNegocio["tipoRecurrencia"] = [
+                    "La opción 'Indefinida' ya no está disponible. Use 'Semanas' con un intervalo entre 1 y 24 semanas."
+                ];
+            }
+            else
+            {
+                erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica o Semanas."];
+            }
+            tipoRecurrencia = TipoRecurrencia.Unica; // valor seguro para continuar validaciones
         }
 
         if (tipoRecurrencia == TipoRecurrencia.Semanas)

@@ -83,7 +83,19 @@ public class CrearBloqueEndpoint : Endpoint<CrearBloqueRequest, CrearBloqueRespo
         // === Parseo y validación de TipoRecurrencia + IntervaloSemanas ===
         if (!Enum.TryParse<TipoRecurrencia>(req.TipoRecurrencia, ignoreCase: true, out var tipoRecurrencia))
         {
-            erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica, Indefinida o Semanas."];
+            // Si el cliente envía 'Indefinida' (legacy, removido del enum en spec-007 §10),
+            // Enum.TryParse devuelve false. Lo identificamos explícitamente para
+            // dar un mensaje útil y orientar al cuidador al modelo actual.
+            if (string.Equals(req.TipoRecurrencia, "Indefinida", StringComparison.OrdinalIgnoreCase))
+            {
+                erroresNegocio["tipoRecurrencia"] = [
+                    "La opción 'Indefinida' ya no está disponible. Use 'Semanas' con un intervalo entre 1 y 24 semanas."
+                ];
+            }
+            else
+            {
+                erroresNegocio["tipoRecurrencia"] = ["Valor inválido. Use: Unica o Semanas."];
+            }
             tipoRecurrencia = TipoRecurrencia.Unica; // valor seguro para continuar validaciones
         }
 
@@ -139,7 +151,10 @@ public class CrearBloqueEndpoint : Endpoint<CrearBloqueRequest, CrearBloqueRespo
         }
 
         // === Validaciones de negocio clásicas ===
-        var hoy = DateOnly.FromDateTime(DateTime.UtcNow);
+        // SKILLS.md §3: huso horario estricto Ecuador. Usar UTC aquí provoca
+        // falsos positivos entre 19:00 y 24:00 hora local de Ecuador (porque
+        // ya es el día siguiente en UTC).
+        var hoy = ZonaEcuador.HoyLocal;
         if (fecha!.Value < hoy)
             erroresNegocio["fecha"] = ["No se pueden crear bloques en fechas pasadas."];
 

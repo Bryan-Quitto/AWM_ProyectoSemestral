@@ -8,6 +8,7 @@ import { SelectorDinamico } from '../../components/SelectorDinamico';
 import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint } from '../../api/generated/api/api';
 import {
   bloqueFormSchema,
+  fechaLocalEcuadorIso,
   type BloqueFormData,
   type TareaFormValue,
 } from './schema';
@@ -23,8 +24,6 @@ interface DialogoCrearBloqueProps {
   isMutating: boolean;
   apiError?: string | null;
 }
-
-const hoy = new Date().toISOString().split('T')[0];
 
 /**
  * Convierte una fecha `YYYY-MM-DD` al nombre del día de la semana en
@@ -61,7 +60,7 @@ export const DialogoCrearBloque = ({
     mode: 'onBlur',
     reValidateMode: 'onChange',
     defaultValues: {
-      fecha: hoy,
+      fecha: fechaLocalEcuadorIso(),
       horaInicio: '08:00',
       horaFin: '14:00',
       cuposMaximos: 1,
@@ -110,7 +109,7 @@ export const DialogoCrearBloque = ({
   });
 
   // Fecha observada para calcular el día de la semana en el microcopy
-  // de "Indefinida" (se actualiza solo cuando el cuidador cambia la fecha).
+  // de "Semanas" (se actualiza solo cuando el cuidador cambia la fecha).
   const fechaForm = useWatch({
     control: form.control,
     name: 'fecha',
@@ -131,14 +130,14 @@ export const DialogoCrearBloque = ({
       ultimoBloqueIdRef.current = bloque.id ?? null;
 
       form.reset({
-        fecha: bloque.fecha || hoy,
+        fecha: bloque.fecha || fechaLocalEcuadorIso(),
         horaInicio: bloque.horaInicio?.slice(0, 5) || '08:00',
         horaFin: bloque.horaFin?.slice(0, 5) || '14:00',
         cuposMaximos: bloque.cuposMaximos || 1,
         descripcion: bloque.descripcion || '',
         perfilDependienteId: bloque.perfilDependienteId || '',
         tipoRecurrencia:
-          (bloque.tipoRecurrencia as 'Unica' | 'Indefinida' | 'Semanas') || 'Unica',
+          (bloque.tipoRecurrencia as 'Unica' | 'Semanas') || 'Unica',
         intervaloSemanas: bloque.intervaloSemanas ?? undefined,
         tareas: ((bloque.tareas ?? []) as Array<{
           id?: string;
@@ -154,7 +153,7 @@ export const DialogoCrearBloque = ({
       if (ultimoBloqueIdRef.current === '__nuevo__') return;
       ultimoBloqueIdRef.current = '__nuevo__';
       form.reset({
-        fecha: hoy,
+        fecha: fechaLocalEcuadorIso(),
         horaInicio: '08:00',
         horaFin: '14:00',
         cuposMaximos: 1,
@@ -249,7 +248,7 @@ export const DialogoCrearBloque = ({
             <input
               type="date"
               {...form.register('fecha')}
-              min={hoy}
+              min={fechaLocalEcuadorIso()}
               disabled={isMutating}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 outline-none transition disabled:opacity-50 cursor-pointer ${
                 form.formState.errors.fecha
@@ -352,9 +351,11 @@ export const DialogoCrearBloque = ({
                 <SelectorDinamico
                   id="tipoRecurrencia"
                   opciones={[
+                    // Spec-007 §10: 'Indefinida' eliminado. Solo opciones que
+                    // el sistema puede cumplir. Para Semanas, el cuidador
+                    // elige un intervalo concreto (1..24 semanas).
                     { valor: 'Unica', etiqueta: 'Una sola vez (sin repetición)' },
-                    { valor: 'Indefinida', etiqueta: 'Todas las semanas (continuo)' },
-                    { valor: 'Semanas', etiqueta: 'Cada N semanas' },
+                    { valor: 'Semanas', etiqueta: 'Cada N semanas (1 a 24)' },
                   ]}
                   value={field.value}
                   onChange={(v) => {
@@ -380,22 +381,6 @@ export const DialogoCrearBloque = ({
               </div>
             )}
           />
-
-          {/* Microcopy para "Indefinida": explica en lenguaje natural que el
-              turno se repetirá todos los <día> de forma continua. Se actualiza
-              automáticamente si el cuidador cambia la fecha. */}
-          {tipoRecurrencia === 'Indefinida' && (
-            <p className="text-xs text-blue-600 mt-1.5 flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-              <span>
-                Este turno se repetirá todos los{' '}
-                <span className="font-medium">
-                  {obtenerNombreDiaSemana(fechaForm ?? '')}
-                </span>{' '}
-                de forma indefinida.
-              </span>
-            </p>
-          )}
 
           {/* Microcopy para "Semanas": explica en lenguaje natural cada cuántas
               semanas y qué día. Se actualiza si cambian la fecha o el intervalo.

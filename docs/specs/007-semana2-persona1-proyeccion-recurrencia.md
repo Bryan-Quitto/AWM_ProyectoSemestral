@@ -381,6 +381,7 @@ npm run build                         # 0 errores de TypeScript, 0 errores de li
 | `IdOcurrencia` determinista colisiona si dos maestros tienen el mismo Guid (improbable, pero…). | Guid de maestro es único por construcción (`Guid.NewGuid()`). Probabilidad de colisión ≈ 0. |
 | Cambios en DTO rompen la UI actual (`TarjetaBloque`, `AgendaDesktop`, `AgendaMobile`). | `Id` se conserva apuntando al maestro → nada existente se rompe. Los nuevos campos son aditivos. |
 | `npm run api:generate` requiere que el backend compile. | La tarea de implementación incluye primero `dotnet build` para detectar errores antes de regenerar tipos. |
+| **Proyección infinita para `Indefinida` con N cuidadores y muchos maestros.** Si un cuidador tiene 50 bloques `Indefinida` y consulta un año, el backend proyecta 50 × 52 = 2600 ocurrencias en memoria. Payload grande, latencia alta, render caro en el cliente. | (a) **Corto plazo (esta iteración)**: rango por defecto ampliado a 90 días + tope absoluto de 365 días por request. (b) **Mediano plazo (Semana 3 — Persona 2)**: el cliente debe calcular el rango visible (calendario o lista con scroll) y pedirlo explícitamente; el resto se renderiza bajo demanda (lazy / windowing). (c) **Largo plazo (Semana 4+)**: migrar a `GET /api/agenda/ocurrencias?cursor=...` con paginación por cursor real si la cardinalidad lo justifica. |
 
 ---
 
@@ -396,3 +397,31 @@ npm run build                         # 0 errores de TypeScript, 0 errores de li
 ---
 
 > **Este spec-007 NO implementa código hasta segunda aprobación explícita del Tech Lead.** Cuando se apruebe, los pasos 1..6 se ejecutan en el orden indicado y se reportan resultados en una sola respuesta con enlaces `file:///` a los archivos modificados.
+
+---
+
+## 10. Notas de Implementación Post-Review (PR contra cuidado de Producción)
+
+### 10.1 Huso horario estricto Ecuador
+
+Durante pruebas manuales se detectó que el backend usaba `DateOnly.FromDateTime(DateTime.UtcNow)` para evaluar "fecha no pasada". A las 21:22 hora Ecuador, UTC ya marca el día siguiente → el backend rechazaba fechas legítimas. Se introdujo `RACPD.Backend/Infrastructure/ZonaEcuador.cs` que cachea `TimeZoneInfo { Id = "America/Guayaquil" }` y expone `ZonaEcuador.HoyLocal`. La regla de negocio "no se pueden crear bloques en fechas pasadas" ahora se evalúa contra el día calendario ecuatoriano, no contra UTC.
+
+Aplicado en:
+- `CrearBloqueEndpoint` (validación de fecha).
+- `BloqueTurno.EstaVencido` (filtro de UI para reservar).
+- `ListarBloquesEndpoint` (rango por defecto).
+
+### 10.2 Rango por defecto y tope absoluto
+
+Rango por defecto ampliado de **30 → 90 días** para que bloques `Indefinida` o `Semanas` sean visibles sin que el cliente tenga que pedirlo explícito. Tope absoluto: **365 días** por request. El cliente puede pasar `fechaDesde` / `fechaHasta` en query string para acortar o alargar.
+
+### 10.3 Paginación / Lazy render (observación arquitectónica)
+
+La observación correcta: proyectar `Indefinida` como lista plana en el response **no escala**. Con 50 maestros recurrentes y un año de rango, el payload crece a miles de entradas. La solución definitiva (Semana 3 — Persona 2) debe combinar:
+
+1. **Server**: el cliente envía el rango visible (calendario → mes actual; lista → ventana scrolleada). El backend proyecta solo ese rango.
+3. **Cliente**: usar `react-window` o virtualización equivalente para renderizar solo las tarjetas visibles. SWR paginado por cursor cuando se exceda N.
+
+### 10.4 IdOcurrencia determinista (no tocar)
+
+Es la llave que permite reservar/editar **una instancia específica** sin tener un registro físico en BD. El backend puede, en futuras iteraciones, aceptar `?ocurrenciaId=...` en lugar de `?id=...` para que la reserva/UI opere sobre la instancia, no sobre el maestro. Por ahora, `Reservar` sigue usando `BloqueTurnoId` (maestro).
