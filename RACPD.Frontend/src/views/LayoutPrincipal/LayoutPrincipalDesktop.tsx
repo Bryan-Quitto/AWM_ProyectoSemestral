@@ -60,9 +60,6 @@ export const LayoutPrincipalDesktop = () => {
             <CampanaNotificaciones
               tamanoIcono={20}
               alineacionPopover="izquierda"
-              variante="desktop"
-              usuarioId={usuario?.id}
-              rolUsuario={usuario?.rol as 'CuidadorPrincipal' | 'Apoyo' | 'AdministradorSistema' | undefined}
             />
           </div>
           {perfilData?.data ? (
