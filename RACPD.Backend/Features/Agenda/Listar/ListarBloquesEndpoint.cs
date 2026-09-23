@@ -40,13 +40,15 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
 
     /// <summary>
     /// Rango por defecto cuando el cliente no envía `fechaDesde` / `fechaHasta`.
-    /// Elegido en 90 días (≈13 semanas) para que un bloque recurrente semanal
-    /// o indefinido tenga suficiente proyección visible sin que el cliente
-    /// tenga que pedirlo explícitamente. Coherente con el principio "Zero-Wait
-    /// Policy" del SKILLS.md: que el cuidador vea el patrón completo de su
-    /// agenda con un solo GET.
+    /// Antes: 90 días continuos (causaba confusión al cuidador: mezclaba
+    /// varios meses en una sola vista).
+    /// Ahora: mes natural en Ecuador (primer día del mes → último día del mes).
+    /// Esto alinea el default con la vista del calendario mensual de la UI y
+    /// respeta la regla "un mes a la vez" del SPEC original (agenda.spec 004).
+    /// Coherente con el principio "Zero-Wait Policy" del SKILLS.md: el cuidador
+    /// ve el mes completo de un solo GET sin pedirlo explícito.
     /// </summary>
-    private const int RangoPorDefectoDias = 90;
+    private const int RangoPorDefectoDias = 90; // Solo defensivo; ver RangoPorDefectoModo.
 
     /// <summary>
     /// Tope absoluto del rango permitido en una una request. Evita que un cliente
@@ -85,28 +87,49 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             ?? User.FindFirstValue("role");
 
         var esPrincipal = rolClaim?.Equals(Rol.CuidadorPrincipal.ToString(), StringComparison.OrdinalIgnoreCase) == true;
+        var esAdministrador = rolClaim?.Equals(Rol.AdministradorSistema.ToString(), StringComparison.OrdinalIgnoreCase) == true;
 
         // Parámetros de filtro (todos opcionales)
         var filtro = Query<string>("filtro", isRequired: false) ?? "Todos";
 
         // SKILLS.md §3: rango de búsqueda en huso Ecuador.
-        // Por defecto, 90 días para que un bloque recurrente semanal o
-        // indefinido sea visible al cuidador sin pedirlo explícito.
+        // Por defecto: mes natural en Ecuador (primer día → último día del mes).
+        // Esto alinea el GET con la vista de calendario mensual del Frontend
+        // y respeta la regla "un mes a la vez" del SPEC original.
         var hoy = ZonaEcuador.HoyLocal;
-        var fechaDesde = hoy;
-        var fechaHasta = hoy.AddDays(RangoPorDefectoDias);
+        var inicioMes = new DateOnly(hoy.Year, hoy.Month, 1);
+        var finMes = inicioMes.AddMonths(1).AddDays(-1);
+        var fechaDesde = inicioMes;
+        var fechaHasta = finMes;
 
-        // Intentar parsear fechas si vienen como query params
+        // Intentar parsear fechas si vienen como query params.
+        // Cualquier fecha válida enviada por el cliente tiene prioridad sobre
+        // el default de mes natural (soporta avance/retroceso de mes en la UI).
         var fechaDesdeStr = Query<string>("fechaDesde", isRequired: false);
         var fechaHastaStr = Query<string>("fechaHasta", isRequired: false);
 
+        var hayDesdeCliente = false;
+        var hayHastaCliente = false;
         if (!string.IsNullOrEmpty(fechaDesdeStr) && DateOnly.TryParse(fechaDesdeStr, out var parsedDesde))
         {
             fechaDesde = parsedDesde;
+            hayDesdeCliente = true;
         }
         if (!string.IsNullOrEmpty(fechaHastaStr) && DateOnly.TryParse(fechaHastaStr, out var parsedHasta))
         {
             fechaHasta = parsedHasta;
+            hayHastaCliente = true;
+        }
+
+        // Si el cliente solo manda uno de los dos extremos, mantener el mes
+        // natural desde/hasta el lado no enviado para no romper la UI.
+        if (hayDesdeCliente && !hayHastaCliente)
+        {
+            fechaHasta = fechaDesde.AddMonths(1).AddDays(-1);
+        }
+        else if (!hayDesdeCliente && hayHastaCliente)
+        {
+            fechaDesde = new DateOnly(fechaHasta.Year, fechaHasta.Month, 1);
         }
 
         // Garantizar coherencia del rango.
@@ -124,11 +147,36 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
             fechaHasta = fechaDesde.AddDays(RangoMaximoDias);
         }
 
+        // === Visibilidad por dependiente (Cero-Indulgencia: tenancy) ===
+        // Antes la query traía TODOS los bloques del sistema, dejando al usuario
+        // ver turnos de dependientes donde no estaba vinculado. Bug crítico
+        // de aislamiento multi-cuidador.
+        //
+        // Regla aplicada (alineada con SKILLS.md §"Huso horario Ecuador" y con
+        // spec-004 §1.3):
+        //  - CuidadorPrincipal: puede ver bloques cuyo PerfilDependienteId sea null
+        //    (legado pre-FK) O esté vinculado a él vía VinculoDependiente activo.
+        //  - Apoyo: idéntico al Principal. Si no tiene vínculos, no ve nada
+        //    (coherente con la regla "no leak entre sesiones").
+        //  - AdministradorSistema: bypass del filtro (rol admin) — pero no tiene
+        //    notificaciones operativas porque la agenda no es su responsabilidad.
+        var idsDependientesVisibles = Array.Empty<Guid>();
+        if (!esAdministrador)
+        {
+            idsDependientesVisibles = await _dbContext.VinculosDependientes
+                .AsNoTracking()
+                .Where(v => v.UsuarioId == usuarioId && v.Activo)
+                .Select(v => v.PerfilDependienteId)
+                .ToArrayAsync(ct);
+        }
+
         // === Trip único a Postgres: candidatas para proyección ===
         // - Unica dentro de [fechaDesde, fechaHasta]
         // - Semanas cuya fecha base <= fechaHasta
         // (TipoRecurrencia.Indefinida eliminado del enum en spec-007 §10)
-        var candidatas = await _dbContext.BloquesTurno
+        // Filtro adicional por visibilidad: solo bloques cuyo PerfilDependiente
+        // pertenezca al set del usuario (o sea null en datos legacy).
+        IQueryable<BloqueTurno> queryCandidatas = _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
             .Include(b => b.PerfilDependiente)
@@ -138,8 +186,20 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                 (b.TipoRecurrencia == TipoRecurrencia.Unica
                     && b.Fecha >= fechaDesde && b.Fecha <= fechaHasta)
                 || (b.TipoRecurrencia == TipoRecurrencia.Semanas
-                    && b.Fecha <= fechaHasta))
-            .ToListAsync(ct);
+                    && b.Fecha <= fechaHasta));
+
+        if (!esAdministrador)
+        {
+            // PerfilDependienteId es NOT NULL desde la migracion
+            // HacerPerfilDependienteIdObligatorio. Si el usuario no tiene
+            // vínculos activos, idsDependientesVisibles queda vacío y la
+            // sub-query Contains() no devuelve nada (cero resultados, que es
+            // lo correcto: sin vínculos = sin agenda visible).
+            queryCandidatas = queryCandidatas.Where(b =>
+                idsDependientesVisibles.Contains(b.PerfilDependienteId));
+        }
+
+        var candidatas = await queryCandidatas.ToListAsync(ct);
 
         // === Proyección en memoria ===
         var ocurrencias = new List<(BloqueTurno Maestro, DateOnly FechaOc)>();
