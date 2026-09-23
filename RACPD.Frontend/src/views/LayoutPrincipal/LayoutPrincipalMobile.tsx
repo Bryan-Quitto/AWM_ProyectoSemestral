@@ -68,9 +68,6 @@ export const LayoutPrincipalMobile = () => {
           <CampanaNotificaciones
             tamanoIcono={20}
             alineacionPopover="derecha"
-            variante="mobile"
-            usuarioId={usuario?.id}
-            rolUsuario={usuario?.rol as 'CuidadorPrincipal' | 'Apoyo' | 'AdministradorSistema' | undefined}
           />
           <Link
             to="/configuracion"

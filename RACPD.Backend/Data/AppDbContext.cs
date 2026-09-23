@@ -19,6 +19,7 @@ public class AppDbContext : DbContext
     public DbSet<ReservaTurno> ReservasTurno { get; set; } = null!;
     public DbSet<DirectorioRelevo> DirectorioRelevos { get; set; } = null!;
     public DbSet<BitacoraTurno> BitacorasTurno { get; set; } = null!;
+    public DbSet<OutboxMensaje> OutboxMensajes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -236,6 +237,18 @@ public class AppDbContext : DbContext
                 .HasDatabaseName("IX_BitacorasTurno_UnSoloCierreActivoPorBloque");
 
             entity.HasIndex(e => e.FechaCierre);
+        });
+
+        // === OutboxMensaje ===
+        modelBuilder.Entity<OutboxMensaje>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Tipo).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.PayloadJson).HasColumnType("jsonb");
+
+            // Indice principal: procesar mensajes pendientes FIFO.
+            entity.HasIndex(e => new { e.Procesado, e.Fecha })
+                .HasDatabaseName("IX_OutboxMensajes_Pendientes_FIFO");
         });
     }
 }
