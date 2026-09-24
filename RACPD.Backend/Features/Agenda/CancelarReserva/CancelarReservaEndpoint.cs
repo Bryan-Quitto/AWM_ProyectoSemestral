@@ -140,5 +140,6 @@ public class CancelarReservaEndpoint : Endpoint<CancelarReservaRequest, Response
 public class CancelarReservaRequest
 {
     public string Id { get; set; } = default!;
+    [QueryParam]
     public string? Fecha { get; set; }
 }

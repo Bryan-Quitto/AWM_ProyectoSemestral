@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:29119"
+      "url": "http://127.0.0.1:35135"
     }
   ],
   "paths": {
@@ -1019,6 +1019,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "fecha",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -1192,6 +1200,41 @@
         ]
       }
     },
+    "/api/agenda/notificaciones-resumen": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionesResumenEndpoint",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionesResumenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
     "/api/agenda": {
       "get": {
         "tags": [
@@ -1271,6 +1314,64 @@
         ]
       }
     },
+    "/api/agenda/{id}/completar": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaCompletarCompletarTurnoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "CompletarTurnoRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaCompletarCompletarTurnoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaCompletarCompletarTurnoResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
     "/api/agenda/{id}/reserva": {
       "delete": {
         "tags": [
@@ -1284,6 +1385,14 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "fecha",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "nullable": true
             }
           }
         ],
@@ -1968,6 +2077,10 @@
           }
         }
       },
+      "RACPDBackendFeaturesAgendaReservarReservarRequest": {
+        "type": "object",
+        "additionalProperties": false
+      },
       "RACPDBackendFeaturesAgendaBloqueTurnoDto": {
         "type": "object",
         "additionalProperties": false,
@@ -2086,6 +2199,54 @@
           "orden": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionesResumenResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "hoy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionTurnoDto"
+            }
+          },
+          "semana": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionTurnoDto"
+            }
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaNotificacionesResumenNotificacionTurnoDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bloqueId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "dependienteNombre": {
+            "type": "string"
+          },
+          "horaInicio": {
+            "type": "string"
+          },
+          "horaFin": {
+            "type": "string"
+          },
+          "cuidadorAsignadoNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
           }
         }
       },
@@ -2234,6 +2395,80 @@
           }
         }
       },
+      "RACPDBackendFeaturesAgendaCompletarCompletarTurnoResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "bitacoraId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "bloqueId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "fechaCierre": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estadoAnimo": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaCompletarCompletarTurnoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "estadoAnimo": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoAnimoTurno"
+              }
+            ]
+          },
+          "sintomas": {
+            "type": "string",
+            "nullable": true
+          },
+          "horasSueno": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          },
+          "observacionesGenerales": {
+            "type": "string",
+            "nullable": true
+          },
+          "tareasRealizadasIds": {
+            "type": "array",
+            "nullable": true,
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
+          }
+        }
+      },
+      "RACPDBackendDomainEnumsEstadoAnimoTurno": {
+        "type": "integer",
+        "description": "",
+        "x-enumNames": [
+          "MuyBien",
+          "Bien",
+          "Neutral",
+          "Mal",
+          "MuyMal"
+        ],
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4
+        ]
+      },
       "RACPDBackendFeaturesAgendaCancelarReservaResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -2242,6 +2477,10 @@
             "type": "string"
           }
         }
+      },
+      "RACPDBackendFeaturesAgendaCancelarReservaCancelarReservaRequest": {
+        "type": "object",
+        "additionalProperties": false
       }
     },
     "securitySchemes": {

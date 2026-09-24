@@ -119,11 +119,9 @@ export const TarjetaBloque = ({
               {bloque.tipoRecurrencia && bloque.tipoRecurrencia !== 'Unica' && (
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 text-[10px] font-medium">
                   <Repeat className="w-3 h-3" />
-                  {bloque.tipoRecurrencia === 'Indefinida'
-                    ? 'Indefinido'
-                    : bloque.tipoRecurrencia === 'Semanas' && bloque.intervaloSemanas
-                      ? `Cada ${bloque.intervaloSemanas} sem.`
-                      : bloque.tipoRecurrencia}
+                  {bloque.tipoRecurrencia === 'Semanas' && bloque.intervaloSemanas
+                    ? `Cada ${bloque.intervaloSemanas} sem.`
+                    : bloque.tipoRecurrencia}
                 </span>
               )}
 

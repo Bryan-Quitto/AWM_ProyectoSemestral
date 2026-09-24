@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 
 interface CalendarioAgendaProps {
@@ -50,15 +50,18 @@ export const CalendarioAgenda = ({
   }, [mesActual]);
 
   const bloquesPorFecha = useMemo(() => {
-    const mapa: Record<string, { disponibles: number; conReserva: boolean }> = {};
+    const mapa: Record<string, { disponibles: number; conReserva: boolean; esRecurrente: boolean }> = {};
     bloques.forEach(bloque => {
       const fecha = bloque.fecha || '';
       if (!fecha) return;
       if (!mapa[fecha]) {
-        mapa[fecha] = { disponibles: 0, conReserva: false };
+        mapa[fecha] = { disponibles: 0, conReserva: false, esRecurrente: false };
       }
       if ((bloque.cuposDisponibles ?? 0) > 0) mapa[fecha].disponibles++;
       if (bloque.yaReservé) mapa[fecha].conReserva = true;
+      if (bloque.tipoRecurrencia && bloque.tipoRecurrencia !== 'Unica') {
+        mapa[fecha].esRecurrente = true;
+      }
     });
     return mapa;
   }, [bloques]);
@@ -114,6 +117,9 @@ export const CalendarioAgenda = ({
               `}
             >
               <span className="font-medium">{dia.dia}</span>
+              {info && info.esRecurrente && (
+                <Repeat className={`absolute top-1 right-1 w-3 h-3 opacity-50 ${estaSeleccionado ? 'text-white' : 'text-blue-500'}`} />
+              )}
               {info && !estaSeleccionado && (
                 <div className="flex gap-0.5 mt-0.5">
                   {info.conReserva && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
@@ -126,7 +132,7 @@ export const CalendarioAgenda = ({
         })}
       </div>
 
-      <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-gray-100 flex-wrap">
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-blue-500" />
           <span className="text-xs text-gray-500">Reservado</span>
@@ -138,6 +144,10 @@ export const CalendarioAgenda = ({
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-gray-400" />
           <span className="text-xs text-gray-500">Completo</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Repeat className="w-3 h-3 text-gray-400" />
+          <span className="text-xs text-gray-500">Recurrente</span>
         </div>
       </div>
     </div>

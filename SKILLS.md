@@ -11,6 +11,7 @@ Asume estrictamente el siguiente entorno para cualquier código propuesto en "RA
 - El Backend es la Única Fuente de Verdad. Todo endpoint de FastEndpoints debe documentarse para Swagger.
 - **PROHIBIDO** el uso de objetos anónimos. Todo retorno debe ser un Record/DTO explícito.
 - Los **Enums** (ej. Roles: Cuidador Principal, Apoyo) deben existir en C#, usar `.HasConversion<string>()` y exponerse como strings.
+- **GOTCHA (FastEndpoints OpenAPI):** Las propiedades de los Request DTOs que provengan de Query Strings DEBEN decorarse obligatoriamente con `[QueryParam]`. De no hacerlo, el generador de Swagger (NSwag) los omitirá del esquema y Orval generará un cliente TypeScript incompleto (sin esos parámetros).
 - **GOTCHA (Error CS1736):** Prohibido inicializar colecciones en records posicionales con `[]`. El Frontend asumirá los fallbacks defensivos (`?? []`).
 
 ### 🚨 REGLA-RFC-7807-ERRORS (Zero-Indulgence Error Handling)
