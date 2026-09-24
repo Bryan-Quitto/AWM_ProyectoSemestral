@@ -109,6 +109,40 @@ export const AgendaMobile = () => {
     bloqueId: null,
   });
 
+  // Lifting State Up (antes lo tenia CalendarioAgenda):
+  // El padre controla el mes visible y lo envia al hijo para que se
+  // re-renderice, y a su vez lo usa para acotar el rango del fetch.
+  // Inicializamos en "hoy" (1ro del mes actual) para que la primera
+  // carga coincida con el mes natural por defecto del backend.
+  const [mesActual, setMesActual] = useState<Date>(
+    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  );
+
+  // Helpers locales: forman YYYY-MM-DD respetando el huso horario del
+  // navegador (Regla de Negocio: America/Guayaquil = UTC-5). Usamos el
+  // constructor `new Date(y, m, d)` en lugar de `toISOString()` para
+  // EVITAR el off-by-one tipico de UTC. `padStart(2, '0')` cubre los
+  // ceros a la izquierda (ej. '2026-10-01' a '2026-10-31').
+  const formatearFecha = (fecha: Date): string => {
+    const y = fecha.getFullYear();
+    const m = String(fecha.getMonth() + 1).padStart(2, '0');
+    const d = String(fecha.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const { fechaDesde, fechaHasta } = useMemo(() => {
+    const year = mesActual.getFullYear();
+    const month = mesActual.getMonth();
+    // Dia 1 del mes actual.
+    const desde = new Date(year, month, 1);
+    // Dia 0 del mes SIGUIENTE = ultimo dia del mes actual (truco JS).
+    const hasta = new Date(year, month + 1, 0);
+    return {
+      fechaDesde: formatearFecha(desde),
+      fechaHasta: formatearFecha(hasta),
+    };
+  }, [mesActual]);
+
   const { data: perfilData } = useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint();
   // El hook puede devolver Success (data con MiPerfilResponse) o Error
   // (data: void). Narrowing: solo accedemos a `rol`/`id` si la respuesta
@@ -120,7 +154,11 @@ export const AgendaMobile = () => {
   const esPrincipal = perfilExitoso?.rol === 'CuidadorPrincipal';
   const usuarioId = perfilExitoso?.id;
 
-  const { bloques, mutate } = useAgenda({ filtro });
+  // Antes: `useAgenda({ filtro })` → el backend solo devolvia el mes
+  // natural en curso y al navegar a octubre el padre no se enteraba.
+  // Ahora pasamos el rango del mes que el hijo esta mostrando, lo que
+  // dispara refetch automatico via SWR al cambiar `mesActual`.
+  const { bloques, mutate } = useAgenda({ filtro, fechaDesde, fechaHasta });
   const { trigger: crearBloque, isMutating: creando } = useCrearBloque();
   const { trigger: editarBloque, isMutating: editando } = useEditarBloque();
   const { trigger: eliminarBloque, isMutating: eliminando } = useEliminarBloque();
@@ -360,6 +398,9 @@ export const AgendaMobile = () => {
             bloques={bloques}
             fechaSeleccionada={fechaSeleccionada}
             onSeleccionarFecha={setFechaSeleccionada}
+            // Lifting State Up: el calendario ahora es controlado.
+            mesActual={mesActual}
+            onCambiarMes={setMesActual}
           />
         </div>
       )}

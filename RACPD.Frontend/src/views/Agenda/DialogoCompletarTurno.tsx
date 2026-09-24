@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useForm, type SubmitHandler } from 'react-hook-form';
+import { useState } from 'react';
+import { useForm, useWatch, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from 'sonner';
 import {
@@ -72,18 +72,9 @@ export const DialogoCompletarTurno = ({
     mode: 'onChange',
   });
 
-  // Reset al abrir/cerrar para no arrastrar estado entre turnos.
-  useEffect(() => {
-    if (abierto) {
-      setTareasSeleccionadas(new Set());
-      form.reset({
-        estadoAnimo: 'Neutral',
-        sintomas: '',
-        observacionesGenerales: '',
-        tareasRealizadasIds: [],
-      });
-    }
-  }, [abierto, form]);
+  // El reset del estado se debe manejar desmontando el modal desde el padre
+  // usando el patrón `key={bloqueId}` para forzar un remount limpio, evitando
+  // así el anti-patrón de sincronizar estado con useEffect en React 19.
 
   const toggleTarea = (tareaId: string) => {
     setTareasSeleccionadas((prev) => {
@@ -93,6 +84,8 @@ export const DialogoCompletarTurno = ({
       return siguiente;
     });
   };
+
+  const estadoAnimoSeleccionado = useWatch({ control: form.control, name: 'estadoAnimo' });
 
   const onSubmit: SubmitHandler<CompletarBitacoraFormData> = async (data) => {
     try {
@@ -212,7 +205,7 @@ export const DialogoCompletarTurno = ({
             </label>
             <div className="grid grid-cols-5 gap-2">
               {estadoAnimoBitacoraEnum.options.map((valor: EstadoAnimoBitacora) => {
-                const seleccionado = form.watch('estadoAnimo') === valor;
+                const seleccionado = estadoAnimoSeleccionado === valor;
                 return (
                   <button
                     key={valor}

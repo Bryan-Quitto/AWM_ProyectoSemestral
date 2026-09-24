@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Repeat } from 'lucide-react';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 
@@ -6,6 +6,14 @@ interface CalendarioAgendaProps {
   bloques: RACPDBackendFeaturesAgendaBloqueTurnoDto[];
   fechaSeleccionada: string | null;
   onSeleccionarFecha: (fecha: string | null) => void;
+  // Lifting State Up (AgendaDesktop.tsx):
+  // El calendario ya NO posee su propio mes. El padre controla ambos:
+  //  - Pinta el mes recibido.
+  //  - Notifica al padre cuando el usuario navega a otro mes, para que
+  //    `useAgenda` haga refetch con el nuevo rango fechaDesde/fechaHasta
+  //    y los bloques del mes visualizado aparezcan correctamente.
+  mesActual: Date;
+  onCambiarMes: (nuevoMes: Date) => void;
 }
 
 const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -15,8 +23,11 @@ export const CalendarioAgenda = ({
   bloques,
   fechaSeleccionada,
   onSeleccionarFecha,
+  mesActual,
+  onCambiarMes,
 }: CalendarioAgendaProps) => {
-  const [mesActual, setMesActual] = useState(() => new Date());
+  // NOTA: el estado interno `mesActual` se elimino. Ahora es controlado.
+  // Si el padre no lo provee, TS strict rompe el contrato.
 
   const { diasCalendario } = useMemo(() => {
     const year = mesActual.getFullYear();
@@ -70,7 +81,7 @@ export const CalendarioAgenda = ({
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
       <div className="flex items-center justify-between mb-4">
         <button
-          onClick={() => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1, 1))}
+          onClick={() => onCambiarMes(new Date(mesActual.getFullYear(), mesActual.getMonth() - 1, 1))}
           className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -79,7 +90,7 @@ export const CalendarioAgenda = ({
           {meses[mesActual.getMonth()]} {mesActual.getFullYear()}
         </h3>
         <button
-          onClick={() => setMesActual(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 1))}
+          onClick={() => onCambiarMes(new Date(mesActual.getFullYear(), mesActual.getMonth() + 1, 1))}
           className="p-2 hover:bg-gray-100 rounded-lg cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 text-gray-600" />

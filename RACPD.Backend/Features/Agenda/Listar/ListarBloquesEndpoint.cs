@@ -225,10 +225,10 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                             if (d >= fechaDesde)
                             {
                                 ocurrencias.Add((b, d));
-                            }
-                            if (++iter > TopeOcurrenciasSemanas)
-                            {
-                                break;
+                                if (++iter > TopeOcurrenciasSemanas)
+                                {
+                                    break;
+                                }
                             }
                         }
                     }
