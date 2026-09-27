@@ -447,6 +447,10 @@ export const AgendaDesktop = () => {
                   onCancelar={handleCancelar}
                   onEditar={setBloqueEditando}
                   onEliminar={handleEliminar}
+                  // Tras cerrar un turno, invalidamos SWR para que el resto
+                  // de la lista (filtros, contadores, recargas) se mantenga
+                  // consistente con el backend.
+                  onBloqueCerrado={() => mutate()}
                   isMutating={isMutating}
                 />
               ))}

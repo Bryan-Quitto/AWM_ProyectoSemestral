@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:20367"
+      "url": "http://127.0.0.1:9696"
     }
   ],
   "paths": {
@@ -1343,6 +1343,51 @@
         ]
       }
     },
+    "/api/agenda/{id}/bitacora": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAgendaObtenerBitacoraObtenerBitacoraEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaBitacoraTurnoDetalleDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
     "/api/agenda/notificaciones-resumen": {
       "get": {
         "tags": [
@@ -2421,6 +2466,14 @@
             "items": {
               "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaTareaTurnoDto"
             }
+          },
+          "estaCompletado": {
+            "type": "boolean"
+          },
+          "bitacoraId": {
+            "type": "string",
+            "format": "guid",
+            "nullable": true
           }
         }
       },
@@ -2467,6 +2520,56 @@
           "orden": {
             "type": "integer",
             "format": "int32"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAgendaBitacoraTurnoDetalleDto": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "bloqueTurnoId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "estadoAnimo": {
+            "type": "string"
+          },
+          "sintomas": {
+            "type": "string",
+            "nullable": true
+          },
+          "horasSueno": {
+            "type": "number",
+            "format": "decimal",
+            "nullable": true
+          },
+          "observacionesGenerales": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaCierre": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "registradoPor": {
+            "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaUsuarioResumenDto"
+          },
+          "tareasRealizadasIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "guid"
+            }
+          },
+          "tareasDelBloque": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RACPDBackendFeaturesAgendaTareaTurnoDto"
+            }
           }
         }
       },

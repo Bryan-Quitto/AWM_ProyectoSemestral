@@ -7,7 +7,8 @@ import { formatearFechaAsignacion } from '../../schemas/fechaAsignacion';
 import { ContactosEmergenciaForm } from './ContactosEmergenciaForm';
 import { Boton } from '../../components/Boton';
 import { SelectorDinamico } from '../../components/SelectorDinamico';
-import { AlertTriangle, Plus, RotateCcw, Trash2, AlertCircle, CheckCircle2, Edit3, User, Droplets, Pill } from 'lucide-react';
+import { AlertTriangle, Plus, RotateCcw, Trash2, AlertCircle, CheckCircle2, Edit3, User, Droplets, Pill, Phone, MessageCircle } from 'lucide-react';
+import { construirEnlaceWhatsApp } from '../DirectorioRelevos/construirEnlaceWhatsApp';
 import {
   useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint,
   useRACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint,
@@ -350,6 +351,17 @@ export function PerfilDependienteDesktop({
               <div className="divide-y divide-blue-50">
                 {contactos.map((c, idx) => {
                   const cAny = c as unknown as ContactoEmergenciaForm;
+                  const telefono = cAny.telefonoWhatsApp ?? '';
+                  // Botones de accion rapida: tel: y wa.me. Se replican
+                  // desde PerfilDependienteMobile.tsx (lineas ~340-360) y
+                  // desde TarjetaCuidador.tsx para garantizar paridad.
+                  // Solo se renderizan si hay telefono cargado.
+                  const telefonoLink = telefono ? `tel:${telefono.replace(/\D/g, '')}` : '';
+                  const mensajeWhatsApp =
+                    'Hola, te contactamos desde RACPD por una emergencia con el dependiente.';
+                  const enlaceWhatsApp = telefono
+                    ? construirEnlaceWhatsApp(telefono, mensajeWhatsApp)
+                    : '';
                   return (
                     <div
                       key={`${cAny.telefonoWhatsApp ?? idx}-${idx}`}
@@ -363,6 +375,26 @@ export function PerfilDependienteDesktop({
                         <p className="text-xl text-blue-600 mt-0.5 font-mono">
                           {cAny.telefonoWhatsApp ?? ''}
                         </p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <a
+                          href={telefonoLink}
+                          aria-label={`Llamar a ${cAny.nombre ?? 'contacto'}`}
+                          className="inline-flex items-center justify-center gap-2 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Phone className="w-4 h-4" />
+                          Llamar
+                        </a>
+                        <a
+                          href={enlaceWhatsApp}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          aria-label={`Enviar WhatsApp a ${cAny.nombre ?? 'contacto'}`}
+                          className="inline-flex items-center justify-center gap-2 py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          WhatsApp
+                        </a>
                       </div>
                     </div>
                   );

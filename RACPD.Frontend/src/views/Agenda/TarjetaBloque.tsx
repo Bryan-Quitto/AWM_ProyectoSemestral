@@ -1,13 +1,19 @@
-import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat } from 'lucide-react';
-import { useState } from 'react';
+import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat, ClipboardCheck, Eye, CheckCircle2, Moon, FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
 import { ModalDetalle } from '../../components/ModalDetalle';
+import { DialogoCompletarTurno } from './DialogoCompletarTurno';
 import {
   calcularAntelacionMinima,
   MENSAJE_BLOQUEO_72H,
 } from '../../features/agenda/lib/calcularAntelacionMinima';
+import { useObtenerBitacora } from '../../features/agenda/hooks/useObtenerBitacora';
+import {
+  ETIQUETAS_ESTADO_ANIMO,
+  type EstadoAnimoBitacora,
+} from './bitacoraSchema';
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 
 /**
@@ -29,6 +35,11 @@ interface TarjetaBloqueProps {
   onCancelar?: (ocurrencia: OcurrenciaRef | string) => void;
   onEditar?: (bloque: RACPDBackendFeaturesAgendaBloqueTurnoDto) => void;
   onEliminar?: (id: string) => void;
+  /**
+   * Notifica al padre cuando el cuidador cierra exitosamente un turno.
+   * El padre deberia disparar `mutate()` de SWR para refrescar la lista.
+   */
+  onBloqueCerrado?: (ocurrencia: OcurrenciaRef) => void;
   isMutating?: boolean;
 }
 
@@ -43,6 +54,15 @@ const formatearFecha = (fecha?: string) => {
   return `${diaSemana}, ${day} ${meses[month - 1]}`;
 };
 
+/**
+ * Clave estable de la OCURRENCIA. Coincide con el patron usado en
+ * AgendaDesktop.tsx / AgendaMobile.tsx (`${id}-${fecha}`) para evitar
+ * colisiones de key en bloques recurrentes. Se usa tambien para
+ * identificar turnos ya cerrados en el set optimista de la sesion.
+ */
+const claveOcurrencia = (id?: string, fecha?: string): string =>
+  fecha ? `${id}-${fecha}` : (id ?? '');
+
 export const TarjetaBloque = ({
   bloque,
   esMiBloque,
@@ -51,10 +71,13 @@ export const TarjetaBloque = ({
   onCancelar,
   onEditar,
   onEliminar,
+  onBloqueCerrado,
   isMutating,
 }: TarjetaBloqueProps) => {
   const esCompleto = (bloque.cuposDisponibles ?? 0) === 0;
-  const estaVencido = bloque.fecha ? new Date(bloque.fecha) < new Date(new Date().toISOString().split('T')[0]) : false;
+  const estaVencido = bloque.fecha
+    ? new Date(bloque.fecha) < new Date(new Date().toISOString().split('T')[0])
+    : false;
 
   const getBorderColor = () => {
     if (bloque.yaReservé) return 'border-blue-500';
@@ -79,6 +102,82 @@ export const TarjetaBloque = ({
   const [detalleAbierto, setDetalleAbierto] = useState(false);
   // Estado para mostrar exclusivamente el listado completo de tareas del bloque
   const [modalTareasAbierto, setModalTareasAbierto] = useState(false);
+  // Estado del modal de cierre de turno / bitacora.
+  const [dialogoCerrarAbierto, setDialogoCerrarAbierto] = useState(false);
+  // Estado del modal de lectura de bitacora (modo lectura, sin formulario).
+  const [modalBitacoraAbierto, setModalBitacoraAbierto] = useState(false);
+
+  // Persona 3 / Semana 3:
+  // El backend ya expone `estaCompletado` y `bitacoraId` en BloqueTurnoDto,
+  // así que el relevo entrante puede ver el reporte del cuidador anterior.
+  // Mantenemos un set optimista local para que el cuidador que cierra su
+  // propio turno vea la insignia sin esperar al round-trip de SWR.
+  const [cerradosEnSesion, setCerradosEnSesion] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const claveBloque = useMemo(
+    () => claveOcurrencia(bloque.id, bloque.fecha),
+    [bloque.id, bloque.fecha],
+  );
+  const completadoPorServidor = bloque.estaCompletado === true || Boolean(bloque.bitacoraId);
+  const completadoEnSesion = cerradosEnSesion.has(claveBloque);
+  const turnoCompletado = completadoPorServidor || completadoEnSesion;
+
+  // Hook de lectura: solo fetchea cuando el modal está abierto. La R3 del
+  // backend (ObtenerBitacoraEndpoint) valida tenancy: el cuidador debe ser
+  // creador, tener reserva activa o vínculo activo con el dependiente.
+  const {
+    bitacora,
+    isLoading: bitacoraCargando,
+    error: bitacoraError,
+    refetch: recargarBitacora,
+  } = useObtenerBitacora({
+    bloqueId: bloque.id,
+    modalAbierto: modalBitacoraAbierto,
+  });
+
+  // Reglas para mostrar el boton "Cerrar turno":
+  //   (yaReservé || esMiBloque)  -> el usuario participa del turno
+  //   !estaVencido               -> la fecha ya paso
+  //   !turnoCompletado           -> el backend ya lo cerro
+  // Esto encaja con la autorizacion R1 del backend
+  // (CompletarTurnoEndpoint.cs): solo el creador o un reservador activo
+  // puede cerrar. El backend rechaza con 403 si no se cumple.
+  const puedeCerrarTurno =
+    (bloque.yaReservé || esMiBloque) &&
+    !!bloque.id &&
+    !estaVencido &&
+    !turnoCompletado;
+
+  // Reglas para mostrar el boton "Ver bitacora":
+  //   turnoCompletado: backend confirma (o sesion optimista local)
+  // El backend aplica la R3 de tenancy al servir el detalle, asi que un
+  // cuidador sin acceso recibira 403 y vera el mensaje de error en el modal.
+  const puedeVerBitacora = turnoCompletado;
+
+  const handleCerradoExitoso = (bitacoraId?: string) => {
+    // Marcamos localmente para que aparezca la insignia inmediatamente.
+    setCerradosEnSesion((prev) => {
+      const siguiente = new Set(prev);
+      siguiente.add(claveBloque);
+      return siguiente;
+    });
+    // Avisamos al padre para que invalide SWR (refresca la pagina,
+    // reordena filtros, etc.). Hacemos esto ANTES de cerrar el modal
+    // para que cuando el cuidador vea la insignia el resto ya este
+    // sincronizado.
+    if (bloque.id) {
+      onBloqueCerrado?.({ id: bloque.id, fecha: bloque.fecha });
+    }
+    setDialogoCerrarAbierto(false);
+    // Feedback adicional: la insignia aparece sola, pero dejamos
+    // huella del ID de bitacora por si el cuidador quiere compartirlo.
+    // Nota: DialogoCompletarTurno ya emite un toast de exito propio;
+    // aqui solo agregamos description contextual para no duplicar.
+    if (bitacoraId) {
+      toast.success(`Bitacora #${bitacoraId.slice(0, 8)} registrada.`);
+    }
+  };
 
   return (
     <div
@@ -130,6 +229,21 @@ export const TarjetaBloque = ({
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-cyan-100 text-cyan-800 text-[10px] font-medium">
                   <ListChecks className="w-3 h-3" />
                   {cantidadTareas} tarea{cantidadTareas === 1 ? '' : 's'}
+                </span>
+              )}
+
+              {/* Badge turno completado (Persona 3 / Semana 3) */}
+              {turnoCompletado && (
+                <span
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-medium"
+                  title={
+                    completadoPorServidor
+                      ? 'Este turno ya fue cerrado. La bitacora esta disponible.'
+                      : 'Cerraste este turno en esta sesion.'
+                  }
+                >
+                  <CheckCircle2 className="w-3 h-3" />
+                  Turno Completado
                 </span>
               )}
             </div>
@@ -227,7 +341,7 @@ export const TarjetaBloque = ({
         </div>
       )}
 
-      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+      <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-gray-200">
         {bloque.puedoReservar && (
           <Boton
             onClick={() => {
@@ -276,6 +390,36 @@ export const TarjetaBloque = ({
             }
           >
             Cancelar Reserva
+          </Boton>
+        )}
+
+        {/* Botón "Cerrar turno" — solo si soy participante del turno y
+            NO está vencido ni cerrado en la sesión. */}
+        {puedeCerrarTurno && (
+          <Boton
+            onClick={() => setDialogoCerrarAbierto(true)}
+            variante="primario"
+            disabled={isMutating}
+            className="flex-1 py-2 cursor-pointer"
+            title="Cerrar este turno y registrar la bitácora del cuidado"
+          >
+            <ClipboardCheck className="w-4 h-4 mr-1.5" />
+            Cerrar turno
+          </Boton>
+        )}
+
+        {/* Botón "Ver bitácora / novedades" — visible para cualquier
+            cuidador con acceso al bloque (relevo entrante, creador o
+            vinculado al dependiente). El backend valida tenancy en R3. */}
+        {puedeVerBitacora && (
+          <Boton
+            onClick={() => setModalBitacoraAbierto(true)}
+            variante="secundario"
+            className="flex-1 py-2 cursor-pointer"
+            title="Ver el resumen del cierre de turno (animo, sueno, sintomas, observaciones)"
+          >
+            <Eye className="w-4 h-4 mr-1.5" />
+            Ver bitácora
           </Boton>
         )}
 
@@ -367,6 +511,192 @@ export const TarjetaBloque = ({
               </li>
             ))}
           </ul>
+        </div>
+      </ModalDetalle>
+
+      {/* Modal de cierre de turno / bitacora. Usamos `key` para forzar
+          remount limpio entre ocurrencias: asi evitamos el anti-patron
+          de sincronizar el formulario con useEffect (regla React 19). */}
+      {bloque.id && (
+        <DialogoCompletarTurno
+          key={`cerrar-${claveBloque}`}
+          abierto={dialogoCerrarAbierto}
+          bloqueId={bloque.id}
+          tareas={tareas.map((t) => ({
+            id: t.id ?? '',
+            descripcion: t.descripcion ?? '',
+            orden: 0,
+          }))}
+          nombreDependiente={bloque.nombreDependiente ?? 'Dependiente'}
+          onCerrar={() => setDialogoCerrarAbierto(false)}
+          onCompletado={handleCerradoExitoso}
+        />
+      )}
+
+      {/* Modal de lectura de bitacora (Persona 3 / Semana 3).
+          Carga los datos reales desde GET /api/agenda/{id}/bitacora via
+          useObtenerBitacora. Visible para cualquier cuidador con acceso
+          al bloque (creador, reservador activo o vinculado al dependiente). */}
+      <ModalDetalle
+        abierto={modalBitacoraAbierto}
+        onCerrar={() => setModalBitacoraAbierto(false)}
+        titulo="Bitacora del turno"
+        icono={<ClipboardCheck className="w-5 h-5 text-emerald-600" />}
+      >
+        <div className="space-y-3 p-1 text-sm">
+          {bitacoraCargando && (
+            <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl text-center text-blue-700">
+              Cargando bitacora...
+            </div>
+          )}
+
+          {!bitacoraCargando && Boolean(bitacoraError) && (
+            <div className="p-3.5 bg-amber-50 border-2 border-amber-300 text-amber-900 rounded-xl flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold">No se pudo cargar la bitacora.</p>
+                <p className="text-xs mt-1">
+                  Puede ser que el turno aun no haya sido cerrado o que no
+                  tengas permisos para consultarla.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => recargarBitacora()}
+                  className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-200 hover:bg-amber-300 text-amber-900 rounded-lg text-xs font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 transition"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Reintentar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!bitacoraCargando && !bitacoraError && bitacora && (
+            <>
+              {/* Encabezado: dependiente + fecha + estado */}
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl">
+                <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wide mb-1 inline-flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Turno cerrado
+                </p>
+                <p className="font-medium text-emerald-900">
+                  {bloque.nombreDependiente ?? 'Dependiente'} —{' '}
+                  {formatearFecha(bloque.fecha)} ({bloque.horaInicio?.slice(0, 5)} — {bloque.horaFin?.slice(0, 5)})
+                </p>
+              </div>
+
+              {/* Estado de animo con badge */}
+              <div className="p-3 bg-sky-50 border border-sky-100 rounded-xl">
+                <p className="text-xs font-semibold text-sky-800 uppercase tracking-wide mb-1">
+                  Estado de animo
+                </p>
+                <p className="font-semibold text-sky-900 text-base">
+                  {ETIQUETAS_ESTADO_ANIMO[bitacora.estadoAnimo as EstadoAnimoBitacora] ??
+                    bitacora.estadoAnimo ??
+                    'No registrado'}
+                </p>
+              </div>
+
+              {/* Horas de sueno */}
+              <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl">
+                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1 inline-flex items-center gap-2">
+                  <Moon className="w-4 h-4" />
+                  Horas de sueno
+                </p>
+                <p className="font-semibold text-blue-900">
+                  {bitacora.horasSueno != null
+                    ? `${bitacora.horasSueno} h`
+                    : 'No especificado'}
+                </p>
+              </div>
+
+              {/* Sintomas observados */}
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                  Sintomas observados
+                </p>
+                <p className="text-gray-800 whitespace-pre-wrap break-words italic">
+                  {bitacora.sintomas && bitacora.sintomas.trim().length > 0
+                    ? bitacora.sintomas
+                    : 'Sin sintomas reportados.'}
+                </p>
+              </div>
+
+              {/* Observaciones generales */}
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1 inline-flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Observaciones del cuidador
+                </p>
+                <p className="text-gray-800 whitespace-pre-wrap break-words">
+                  {bitacora.observacionesGenerales && bitacora.observacionesGenerales.trim().length > 0
+                    ? bitacora.observacionesGenerales
+                    : <span className="italic text-gray-400">Sin observaciones registradas.</span>}
+                </p>
+              </div>
+
+              {/* Checklist: realizadas vs pendientes */}
+              {bitacora.tareasDelBloque && bitacora.tareasDelBloque.length > 0 && (
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                    Tareas del turno
+                  </p>
+                  <ul className="space-y-1.5 list-none">
+                    {bitacora.tareasDelBloque.map((t, i) => {
+                      const esRealizada = Boolean(
+                        t.id && bitacora.tareasRealizadasIds?.includes(t.id),
+                      );
+                      return (
+                        <li
+                          key={t.id ?? i}
+                          className={`flex items-start gap-2 p-2 rounded-lg border ${
+                            esRealizada
+                              ? 'bg-emerald-50 border-emerald-200'
+                              : 'bg-white border-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`mt-0.5 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 ${
+                              esRealizada
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-gray-200 text-gray-500'
+                            }`}
+                            aria-hidden="true"
+                          >
+                            {esRealizada ? '✓' : '·'}
+                          </span>
+                          <span
+                            className={`text-sm leading-snug ${
+                              esRealizada
+                                ? 'line-through text-emerald-900/70'
+                                : 'text-gray-800'
+                            }`}
+                          >
+                            {t.descripcion}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+
+              {/* Auditoria: registrado por */}
+              <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-xs text-blue-700">
+                <p className="font-semibold mb-0.5">
+                  Registrado por {bitacora.registradoPor?.nombreCompleto ?? 'cuidador no identificado'}
+                </p>
+                {bitacora.fechaCierre && (
+                  <p className="text-blue-600">
+                    el {new Date(bitacora.fechaCierre).toLocaleString('es-EC', {
+                      dateStyle: 'long',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </ModalDetalle>
     </div>

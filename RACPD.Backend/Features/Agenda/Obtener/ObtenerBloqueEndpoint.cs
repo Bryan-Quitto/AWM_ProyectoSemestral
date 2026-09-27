@@ -73,6 +73,13 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
             && cuposDisponibles > 0
             && miReserva == null;
 
+        // === Persona 3 / Semana 3: bitácora activa del bloque ===
+        var bitacoraActivaId = await _dbContext.BitacorasTurno
+            .AsNoTracking()
+            .Where(bit => bit.BloqueTurnoId == bloqueId && bit.Activa)
+            .Select(bit => (Guid?)bit.Id)
+            .FirstOrDefaultAsync(ct);
+
         // Cuando se consulta un bloque por id se devuelve la entidad maestra.
         // Coherente con el algoritmo de proyección: IdOcurrencia de la fecha
         // base es determinista y coincide con IdBloqueMaestro sólo si el id
@@ -109,7 +116,10 @@ public class ObtenerBloqueEndpoint : EndpointWithoutRequest<BloqueTurnoDto>
             Tareas: (bloque.Tareas ?? new List<TareaTurnoItem>())
                 .OrderBy(t => t.Orden)
                 .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
-                .ToList()
+                .ToList(),
+            // === Persona 3 / Semana 3 ===
+            EstaCompletado: bitacoraActivaId.HasValue,
+            BitacoraId: bitacoraActivaId
         );
 
         await Send.OkAsync(dto, ct);

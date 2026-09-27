@@ -79,7 +79,16 @@ public record BloqueTurnoDto(
     string NombreDependiente,
     string TipoRecurrencia,
     int? IntervaloSemanas,
-    IReadOnlyList<TareaTurnoDto> Tareas
+    IReadOnlyList<TareaTurnoDto> Tareas,
+    /// <summary>
+    /// true si este bloque ya tiene una BitacoraTurno activa (turno cerrado).
+    /// Persona 3 / Semana 3: habilita insignia y botón "Ver bitácora" en el Frontend.
+    /// </summary>
+    bool EstaCompletado = false,
+    /// <summary>
+    /// Id de la BitacoraTurno activa. null si el turno aún no fue cerrado.
+    /// </summary>
+    Guid? BitacoraId = null
 );
 
 /// <summary>
@@ -121,4 +130,31 @@ public record ReservaExitosaDto(
     Guid ReservaId,
     Guid BloqueId,
     DateTimeOffset ConfirmadoEn
+);
+
+/// <summary>
+/// DTO de detalle de BitacoraTurno para el endpoint GET /api/agenda/{id}/bitacora.
+/// Persona 3 / Semana 3: consumido por el relevo entrante y el cuidador principal
+/// para revisar el reporte clínico/operativo (ánimo, síntomas, horas de sueño,
+/// observaciones y tareas completadas) al iniciar o supervisar un turno.
+/// </summary>
+public record BitacoraTurnoDetalleDto(
+    Guid Id,
+    Guid BloqueTurnoId,
+    string EstadoAnimo,
+    string? Sintomas,
+    decimal? HorasSueno,
+    string? ObservacionesGenerales,
+    DateTimeOffset FechaCierre,
+    UsuarioResumenDto RegistradoPor,
+    /// <summary>
+    /// IDs de TareaTurnoItem marcadas como realizadas en este turno.
+    /// Lista vacía si el bloque no tenía checklist o no se marcó ninguna.
+    /// </summary>
+    IReadOnlyList<Guid> TareasRealizadasIds,
+    /// <summary>
+    /// Tareas del bloque maestro (checklist completo). Permite al frontend
+    /// diferenciar visualmente realizadas vs. pendientes en el modal de lectura.
+    /// </summary>
+    IReadOnlyList<TareaTurnoDto> TareasDelBloque
 );

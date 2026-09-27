@@ -264,6 +264,20 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                 .ToList();
         }
 
+        // === Persona 3 / Semana 3: bitácoras activas por bloque (sin N+1) ===
+        // Traemos en UNA sola query las bitacoras activas de los IDs de bloque
+        // presentes en la lista proyectada, evitando N+1 al mapear a DTO.
+        var idsBloquesEnResultado = ocurrencias
+            .Select(o => o.Maestro.Id)
+            .Distinct()
+            .ToArray();
+
+        var bitacorasPorBloque = await _dbContext.BitacorasTurno
+            .AsNoTracking()
+            .Where(bit => idsBloquesEnResultado.Contains(bit.BloqueTurnoId) && bit.Activa)
+            .Select(bit => new { bit.Id, bit.BloqueTurnoId })
+            .ToDictionaryAsync(x => x.BloqueTurnoId, x => x.Id, ct);
+
         // === Mapeo a DTO con orden estable ===
         var bloquesDto = ocurrencias
             .OrderBy(o => o.FechaOc)
@@ -280,6 +294,15 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     && cuposDisponibles > 0
                     && miReserva == null;
                 var idOcurrencia = OcurrenciaIdHelper.CalcularIdOcurrencia(b.Id, o.FechaOc);
+
+                // Lookup de bitácora activa para este bloque maestro.
+                // Usamos Guid? para representar ausencia: el dictionary no
+                // contiene la clave si NO hay bitácora activa.
+                Guid? bitacoraId = null;
+                if (bitacorasPorBloque.TryGetValue(b.Id, out var idEncontrado))
+                {
+                    bitacoraId = idEncontrado;
+                }
 
                 return new BloqueTurnoDto(
                     Id: b.Id,
@@ -313,7 +336,10 @@ public class ListarBloquesEndpoint : EndpointWithoutRequest<Response>
                     Tareas: (b.Tareas ?? new List<TareaTurnoItem>())
                         .OrderBy(t => t.Orden)
                         .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
-                        .ToList()
+                        .ToList(),
+                    // === Persona 3 / Semana 3: estado de bitácora ===
+                    EstaCompletado: bitacoraId.HasValue,
+                    BitacoraId: bitacoraId
                 );
             }).ToList();
 

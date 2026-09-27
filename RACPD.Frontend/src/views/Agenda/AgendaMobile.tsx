@@ -443,6 +443,9 @@ export const AgendaMobile = () => {
               onCancelar={handleCancelar}
               onEditar={setBloqueEditando}
               onEliminar={handleEliminar}
+              // Tras cerrar un turno, invalidamos SWR para mantener
+              // sincronizada la lista con el backend.
+              onBloqueCerrado={() => mutate()}
               isMutating={isMutating}
             />
           ))
