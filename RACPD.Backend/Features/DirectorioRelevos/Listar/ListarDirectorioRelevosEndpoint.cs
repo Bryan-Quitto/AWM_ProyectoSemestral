@@ -15,8 +15,9 @@ namespace RACPD.Backend.Features.DirectorioRelevos.Listar;
 /// VinculoDependiente.
 ///
 /// Query params (todos opcionales):
-///   - terminoBusqueda  (string) : filtra por Nombre (case-insensitive, ILIKE).
-///   - estado           (string) : "Disponible" | "NoDisponible" | null (= todos).
+///   - terminoBusqueda       (string) : filtra por Nombre (case-insensitive, ILIKE).
+///   - estado                (string) : "Disponible" | "NoDisponible" | null (= todos).
+///   - perfilDependienteId   (Guid?)  : filtra por dependiente concreto.
 ///
 /// Coherencia con Usuario:
 /// Si el UsuarioApoyo NO está Activo, el relevo se trata como
@@ -27,6 +28,11 @@ namespace RACPD.Backend.Features.DirectorioRelevos.Listar;
 ///
 /// El valor persistido en <c>DirectorioRelevo.Estado</c> NO se modifica;
 /// la coerción es solo de lectura.
+///
+/// Nota: la respuesta proyecta también el nombre del dependiente al que
+/// pertenece el relevo. Cuando un cuidador está vinculado a varios
+/// dependientes del mismo usuario (tras dedupe por teléfono), se
+/// muestra el primero alfabéticamente.
 ///
 /// Errores: RFC 7807 vía ProblemDetailsHelper.
 /// </summary>
@@ -72,6 +78,15 @@ public class ListarDirectorioRelevosEndpoint
             return;
         }
 
+        // Si el filtro por dependiente se refiere a un perfil que el
+        // usuario no puede ver, devolvemos lista vacía sin error.
+        if (req.PerfilDependienteId is { } perfilFiltro &&
+            !perfilesVisibles.Contains(perfilFiltro))
+        {
+            await Send.OkAsync(new List<RelevoItemResponse>(), ct);
+            return;
+        }
+
         // === Base query ===
         var query = _db.DirectorioRelevos
             .AsNoTracking()
@@ -84,6 +99,11 @@ public class ListarDirectorioRelevosEndpoint
         {
             var termino = req.TerminoBusqueda.Trim();
             query = query.Where(d => EF.Functions.ILike(d.Nombre, $"%{termino}%"));
+        }
+
+        if (req.PerfilDependienteId is { } perfilDep)
+        {
+            query = query.Where(d => d.PerfilDependienteId == perfilDep);
         }
 
         // === Estado EFECTIVO en SQL ===
@@ -102,6 +122,8 @@ public class ListarDirectorioRelevosEndpoint
             d.Id,
             d.Nombre,
             d.Telefono,
+            d.PerfilDependienteId,
+            DependienteNombre = d.PerfilDependiente.NombreCompleto,
             EstadoEfectivo = d.UsuarioApoyo.Estado == estadoUsuarioActivo
                 ? d.Estado
                 : estadoNoDisponible
@@ -121,17 +143,22 @@ public class ListarDirectorioRelevosEndpoint
 
         var resultado = await queryFinal
             .OrderBy(x => x.Nombre)
+            .ThenBy(x => x.DependienteNombre)
             .ToListAsync(ct);
 
         // Deduplicar por Teléfono (un cuidador puede apoyar a varios
-        // dependientes del mismo usuario y aparecería duplicado).
+        // dependientes del mismo usuario y aparecería duplicado). Tras
+        // dedupe, conservamos el nombre del primer dependiente (orden
+        // alfabético garantiza determinismo).
         var resultadoUnico = resultado
             .DistinctBy(x => x.Telefono)
             .Select(x => new RelevoItemResponse(
                 Id: x.Id,
                 Nombre: x.Nombre,
                 Telefono: x.Telefono,
-                Estado: x.EstadoEfectivo))
+                Estado: x.EstadoEfectivo,
+                PerfilDependienteId: x.PerfilDependienteId,
+                DependienteNombre: x.DependienteNombre))
             .ToList();
 
         await Send.OkAsync(resultadoUnico, ct);
@@ -142,11 +169,15 @@ public class ListarDirectorioRelevosRequest
 {
     public string? TerminoBusqueda { get; init; }
     public string? Estado { get; init; }
+    /// <summary>Filtra el listado por un dependiente concreto.</summary>
+    public Guid? PerfilDependienteId { get; init; }
 }
 
 public record RelevoItemResponse(
     Guid Id,
     string Nombre,
     string Telefono,
-    EstadoDirectorioRelevo Estado
+    EstadoDirectorioRelevo Estado,
+    Guid PerfilDependienteId,
+    string DependienteNombre
 );

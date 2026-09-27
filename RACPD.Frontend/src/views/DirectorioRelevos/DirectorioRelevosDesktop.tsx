@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Search, UsersRound } from 'lucide-react';
+import { Search, UsersRound, Plus, Filter } from 'lucide-react';
 import {
   useDirectorioRelevos,
   type RelevoItemResponse,
 } from '../../features/directorio-relevos/hooks/useDirectorioRelevos';
 import { TarjetaCuidador } from './TarjetaCuidador';
+import type { DirectorioHeader } from './DirectorioHeader';
 
 type FiltroEstado = 'Todos' | 'Disponible' | 'NoDisponible';
 
@@ -24,8 +25,15 @@ const FILTROS: { id: FiltroEstado; label: string }[] = [
  * El hook `useDirectorioRelevos` aplica los filtros server-side, por
  * lo que cambiar el filtro dispara un fetch fresco (con keepPreviousData
  * para evitar parpadeo).
+ *
+ * El filtro por dependiente lo provee el Contenedor via `header`
+ * (compartido con Mobile), porque la lista de dependientes visibles
+ * vive en el padre.
+ *
+ * El botón "Agregar relevo" lo provee el Contenedor via la prop
+ * `header.onAgregar` (compartido con Mobile).
  */
-export const DirectorioRelevosDesktop = () => {
+export const DirectorioRelevosDesktop = ({ header }: { header: DirectorioHeader }) => {
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('Todos');
 
@@ -35,11 +43,16 @@ export const DirectorioRelevosDesktop = () => {
   const { relevos, isLoading } = useDirectorioRelevos({
     terminoBusqueda: terminoNormalizado ? terminoNormalizado : undefined,
     estado: estadoQuery,
+    perfilDependienteId: header.filtroDependienteId,
   });
 
   const total = (relevos || []).length;
   const totalLabel =
     total === 1 ? '1 cuidador' : `${total} cuidadores`;
+
+  const mostrarFiltroDependiente =
+    header.perfilesDependientes !== undefined &&
+    header.perfilesDependientes.length > 1;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -52,6 +65,16 @@ export const DirectorioRelevosDesktop = () => {
             Cuidadores de apoyo disponibles para coordinar relevos.
           </p>
         </div>
+        {header.onAgregar && (
+          <button
+            onClick={header.onAgregar}
+            title={header.tooltipBloqueado}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm hover:shadow-md cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Agregar relevo
+          </button>
+        )}
       </div>
 
       {/* Buscador */}
@@ -90,6 +113,34 @@ export const DirectorioRelevosDesktop = () => {
             </button>
           );
         })}
+
+        {/* Filtro por dependiente (solo si hay > 1) */}
+        {mostrarFiltroDependiente && (
+          <div className="ml-2 inline-flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" aria-hidden="true" />
+            <label htmlFor="filtro-dependiente" className="text-sm text-gray-600">
+              Dependiente:
+            </label>
+            <select
+              id="filtro-dependiente"
+              value={header.filtroDependienteId ?? ''}
+              onChange={(e) =>
+                header.onCambiarFiltroDependiente?.(
+                  e.target.value === '' ? undefined : e.target.value,
+                )
+              }
+              className="px-3 py-1.5 border border-blue-200 rounded-lg bg-white text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              {header.perfilesDependientes?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombreCompleto}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <span className="text-sm text-gray-500 ml-2">{totalLabel}</span>
       </div>
 
@@ -112,7 +163,14 @@ export const DirectorioRelevosDesktop = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
           {(relevos || []).map((relevo: RelevoItemResponse) => (
-            <TarjetaCuidador key={relevo.id ?? relevo.telefono} relevo={relevo} />
+            <TarjetaCuidador
+              key={relevo.id ?? relevo.telefono}
+              relevo={relevo}
+              puedeEditar={header.puedeEditar}
+              onEditar={header.onEditar}
+              puedeEliminar={header.puedeEliminar}
+              onEliminar={header.onEliminar}
+            />
           ))}
         </div>
       )}
