@@ -76,6 +76,10 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
         // === Trip 1: Bloques Unica dentro de la semana (incluido hoy) ===
         // Logica equivalente a ListarBloquesEndpoint para no introducir
         // divergencias con el calendario.
+        // Regla de producto: NO se incluyen turnos con fecha estrictamente
+        // anterior a hoy (pasado). Aunque estuvieran dentro del rango de la
+        // semana (lunes-domingo), se excluyen para que el Dashboard, la
+        // Campana y el Radar nunca muestren información obsoleta.
         var bloquesSemana = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
@@ -84,7 +88,7 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
                 .ThenInclude(r => r.Usuario)
             .Where(b =>
                 b.TipoRecurrencia == TipoRecurrencia.Unica
-                && b.Fecha >= inicioSemana
+                && b.Fecha >= hoyEcuador
                 && b.Fecha <= finSemana)
             .Where(b => esAdministrador
                 || idsDependientesVisibles.Contains(b.PerfilDependienteId))
@@ -108,6 +112,7 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
                 BloqueId: b.Id,
                 PerfilDependienteId: b.PerfilDependienteId,
                 DependienteNombre: b.PerfilDependiente?.NombreCompleto ?? "Sin dependiente",
+                Fecha: b.Fecha,
                 HoraInicio: b.HoraInicio.ToString("HH:mm"),
                 HoraFin: b.HoraFin.ToString("HH:mm"),
                 CuidadorAsignadoNombre: b.CreadoPorId == usuarioId
@@ -125,15 +130,24 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
             {
                 hoy.Add(dto);
             }
-            else if (b.Fecha >= manana && b.Fecha <= finSemana)
+            else if (b.Fecha >= inicioSemana && b.Fecha <= finSemana && b.Fecha != hoyEcuador)
             {
+                // Cobertura semanal: incluye cualquier bloque visible de la
+                // semana actual excepto el de hoy (que ya va a `hoy[]`).
+                // Antes filtraba `b.Fecha >= manana`, lo que dejaba vacía la
+                // lista los domingos (hoy es el último día de la semana).
                 semana.Add(dto);
             }
         }
 
         // Ordenar cronologicamente para presentacion consistente.
+        // (Antes `semana` ordenaba por DependienteNombre — corregido para que
+        // el frontend pueda derivar la etiqueta del día desde el orden real.)
         hoy = hoy.OrderBy(t => t.HoraInicio).ToList();
-        semana = semana.OrderBy(t => t.DependienteNombre).ThenBy(t => t.HoraInicio).ToList();
+        semana = semana
+            .OrderBy(t => t.Fecha)
+            .ThenBy(t => t.HoraInicio)
+            .ToList();
 
         await Send.OkAsync(
             new NotificacionesResumenResponse(hoy, semana),
@@ -150,6 +164,8 @@ public record NotificacionTurnoDto(
     Guid BloqueId,
     Guid PerfilDependienteId,
     string DependienteNombre,
+    DateOnly Fecha,        // Fecha local Ecuador del bloque; permite al FE
+                            // etiquetar correctamente "Miércoles 23 sept" en el radar.
     string HoraInicio,   // "HH:mm"
     string HoraFin,      // "HH:mm"
     string? CuidadorAsignadoNombre,

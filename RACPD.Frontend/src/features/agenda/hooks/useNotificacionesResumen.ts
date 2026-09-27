@@ -19,6 +19,9 @@ export interface NotificacionTurno {
   bloqueId: string;
   perfilDependienteId: string;
   dependienteNombre: string;
+  /** Fecha local Ecuador del bloque (YYYY-MM-DD). Permite al FE etiquetar
+   * correctamente el día en el Radar semanal sin asumir el orden del array. */
+  fecha: string;
   horaInicio: string;   // "HH:mm"
   horaFin: string;      // "HH:mm"
   cuidadorAsignadoNombre: string | null;
