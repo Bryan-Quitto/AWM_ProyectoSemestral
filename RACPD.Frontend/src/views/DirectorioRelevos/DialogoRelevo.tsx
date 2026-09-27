@@ -1,23 +1,12 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { z } from 'zod';
 import { X, AlertTriangle, Check } from 'lucide-react';
 import { Boton } from '../../components/Boton';
+import { normalizarTelefonoEcuador } from '../../schemas/telefono';
 import type {
   CrearRelevoBody,
   EditarRelevoBody,
 } from '../../features/directorio-relevos/hooks/useDirectorioRelevos';
-
-// Normaliza un teléfono ecuatoriano: quita espacios, guiones, paréntesis
-// y el prefijo internacional "593" duplicado. Acepta pegar valores con
-// formato visual (+593 99 123 4567 / (09) 91234567).
-export const normalizarTelefonoEcuador = (input: string): string => {
-  if (!input) return '';
-  let limpio = input.replace(/[\s\-()\.]/g, '');
-  // Si el usuario escribió +5935939... (pega el código dos veces), colapsar.
-  if (limpio.startsWith('+593593')) limpio = '+593' + limpio.slice(7);
-  else if (limpio.startsWith('593593')) limpio = '+593' + limpio.slice(6);
-  return limpio;
-};
 
 const telefonoRegex = /^(?:\+?593|0)?9\d{8}$/;
 
@@ -167,10 +156,12 @@ export const DialogoRelevo = ({
 
   const [perfilDependienteId, setPerfilDependienteId] = useState(perfilInicial);
   const [usuarioApoyoId, setUsuarioApoyoId] = useState('');
-  const [nombre, setNombre] = useState('');
-  const [telefono, setTelefono] = useState('');
-  const [estado, setEstado] = useState<'Disponible' | 'NoDisponible'>('Disponible');
-  const [notas, setNotas] = useState('');
+  const [nombre, setNombre] = useState(() => (modo === 'editar' ? relevoEditar?.nombre ?? '' : ''));
+  const [telefono, setTelefono] = useState(() => (modo === 'editar' ? relevoEditar?.telefono ?? '' : ''));
+  const [estado, setEstado] = useState<'Disponible' | 'NoDisponible'>(
+    () => (modo === 'editar' ? relevoEditar?.estado ?? 'Disponible' : 'Disponible'),
+  );
+  const [notas, setNotas] = useState(() => (modo === 'editar' ? relevoEditar?.notas ?? '' : ''));
   const [errores, setErrores] = useState<Partial<Record<string, string>>>({});
   // Campos que el usuario ya tocó (onBlur). Solo mostramos errores a
   // partir del primer blur → primer submit, sin embargo, sí muestra
@@ -179,34 +170,6 @@ export const DialogoRelevo = ({
   // En modo editar, marca los campos que el usuario cambió
   // explícitamente. Solo esos viajan al PUT (PATCH-like semantics real).
   const dirtyRef = useRef<Set<string>>(new Set());
-
-  const resetFormulario = useCallback(() => {
-    setPerfilDependienteId(perfilInicial);
-    setUsuarioApoyoId('');
-    setNombre('');
-    setTelefono('');
-    setEstado('Disponible');
-    setNotas('');
-    setErrores({});
-    setTocados({});
-    dirtyRef.current.clear();
-  }, [perfilInicial]);
-
-  // Reset al cambiar de modo o relevo a editar.
-  useEffect(() => {
-    if (!abierto) return;
-    if (modo === 'editar' && relevoEditar) {
-      setNombre(relevoEditar.nombre ?? '');
-      setTelefono(relevoEditar.telefono ?? '');
-      setEstado(relevoEditar.estado ?? 'Disponible');
-      setNotas(relevoEditar.notas ?? '');
-      setErrores({});
-      setTocados({});
-      dirtyRef.current.clear();
-    } else if (modo === 'crear') {
-      resetFormulario();
-    }
-  }, [abierto, modo, relevoEditar, resetFormulario]);
 
   // Helpers de blur/change que marcan el campo como tocado y revalidan
   // solo ese campo si ya fue tocado antes (UX de no spamear errores).

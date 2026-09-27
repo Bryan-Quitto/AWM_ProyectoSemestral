@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:35135"
+      "url": "http://127.0.0.1:20367"
     }
   ],
   "paths": {
@@ -972,6 +972,15 @@
               "type": "string",
               "nullable": true
             }
+          },
+          {
+            "name": "perfilDependienteId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid",
+              "nullable": true
+            }
           }
         ],
         "responses": {
@@ -1000,6 +1009,140 @@
             "JWTBearerAuth": [
               "CuidadorPrincipal",
               "Apoyo"
+            ]
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesDirectorioRelevosCrearCrearRelevoEndpoint",
+        "requestBody": {
+          "x-name": "CrearRelevoRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosCrearCrearRelevoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosCrearRelevoItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      }
+    },
+    "/api/directorio-relevos/{id}": {
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesDirectorioRelevosEliminarEliminarRelevoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
+            ]
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesDirectorioRelevosEditarEditarRelevoEndpoint",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "x-name": "EditarRelevoRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosEditarEditarRelevoRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesDirectorioRelevosEditarRelevoItemResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "CuidadorPrincipal"
             ]
           }
         ]
@@ -2031,6 +2174,13 @@
           },
           "estado": {
             "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "dependienteNombre": {
+            "type": "string"
           }
         }
       },
@@ -2049,6 +2199,124 @@
       "RACPDBackendFeaturesDirectorioRelevosListarListarDirectorioRelevosRequest": {
         "type": "object",
         "additionalProperties": false
+      },
+      "RACPDBackendFeaturesDirectorioRelevosEditarRelevoItemResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "dependienteNombre": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesDirectorioRelevosEditarEditarRelevoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+              }
+            ]
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "listado": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "RACPDBackendFeaturesDirectorioRelevosCrearRelevoItemResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "dependienteNombre": {
+            "type": "string"
+          }
+        }
+      },
+      "RACPDBackendFeaturesDirectorioRelevosCrearCrearRelevoRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "usuarioApoyoId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "estado": {
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RACPDBackendDomainEnumsEstadoDirectorioRelevo"
+              }
+            ]
+          },
+          "notas": {
+            "type": "string",
+            "nullable": true
+          },
+          "listado": {
+            "type": "boolean",
+            "nullable": true
+          }
+        }
       },
       "RACPDBackendFeaturesAgendaReservarResponse": {
         "type": "object",

@@ -261,6 +261,7 @@ export const DirectorioRelevosContenedor = () => {
       )}
 
       <DialogoRelevo
+        key={dialogoAbierto ? (modo === 'editar' ? (relevoEditarAdaptado?.id ?? 'editar') : 'crear') : 'cerrado'}
         abierto={dialogoAbierto}
         modo={modo}
         onCerrar={handleCerrar}
