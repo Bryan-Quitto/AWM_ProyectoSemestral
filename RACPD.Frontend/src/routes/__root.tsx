@@ -1,6 +1,7 @@
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 import { PaginaNoEncontrada } from '../components/PaginaNoEncontrada'
+import { BotonAccesibilidadFlotante } from '../components/Accesibilidad/BotonAccesibilidadFlotante'
 
 export interface RouterContext {
   isAuthenticated: () => boolean
@@ -34,6 +35,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
         }}
       />
       <Outlet />
+      <BotonAccesibilidadFlotante />
     </>
   )
 })

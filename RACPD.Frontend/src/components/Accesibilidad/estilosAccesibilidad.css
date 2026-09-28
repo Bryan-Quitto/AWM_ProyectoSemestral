@@ -1,0 +1,60 @@
+/* ==========================================================================
+   ESTILOS DE ACCESIBILIDAD UNIVERSAL - RACPD
+   Alineado con las leyes maestras de diseño y psicología de salud.
+   ========================================================================== */
+
+/* 1. Tamaños de texto relativos escalables */
+html.accesibilidad-texto-grande {
+  font-size: 115% !important;
+}
+
+html.accesibilidad-texto-extragrande {
+  font-size: 130% !important;
+}
+
+/* 2. Modo de Alto Contraste */
+html.accesibilidad-alto-contraste {
+  filter: contrast(135%);
+}
+
+html.accesibilidad-alto-contraste body {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+}
+
+html.accesibilidad-alto-contraste button,
+html.accesibilidad-alto-contraste a,
+html.accesibilidad-alto-contraste input,
+html.accesibilidad-alto-contraste select,
+html.accesibilidad-alto-contraste textarea {
+  outline: 2px solid #000000 !important;
+  outline-offset: 1px !important;
+}
+
+/* 3. Escala de Grises para sensibilidad cromática */
+html.accesibilidad-escala-grises {
+  filter: grayscale(100%) !important;
+}
+
+/* Manejo simultáneo de escala de grises y alto contraste */
+html.accesibilidad-escala-grises.accesibilidad-alto-contraste {
+  filter: grayscale(100%) contrast(135%) !important;
+}
+
+/* 4. Fuente Hiperlegible (mayor espaciado e interlineado) */
+html.accesibilidad-fuente-legible body,
+html.accesibilidad-fuente-legible button,
+html.accesibilidad-fuente-legible input,
+html.accesibilidad-fuente-legible select,
+html.accesibilidad-fuente-legible textarea {
+  letter-spacing: 0.04em !important;
+  word-spacing: 0.06em !important;
+  line-height: 1.7 !important;
+}
+
+/* 5. Subrayar todos los enlaces y botones interactivos */
+html.accesibilidad-subrayar-enlaces a,
+html.accesibilidad-subrayar-enlaces button {
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+}
