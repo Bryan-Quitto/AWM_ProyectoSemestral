@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 import { Boton } from '../../components/Boton';
-import { TarjetaBloque } from './TarjetaBloque';  
+import { TarjetaBloque } from './TarjetaBloque';
 import { DialogoCrearBloque } from './DialogoCrearBloque';
 import { CalendarioAgenda } from './CalendarioAgenda';
 import { ConfirmarAccion } from './ConfirmarAccion';
@@ -22,6 +23,13 @@ import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 import type { BloqueFormData } from './schema';
 import type { OcurrenciaRef } from './TarjetaBloque';
+
+/**
+ * Duración en ms que la tarjeta permanece "destacada" antes de limpiar el
+ * search param. Coincide con 3 ciclos del keyframe `pulse-highlight`
+ * (~3.3s) para que la animación se complete de forma natural.
+ */
+const DURACION_DESTACADO_MS = 3300;
 
 type Filtro = 'Todos' | 'Disponibles' | 'MisReservas' | 'MisBloques';
 
@@ -87,7 +95,8 @@ const extraerMensajeError = (respuesta: any, fallback: string): string => {
   return fallback;
 };
 
-export const AgendaDesktop = () => {
+export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: string } = {}) => {
+  const navigate = useNavigate();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [bloqueEditando, setBloqueEditando] = useState<RACPDBackendFeaturesAgendaBloqueTurnoDto | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -170,6 +179,71 @@ export const AgendaDesktop = () => {
   const { trigger: cancelarReserva, isMutating: cancelando } = useCancelarReserva();
 
   const isMutating = creando || editando || eliminando || reservando || cancelando;
+
+  // === Deep-link desde el Dashboard ===
+  // Cuando llegamos con `?bloqueIdDestacado=<id>`:
+  //   1. Esperamos a que `bloques` se hidrate (SWR).
+  //   2. Si el bloque está en el mes actual → resaltamos.
+  //   3. Si está en otro mes → saltamos al mes y dejamos que el siguiente
+  //      ciclo de render (cuando SWR devuelva el nuevo rango) lo destaque.
+  //   4. Si NO existe (otro cuidador lo tomó/eliminó) → toast informativo.
+  //   5. Tras ~3s limpiamos el search param para que F5 no vuelva a animar.
+  // Usamos `useRef` como bandera "ya procesado" para evitar re-disparar el
+  // efecto cuando SWR refetchea (mutate tras una reserva, etc.).
+  const deepLinkProcesadoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!bloqueIdDestacado) return;
+    if (deepLinkProcesadoRef.current === bloqueIdDestacado) return;
+    if (!bloques || bloques.length === 0) return; // esperar hidratación
+
+    const bloque = bloques.find((b) => b.id === bloqueIdDestacado);
+    if (!bloque) {
+      // Bloque fantasma (otro cuidador lo tomó/cubrió/eliminó mientras
+      // el nuestro estaba en el Dashboard). Tu decisión: toast + aterrizar
+      // sin highlight.
+      deepLinkProcesadoRef.current = bloqueIdDestacado;
+      toast.info('Este turno ya no está disponible o fue cubierto por otra persona.', {
+        duration: 5000,
+      });
+      navigate({
+        to: '/agenda',
+        search: {},
+        replace: true,
+      });
+      return;
+    }
+
+    deepLinkProcesadoRef.current = bloqueIdDestacado;
+
+    // Si el bloque cae en otro mes distinto al que muestra el calendario,
+    // saltamos al mes del bloque. Esto disparará el refetch de SWR y,
+    // cuando lleguen los datos, la tarjeta ya estará en pantalla y será
+    // visible con `destacado=true` por el sub-filtro de `fechaSeleccionada`
+    // + el ID match.
+    if (bloque.fecha) {
+      const [year, month] = bloque.fecha.split('-').map(Number);
+      if (Number.isFinite(year) && Number.isFinite(month)) {
+        const mesDelBloque = new Date(year, month - 1, 1);
+        if (
+          mesDelBloque.getFullYear() !== mesActual.getFullYear() ||
+          mesDelBloque.getMonth() !== mesActual.getMonth()
+        ) {
+          setMesActual(mesDelBloque);
+          // Marcamos la fecha para que el sub-filtro de la lista lo muestre
+          // de inmediato si ya está en caché.
+          setFechaSeleccionada(bloque.fecha);
+        }
+      }
+    }
+
+    // Limpiamos el search param tras la animación completa.
+    const timer = window.setTimeout(() => {
+      navigate({ to: '/agenda', search: {}, replace: true });
+    }, DURACION_DESTACADO_MS);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bloqueIdDestacado, bloques]);
 
   const mostrarToast = (mensaje: string, tipo: 'exito' | 'error') => {
     setToastLocal({ mensaje, tipo });
@@ -427,18 +501,10 @@ export const AgendaDesktop = () => {
                 <TarjetaBloque
                   // Key compuesta: el backend emite el mismo `bloque.id` (Guid
                   // maestro) para todas las ocurrencias recurrentes de un
-                  // mismo bloque, lo que provocaba el warning de React
-                  // "Encountered two children with the same key" al renderizar
-                  // dos o más tarjetas del mismo maestro.
-                  //
-                  // Sintesis minima en cliente: par {maestroId, fechaOc} que
-                  // coincide con el algoritmo servidor
-                  // `OcurrenciaIdHelper.CalcularIdOcurrencia(b.Id, fechaOc)` en
-                  // `RACPD.Backend/Features/Agenda/Listar/ListarBloquesEndpoint.cs`.
-                  //
-                  // Pendiente: regenerar Orval para que el DTO incluya
-                  // `idBloqueMaestro` / `idOcurrencia` ya validados por el
-                  // backend. Cuando exista, migrar a `bloque.idOcurrencia`.
+                  // mismo bloque. Sin esta síntesis React lanzaba el warning
+                  // "Encountered two children with the same key". Coincide
+                  // con el algoritmo servidor en
+                  // `OcurrenciaIdHelper.CalcularIdOcurrencia(b.Id, fechaOc)`.
                   key={bloque.fecha ? `${bloque.id}-${bloque.fecha}` : bloque.id}
                   bloque={bloque}
                   esMiBloque={bloque.creadoPor?.id === usuarioId}
@@ -452,6 +518,9 @@ export const AgendaDesktop = () => {
                   // consistente con el backend.
                   onBloqueCerrado={() => mutate()}
                   isMutating={isMutating}
+                  // Deep-link desde el Dashboard: solo el bloque cuyo id
+                  // coincide con `bloqueIdDestacado` recibe el highlight.
+                  destacado={bloque.id === bloqueIdDestacado}
                 />
               ))}
             </div>

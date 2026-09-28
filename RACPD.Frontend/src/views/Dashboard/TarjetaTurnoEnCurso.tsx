@@ -123,6 +123,12 @@ export const TarjetaTurnoEnCurso = ({ turno, cargando }: TarjetaTurnoEnCursoProp
       <div className="mt-4">
         <Link
           to="/agenda"
+          // Deep-link: el id maestro del bloque viaja en el search param
+          // para que la Agenda salte al mes, haga scroll y aplique el
+          // anillo pulsante sobre esta tarjeta concreta. Antes este botón
+          // era idéntico a los del Radar (mismo `to`, sin contexto) → el
+          // cuidador llegaba a la agenda y tenía que buscar el turno a ojo.
+          search={turno.bloqueId ? { bloqueIdDestacado: turno.bloqueId } : undefined}
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer active:scale-[0.98]"
           aria-label="Ver detalles en la agenda"
         >

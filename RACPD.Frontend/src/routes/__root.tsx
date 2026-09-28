@@ -1,6 +1,7 @@
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { Toaster } from 'sonner'
 import { PaginaNoEncontrada } from '../components/PaginaNoEncontrada'
+import { PaginaError } from '../components/PaginaError'
 import { BotonAccesibilidadFlotante } from '../components/Accesibilidad/BotonAccesibilidadFlotante'
 
 export interface RouterContext {
@@ -12,6 +13,11 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   // dedicada independientemente de si la URL intentada era pública o
   // estaba bajo el prefijo /_protegidas.
   notFoundComponent: PaginaNoEncontrada,
+  // Captura errores no controlados en cualquier ruta (excepciones en
+  // componentes, errores de render, etc.) y los muestra en una pantalla
+  // dedicada, reemplazando el ErrorBoundary por defecto de TanStack
+  // Router que exponía detalles técnicos al cuidador.
+  errorComponent: PaginaError,
   component: () => (
     <>
       {/*

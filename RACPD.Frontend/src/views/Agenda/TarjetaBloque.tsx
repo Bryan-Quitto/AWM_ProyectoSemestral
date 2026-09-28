@@ -1,5 +1,5 @@
 import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat, ClipboardCheck, Eye, CheckCircle2, Moon, FileText, AlertCircle, RefreshCw } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
@@ -41,6 +41,16 @@ interface TarjetaBloqueProps {
    */
   onBloqueCerrado?: (ocurrencia: OcurrenciaRef) => void;
   isMutating?: boolean;
+  /**
+   * Si es `true`, la tarjeta se anima con el "ring pulsante" y se hace
+   * scroll automático hasta ella. Lo activa AgendaDesktop/AgendaMobile
+   * cuando llega con `?bloqueIdDestacado=<id>` desde el Dashboard.
+   *
+   * La animación es puramente CSS (`animate-pulse-highlight` en index.css)
+   * y respeta `prefers-reduced-motion: reduce` para no inducir mareos
+   * en cuidadores con sensibilidad vestibular.
+   */
+  destacado?: boolean;
 }
 
 const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -73,6 +83,7 @@ export const TarjetaBloque = ({
   onEliminar,
   onBloqueCerrado,
   isMutating,
+  destacado = false,
 }: TarjetaBloqueProps) => {
   const esCompleto = (bloque.cuposDisponibles ?? 0) === 0;
   const estaVencido = bloque.fecha
@@ -179,11 +190,37 @@ export const TarjetaBloque = ({
     }
   };
 
+  // === Deep-link desde el Dashboard ===
+  // Cuando AgendaDesktop/AgendaMobile nos renderiza con `destacado=true`,
+  // hacemos scroll a nuestra propia raíz. Usamos un ref + useEffect
+  // porque es el único efecto legítimo aquí: sincronizamos un prop de UI
+  // (alto nivel) con un side effect del navegador (scrollIntoView, imperativo).
+  // No es la antipatrón de "useEffect para copiar props a estado".
+  const tarjetaRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (destacado && tarjetaRef.current) {
+      // Doble rAF para asegurar que el browser ya pintó la animación
+      // y el highlight es visible cuando el usuario llega. Sin esto,
+      // en listas largas el cuidador vería scroll → vacío → highlight.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          tarjetaRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        });
+      });
+    }
+  }, [destacado]);
+
   return (
     <div
+      ref={tarjetaRef}
+      data-bloque-id={bloque.id}
       className={`
         rounded-xl border-2 p-4 transition-all duration-200
         ${getBorderColor()} ${getBgColor()}
+        ${destacado ? 'animate-pulse-highlight' : ''}
         ${bloque.puedoReservar ? 'cursor-pointer hover:shadow-md hover:scale-[1.01] active:scale-[0.99]' : ''}
         ${bloque.yaReservé || esMiBloque ? 'cursor-default' : ''}
         ${!bloque.puedoReservar && !bloque.yaReservé && !esMiBloque ? 'opacity-75' : ''}

@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:9696"
+      "url": "http://127.0.0.1:46702"
     }
   ],
   "paths": {
@@ -2605,6 +2605,10 @@
           },
           "dependienteNombre": {
             "type": "string"
+          },
+          "fecha": {
+            "type": "string",
+            "format": "date"
           },
           "horaInicio": {
             "type": "string"

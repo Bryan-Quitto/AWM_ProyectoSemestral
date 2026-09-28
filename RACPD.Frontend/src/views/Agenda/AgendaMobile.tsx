@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from '@tanstack/react-router';
 import { Boton } from '../../components/Boton';
 import { TarjetaBloque } from './TarjetaBloque';
 import { DialogoCrearBloque } from './DialogoCrearBloque';
@@ -22,6 +23,13 @@ import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '
 import type { RACPDBackendFeaturesAgendaBloqueTurnoDto } from '../../api/generated/model';
 import type { BloqueFormData } from './schema';
 import type { OcurrenciaRef } from './TarjetaBloque';
+
+/**
+ * Duración en ms que la tarjeta permanece "destacada" antes de limpiar el
+ * search param. Coincide con 3 ciclos del keyframe `pulse-highlight`
+ * (~3.3s) para que la animación se complete de forma natural.
+ */
+const DURACION_DESTACADO_MS = 3300;
 
 type Filtro = 'Todos' | 'Disponibles' | 'MisReservas' | 'MisBloques';
 
@@ -82,7 +90,8 @@ const extraerMensajeError = (respuesta: any, fallback: string): string => {
   return fallback;
 };
 
-export const AgendaMobile = () => {
+export const AgendaMobile = ({ bloqueIdDestacado }: { bloqueIdDestacado?: string } = {}) => {
+  const navigate = useNavigate();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [bloqueEditando, setBloqueEditando] = useState<RACPDBackendFeaturesAgendaBloqueTurnoDto | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -166,6 +175,53 @@ export const AgendaMobile = () => {
   const { trigger: cancelarReserva, isMutating: cancelando } = useCancelarReserva();
 
   const isMutating = creando || editando || eliminando || reservando || cancelando;
+
+  // === Deep-link desde el Dashboard ===
+  // Misma lógica que AgendaDesktop.tsx (ver comentarios allí). Lo único
+  // distinto en mobile: no hay `setMostrarCalendario(false)` porque en
+  // móvil el cuidador suele tener el calendario colapsable ya cerrado, y
+  // el scroll a la tarjeta sigue siendo visible. Si quieres que el
+  // calendario se abra automáticamente al llegar con deep-link, añadir
+  // `setMostrarCalendario(true)` en el bloque "encontrado".
+  const deepLinkProcesadoRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!bloqueIdDestacado) return;
+    if (deepLinkProcesadoRef.current === bloqueIdDestacado) return;
+    if (!bloques || bloques.length === 0) return;
+
+    const bloque = bloques.find((b) => b.id === bloqueIdDestacado);
+    if (!bloque) {
+      deepLinkProcesadoRef.current = bloqueIdDestacado;
+      toast.info('Este turno ya no está disponible o fue cubierto por otra persona.', {
+        duration: 5000,
+      });
+      navigate({ to: '/agenda', search: {}, replace: true });
+      return;
+    }
+
+    deepLinkProcesadoRef.current = bloqueIdDestacado;
+
+    if (bloque.fecha) {
+      const [year, month] = bloque.fecha.split('-').map(Number);
+      if (Number.isFinite(year) && Number.isFinite(month)) {
+        const mesDelBloque = new Date(year, month - 1, 1);
+        if (
+          mesDelBloque.getFullYear() !== mesActual.getFullYear() ||
+          mesDelBloque.getMonth() !== mesActual.getMonth()
+        ) {
+          setMesActual(mesDelBloque);
+          setFechaSeleccionada(bloque.fecha);
+        }
+      }
+    }
+
+    const timer = window.setTimeout(() => {
+      navigate({ to: '/agenda', search: {}, replace: true });
+    }, DURACION_DESTACADO_MS);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bloqueIdDestacado, bloques]);
 
   const mostrarToast = (mensaje: string, tipo: 'exito' | 'error') => {
     setToastLocal({ mensaje, tipo });
@@ -447,6 +503,8 @@ export const AgendaMobile = () => {
               // sincronizada la lista con el backend.
               onBloqueCerrado={() => mutate()}
               isMutating={isMutating}
+              // Deep-link desde el Dashboard.
+              destacado={bloque.id === bloqueIdDestacado}
             />
           ))
         )}

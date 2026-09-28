@@ -147,6 +147,16 @@ export const RadarAlertaSemanal = ({
                   </div>
                   <Link
                     to="/agenda"
+                    // Deep-link: cada "Gestionar" apunta al turno concreto
+                    // del item del Radar. Antes era un link genérico a la
+                    // agenda → el cuidador llegaba y tenía que volver a
+                    // encontrar el lunes 28 sept a ojo. Ahora la Agenda
+                    // salta al día, hace scroll y aplica el highlight.
+                    search={
+                      turno.bloqueId
+                        ? { bloqueIdDestacado: turno.bloqueId }
+                        : undefined
+                    }
                     className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900 cursor-pointer whitespace-nowrap"
                     aria-label={`Gestionar relevo de ${diaLabel}`}
                   >
@@ -159,6 +169,8 @@ export const RadarAlertaSemanal = ({
           </ul>
           <Link
             to="/agenda"
+            // "Abrir agenda completa" sigue siendo genérico (sin search
+            // param): el cuidador quiere ver TODO, no uno específico.
             className="mt-4 inline-flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer active:scale-[0.98]"
           >
             Abrir agenda completa
