@@ -1,9 +1,8 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { useNotificacionesResumen } from '../../features/agenda/hooks/useNotificacionesResumen';
 import { useDirectorioRelevos } from '../../features/directorio-relevos/hooks/useDirectorioRelevos';
-import { useAgenda } from '../../features/agenda/hooks/useAgenda';
-import { useObtenerBitacora } from '../../features/agenda/hooks/useObtenerBitacora';
+import { useUltimaBitacora } from '../../features/agenda/hooks/useUltimaBitacora';
 import {
   useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint,
   useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint,
@@ -12,6 +11,7 @@ import {
 import { DashboardDesktop } from './DashboardDesktop';
 import { DashboardMobile } from './DashboardMobile';
 import { DashboardAdmin } from './DashboardAdmin';
+import { ModalDetalleBitacoraDashboard } from './ModalDetalleBitacoraDashboard';
 import type { NotificacionTurno } from '../../features/agenda/hooks/useNotificacionesResumen';
 
 /**
@@ -24,27 +24,50 @@ const parsearHHmm = (hhmm: string | undefined): number => {
   return h * 60 + m;
 };
 
+export type TipoEstadoTemporalTurno = 'en-curso' | 'proximo' | 'concluidos';
+
+export interface TurnoRelevanteHoy {
+  turno: NotificacionTurno;
+  tipo: 'en-curso' | 'proximo';
+}
+
 /**
- * Determina el "turno en curso": el primer bloque de HOY cuyo intervalo
- * [inicio, fin] contiene la hora actual del cliente. Si no hay ninguno,
- * retorna el primero del día (próximo por ocurrir) o null.
- *
- * Nota de zona horaria (SPEC §2): el backend serializa en America/Guayaquil
- * pero el navegador usa su zona local. Riesgo aceptado para MVP; documentado
- * como mejora futura (inyectar `Date.now()` desde el backend).
+ * Determina el turno relevante del día según la hora actual:
+ * 1. Si hay un turno cuyo intervalo [inicio, fin] contiene la hora actual -> 'en-curso'.
+ * 2. Si no hay ninguno en curso, busca el primer turno futuro de hoy (ahora < fin) -> 'proximo'.
+ * 3. Si todos los turnos de hoy ya terminaron (ahora > fin de todos) -> retorna null con tipo 'concluidos'.
  */
-const calcularTurnoEnCurso = (hoy: NotificacionTurno[]): NotificacionTurno | null => {
-  if (!hoy.length) return null;
+const calcularTurnoRelevanteHoy = (
+  hoy: NotificacionTurno[],
+): { resultado: TurnoRelevanteHoy | null; todosConcluidos: boolean } => {
+  if (!hoy.length) return { resultado: null, todosConcluidos: false };
+
   const ahora = new Date();
   const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
 
+  // 1. ¿Hay algún turno ocurriendo en este momento exacto?
   const enCurso = hoy.find((t) => {
     const inicio = parsearHHmm(t.horaInicio);
     const fin = parsearHHmm(t.horaFin);
     return inicio >= 0 && fin >= 0 && inicio <= minutosActuales && minutosActuales <= fin;
   });
 
-  return enCurso ?? hoy[0] ?? null;
+  if (enCurso) {
+    return { resultado: { turno: enCurso, tipo: 'en-curso' }, todosConcluidos: false };
+  }
+
+  // 2. ¿Hay algún turno futuro que aún no haya concluido hoy?
+  const proximo = hoy.find((t) => {
+    const fin = parsearHHmm(t.horaFin);
+    return fin >= 0 && minutosActuales < fin;
+  });
+
+  if (proximo) {
+    return { resultado: { turno: proximo, tipo: 'proximo' }, todosConcluidos: false };
+  }
+
+  // 3. Si no hay ninguno en curso ni futuro, todos los turnos de hoy ya terminaron
+  return { resultado: null, todosConcluidos: true };
 };
 
 /**
@@ -105,8 +128,8 @@ export const DashboardContenedor = () => {
   const turnosHoy = useMemo(() => datos?.hoy ?? [], [datos]);
   const turnosSemana = useMemo(() => datos?.semana ?? [], [datos]);
 
-  const turnoEnCurso = useMemo(
-    () => calcularTurnoEnCurso(turnosHoy),
+  const { resultado: turnoRelevante, todosConcluidos: turnosHoyConcluidos } = useMemo(
+    () => calcularTurnoRelevanteHoy(turnosHoy),
     // turnosHoy es memoizado por dato → solo cambia cuando SWR recibe respuesta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [datos],
@@ -138,26 +161,21 @@ export const DashboardContenedor = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datos]);
 
-  // Consultamos los bloques para ubicar el último turno que fue completado con bitácora
-  const { bloques, isLoading: cargandoAgenda } = useAgenda();
+  // useUltimaBitacora llama a GET /api/agenda/ultima-bitacora que ordena por
+  // FechaCierre DESC en el backend — la única fuente de verdad correcta.
+  // Elimina la dependencia frágil de ordenar BloquesTurno por horaInicio en el cliente
+  // (que era el bug: turno de 08:00 cerrado a las 17:00 quedaba tapado por uno de
+  // 09:32 cerrado antes a las 14:52 porque "09:32" > "08:00" lexicográficamente).
+  const {
+    bitacora: ultimaBitacora,
+    isLoading: cargandoBitacora,
+    error: errorBitacora,
+    mutate: recargarBitacoraMutate,
+  } = useUltimaBitacora();
 
-  const ultimoBloqueCompletadoId = useMemo(() => {
-    if (!bloques || !bloques.length) return undefined;
-    const completados = bloques.filter((b) => b.estaCompletado && b.id);
-    if (!completados.length) return undefined;
-    // Ordenar de más reciente a más antiguo por fecha y hora
-    const ordenados = [...completados].sort((a, b) => {
-      const fechaA = `${a.fecha ?? ''} ${a.horaInicio ?? ''}`;
-      const fechaB = `${b.fecha ?? ''} ${b.horaInicio ?? ''}`;
-      return fechaB.localeCompare(fechaA);
-    });
-    return ordenados[0]?.id;
-  }, [bloques]);
+  // El bloqueId de la última bitácora se usa para el deep-link al modal de agenda
+  const ultimoBloqueCompletadoId = ultimaBitacora?.bloqueTurnoId ?? undefined;
 
-  const { bitacora: ultimaBitacora, isLoading: cargandoBitacora } = useObtenerBitacora({
-    bloqueId: ultimoBloqueCompletadoId,
-    modalAbierto: Boolean(ultimoBloqueCompletadoId),
-  });
 
   const kpiEstadoAnimo = useMemo(() => {
     if (!ultimoBloqueCompletadoId) {
@@ -226,16 +244,17 @@ export const DashboardContenedor = () => {
 
   const cuidadoresDisponibles = relevosDisponibles.length;
 
+  const [modalBitacoraAbierto, setModalBitacoraAbierto] = useState(false);
+
   const propsCompartidas = {
     nombreCuidador,
-    nombreDependiente,
     kpiTurnosHoy,
     kpiCoberturaSemanal,
     cuidadoresDisponibles,
     kpiEstadoAnimo,
     cargandoNotificaciones,
     cargandoRelevos,
-    cargandoEstadoAnimo: cargandoAgenda || cargandoBitacora,
+    cargandoEstadoAnimo: cargandoBitacora,
     hayErrorNotificaciones: Boolean(errorNotificaciones),
     hayErrorRelevos: Boolean(errorRelevos),
     reintentarNotificaciones: () => {
@@ -244,9 +263,11 @@ export const DashboardContenedor = () => {
     reintentarRelevos: () => {
       void reintentarRelevos();
     },
-    turnoEnCurso,
+    turnoRelevante,
+    turnosHoyConcluidos,
     turnosHoy,
     turnosSemana,
+    onAbrirBitacora: ultimoBloqueCompletadoId ? () => setModalBitacoraAbierto(true) : undefined,
   };
 
   const esAdministrador = miPerfilData?.data?.rol === 'AdministradorSistema';
@@ -282,9 +303,25 @@ export const DashboardContenedor = () => {
     );
   }
 
-  return esMobile ? (
-    <DashboardMobile {...propsCompartidas} />
-  ) : (
-    <DashboardDesktop {...propsCompartidas} />
+  return (
+    <>
+      {esMobile ? (
+        <DashboardMobile {...propsCompartidas} />
+      ) : (
+        <DashboardDesktop {...propsCompartidas} />
+      )}
+
+      <ModalDetalleBitacoraDashboard
+        abierto={modalBitacoraAbierto}
+        onCerrar={() => setModalBitacoraAbierto(false)}
+        bitacora={ultimaBitacora}
+        cargando={cargandoBitacora}
+        error={errorBitacora}
+        onReintentar={() => recargarBitacoraMutate()}
+        bloqueId={ultimoBloqueCompletadoId}
+        nombreDependiente={nombreDependiente}
+        dependienteId={dependienteActivo?.perfilId}
+      />
+    </>
   );
 };

@@ -4,11 +4,11 @@ import { TarjetaMetrica } from './TarjetaMetrica';
 import { TarjetaTurnoEnCurso } from './TarjetaTurnoEnCurso';
 import { RadarAlertaSemanal } from './RadarAlertaSemanal';
 import { BannerRelevoUrgente } from './BannerRelevoUrgente';
+import type { TurnoRelevanteHoy } from './DashboardContenedor';
 import type { NotificacionTurno } from '../../features/agenda/hooks/useNotificacionesResumen';
 
 interface DashboardDesktopProps {
   nombreCuidador: string;
-  nombreDependiente: string;
   kpiTurnosHoy: { total: number; cubiertos: number };
   kpiCoberturaSemanal: { cubiertos: number; pendientes: number };
   cuidadoresDisponibles: number;
@@ -25,9 +25,11 @@ interface DashboardDesktopProps {
   hayErrorRelevos: boolean;
   reintentarNotificaciones: () => void;
   reintentarRelevos: () => void;
-  turnoEnCurso: NotificacionTurno | null;
+  turnoRelevante: TurnoRelevanteHoy | null;
+  turnosHoyConcluidos?: boolean;
   turnosHoy: NotificacionTurno[];
   turnosSemana: NotificacionTurno[];
+  onAbrirBitacora?: () => void;
 }
 
 /**
@@ -41,7 +43,6 @@ interface DashboardDesktopProps {
  */
 export const DashboardDesktop = ({
   nombreCuidador,
-  nombreDependiente,
   kpiTurnosHoy,
   kpiCoberturaSemanal,
   cuidadoresDisponibles,
@@ -53,16 +54,15 @@ export const DashboardDesktop = ({
   hayErrorRelevos,
   reintentarNotificaciones,
   reintentarRelevos,
-  turnoEnCurso,
+  turnoRelevante,
+  turnosHoyConcluidos,
   turnosHoy,
   turnosSemana,
+  onAbrirBitacora,
 }: DashboardDesktopProps) => {
   return (
     <div className="min-h-full bg-gradient-to-br from-sky-50 via-white to-blue-50 p-6 md:p-8 space-y-6">
-      <EncabezadoEmpatico
-        nombreCuidador={nombreCuidador}
-        nombreDependiente={nombreDependiente}
-      />
+      <EncabezadoEmpatico nombreCuidador={nombreCuidador} />
 
       {/* === Fila KPIs (4 columnas) === */}
       <section
@@ -100,6 +100,8 @@ export const DashboardDesktop = ({
           icono={kpiEstadoAnimo.tono === 'alerta' ? AlertCircle : Smile}
           tono={kpiEstadoAnimo.tono}
           cargando={cargandoEstadoAnimo}
+          onClick={onAbrirBitacora}
+          ariaLabelAccion="Ver reporte detallado de bitácora y estado de ánimo"
         />
       </section>
 
@@ -116,7 +118,8 @@ export const DashboardDesktop = ({
             />
           ) : (
             <TarjetaTurnoEnCurso
-              turno={turnoEnCurso}
+              turnoRelevante={turnoRelevante}
+              turnosHoyConcluidos={turnosHoyConcluidos}
               cargando={cargandoNotificaciones}
             />
           )}

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
+using RACPD.Backend.Domain.Entities;
 using RACPD.Backend.Domain.Enums;
 using RACPD.Backend.Infrastructure;
 
@@ -53,18 +54,11 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
             ?? User.FindFirstValue("role");
         var esAdministrador = rolClaim?.Equals(Rol.AdministradorSistema.ToString(), StringComparison.OrdinalIgnoreCase) == true;
 
-        // === Semana en Ecuador (lunes a domingo) ===
+        // === Ventana deslizante de 7 días en Ecuador (hoy a hoy + 6 días) ===
+        // Proporciona un horizonte de previsión constante de 7 días continuos,
+        // eliminando la pérdida de visibilidad que ocurría al final de la semana calendario.
         var hoyEcuador = ZonaEcuador.HoyLocal;
-        // DayOfWeek: Sunday=0, Monday=1, ..., Saturday=6.
-        // Para que la semana inicie en lunes: domingo -> 6, lunes -> 0, martes -> 1, ...
-        var diasDesdeInicioSemana = hoyEcuador.DayOfWeek switch
-        {
-            DayOfWeek.Sunday => 6,
-            _ => (int)hoyEcuador.DayOfWeek - 1,
-        };
-        var inicioSemana = hoyEcuador.AddDays(-diasDesdeInicioSemana);
-        var finSemana = inicioSemana.AddDays(6);
-        var manana = hoyEcuador.AddDays(1);
+        var finVentana = hoyEcuador.AddDays(6);
 
         // === Visibilidad por dependiente (idem Listar) ===
         var idsDependientesVisibles = await _dbContext.VinculosDependientes
@@ -73,34 +67,61 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
             .Select(v => v.PerfilDependienteId)
             .ToArrayAsync(ct);
 
-        // === Trip 1: Bloques Unica dentro de la semana (incluido hoy) ===
-        // Logica equivalente a ListarBloquesEndpoint para no introducir
-        // divergencias con el calendario.
-        // Regla de producto: NO se incluyen turnos con fecha estrictamente
-        // anterior a hoy (pasado). Aunque estuvieran dentro del rango de la
-        // semana (lunes-domingo), se excluyen para que el Dashboard, la
-        // Campana y el Radar nunca muestren información obsoleta.
-        var bloquesSemana = await _dbContext.BloquesTurno
+        // === Trip 1: Bloques dentro de la ventana de 7 días (incluido hoy) ===
+        // Soportamos TipoRecurrencia.Unica y TipoRecurrencia.Semanas (con proyección de ocurrencias),
+        // alineado con la lógica de ListarBloquesEndpoint para no omitir turnos recurrentes en el Radar.
+        var bloquesCandidatos = await _dbContext.BloquesTurno
             .AsNoTracking()
             .Include(b => b.CreadoPor)
             .Include(b => b.PerfilDependiente)
             .Include(b => b.Reservas.Where(r => r.Activa))
                 .ThenInclude(r => r.Usuario)
             .Where(b =>
-                b.TipoRecurrencia == TipoRecurrencia.Unica
-                && b.Fecha >= hoyEcuador
-                && b.Fecha <= finSemana)
+                (b.TipoRecurrencia == TipoRecurrencia.Unica
+                    && b.Fecha >= hoyEcuador
+                    && b.Fecha <= finVentana)
+                || (b.TipoRecurrencia == TipoRecurrencia.Semanas
+                    && b.Fecha <= finVentana))
             .Where(b => esAdministrador
                 || idsDependientesVisibles.Contains(b.PerfilDependienteId))
             .ToListAsync(ct);
 
+        // Proyectar ocurrencias en memoria para turnos recurrentes
+        var ocurrencias = new List<(BloqueTurno Maestro, DateOnly FechaOc)>();
+        foreach (var b in bloquesCandidatos)
+        {
+            switch (b.TipoRecurrencia)
+            {
+                case TipoRecurrencia.Unica:
+                    if (b.Fecha >= hoyEcuador && b.Fecha <= finVentana)
+                    {
+                        ocurrencias.Add((b, b.Fecha));
+                    }
+                    break;
+
+                case TipoRecurrencia.Semanas
+                    when b.IntervaloSemanas is int n && n >= 1 && n <= 24:
+                    {
+                        var paso = n * 7;
+                        for (var d = b.Fecha; d <= finVentana; d = d.AddDays(paso))
+                        {
+                            if (d >= hoyEcuador)
+                            {
+                                ocurrencias.Add((b, d));
+                            }
+                        }
+                    }
+                    break;
+            }
+        }
+
         // Materializar en memoria las notificaciones del usuario.
         // "Hoy" = turnos donde el usuario es creador o tiene Reserva activa.
-        // "Semana" = todos los turnos restantes de la semana visibles.
+        // "Semana" = todos los turnos restantes de los próximos días (mañana a hoy + 6 días).
         var hoy = new List<NotificacionTurnoDto>();
         var semana = new List<NotificacionTurnoDto>();
 
-        foreach (var b in bloquesSemana)
+        foreach (var (b, fechaOc) in ocurrencias)
         {
             // Estado derivado de las reservas activas (BloqueTurno no tiene campo Estado).
             var reservasActivas = b.Reservas.Where(r => r.Activa).ToList();
@@ -112,7 +133,7 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
                 BloqueId: b.Id,
                 PerfilDependienteId: b.PerfilDependienteId,
                 DependienteNombre: b.PerfilDependiente?.NombreCompleto ?? "Sin dependiente",
-                Fecha: b.Fecha,
+                Fecha: fechaOc,
                 HoraInicio: b.HoraInicio.ToString("HH:mm"),
                 HoraFin: b.HoraFin.ToString("HH:mm"),
                 CuidadorAsignadoNombre: b.CreadoPorId == usuarioId
@@ -126,16 +147,14 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
             var meRelevo = b.CreadoPorId == usuarioId
                 || reservasActivas.Any(r => r.UsuarioId == usuarioId);
 
-            if (b.Fecha == hoyEcuador && meRelevo)
+            if (fechaOc == hoyEcuador && meRelevo)
             {
                 hoy.Add(dto);
             }
-            else if (b.Fecha >= inicioSemana && b.Fecha <= finSemana && b.Fecha != hoyEcuador)
+            else if (fechaOc > hoyEcuador && fechaOc <= finVentana)
             {
-                // Cobertura semanal: incluye cualquier bloque visible de la
-                // semana actual excepto el de hoy (que ya va a `hoy[]`).
-                // Antes filtraba `b.Fecha >= manana`, lo que dejaba vacía la
-                // lista los domingos (hoy es el último día de la semana).
+                // Cobertura de los próximos días: incluye cualquier bloque visible de la ventana
+                // posterior al día de hoy.
                 semana.Add(dto);
             }
         }

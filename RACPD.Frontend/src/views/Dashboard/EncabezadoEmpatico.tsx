@@ -3,29 +3,16 @@ import { obtenerSaludoContextual } from './utilidades';
 interface EncabezadoEmpaticoProps {
   /** Nombre del cuidador (logueado) o cadena vacía si aún carga. */
   nombreCuidador: string;
-  /** Nombre del dependiente activo o cadena vacía. */
-  nombreDependiente: string;
 }
 
 /**
  * EncabezadoEmpatico
  *
- * Saludo dinámico + subtítulo. UI ligada al feature Dashboard; vive en
- * `/views/Dashboard/` según la regla de dominio. Es agnóstico al layout
- * (Desktop/Mobile): el tamaño tipográfico se controla desde el padre.
- *
- * La función `obtenerSaludoContextual` se importa desde `./utilidades`
- * para no romper la regla `react(only-export-components)` de oxlint.
+ * Saludo dinámico y empático con resumen operativo general de la agenda.
  */
-export const EncabezadoEmpatico = ({
-  nombreCuidador,
-  nombreDependiente,
-}: EncabezadoEmpaticoProps) => {
+export const EncabezadoEmpatico = ({ nombreCuidador }: EncabezadoEmpaticoProps) => {
   const saludo = obtenerSaludoContextual();
   const nombre = nombreCuidador.trim() ? `, ${nombreCuidador}` : '';
-  const subtitulo = nombreDependiente.trim()
-    ? `Resumen operativo y estado del cuidado de ${nombreDependiente}`
-    : 'Resumen operativo del cuidado';
 
   return (
     <header className="space-y-1">
@@ -33,7 +20,9 @@ export const EncabezadoEmpatico = ({
         {saludo}
         {nombre}
       </h1>
-      <p className="text-sm md:text-base text-blue-700/80">{subtitulo}</p>
+      <p className="text-sm md:text-base text-blue-700/80">
+        Resumen operativo y estado de tu agenda de cuidado
+      </p>
     </header>
   );
 };

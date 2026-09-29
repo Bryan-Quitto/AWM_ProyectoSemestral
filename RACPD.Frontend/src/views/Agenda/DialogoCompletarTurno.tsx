@@ -106,7 +106,9 @@ export const DialogoCompletarTurno = ({
       });
 
       if (respuesta?.status >= 400) {
-        const detalle = respuesta?.data?.detail ?? 'No se pudo cerrar el turno.';
+        const errores = respuesta?.data?.errors as Record<string, string[]> | undefined;
+        const primerError = errores ? Object.values(errores).flat()[0] : undefined;
+        const detalle = primerError ?? respuesta?.data?.detail ?? 'No se pudo cerrar el turno.';
         toast.error(detalle, { duration: 6000 });
         return;
       }
@@ -117,7 +119,11 @@ export const DialogoCompletarTurno = ({
       onCompletado(respuesta?.data?.bitacoraId);
       onCerrar();
     } catch (err: any) {
-      const detalle = err?.response?.data?.detail
+      const errores = err?.response?.data?.errors as Record<string, string[]> | undefined;
+      const primerError = errores ? Object.values(errores).flat()[0] : undefined;
+      const detalle = primerError
+        ?? err?.response?.data?.detail
+        ?? err?.message
         ?? 'Error de conexion. Intente de nuevo.';
       toast.error(detalle, { duration: 6000 });
     }

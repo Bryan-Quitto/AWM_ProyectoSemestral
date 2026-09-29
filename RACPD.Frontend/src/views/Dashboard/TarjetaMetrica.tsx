@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export type TonoKpi = 'primario' | 'exito' | 'alerta' | 'sistema';
 
@@ -10,6 +11,10 @@ interface TarjetaMetricaProps {
   tono?: TonoKpi;
   /** Si true, renderiza esqueletos animate-pulse en lugar del contenido (Zero-Wait). */
   cargando?: boolean;
+  /** Si se define, la tarjeta se vuelve clickeable y muestra un indicador de acceso directo */
+  onClick?: () => void;
+  /** Texto descriptivo para lectores de pantalla de la acción al hacer clic */
+  ariaLabelAccion?: string;
 }
 
 const TONOS_CONTENEDOR: Record<TonoKpi, string> = {
@@ -42,8 +47,15 @@ export const TarjetaMetrica = ({
   icono: Icono,
   tono = 'primario',
   cargando = false,
+  onClick,
+  ariaLabelAccion,
 }: TarjetaMetricaProps) => {
-  const clasesCaja = `${TONOS_CONTENEDOR[tono]} border rounded-2xl p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`;
+  const esClickeable = Boolean(onClick);
+  const clasesCaja = `${TONOS_CONTENEDOR[tono]} border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 ${
+    esClickeable
+      ? 'cursor-pointer hover:-translate-y-0.5 active:scale-[0.98] group'
+      : ''
+  }`;
   const clasesIcono = `${TONOS_ICONO[tono]} w-10 h-10 rounded-xl flex items-center justify-center shrink-0`;
 
   if (cargando) {
@@ -66,13 +78,36 @@ export const TarjetaMetrica = ({
   }
 
   return (
-    <div className={clasesCaja}>
+    <div
+      className={clasesCaja}
+      onClick={onClick}
+      role={esClickeable ? 'button' : undefined}
+      tabIndex={esClickeable ? 0 : undefined}
+      onKeyDown={
+        esClickeable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick?.();
+              }
+            }
+          : undefined
+      }
+      aria-label={ariaLabelAccion ?? etiqueta}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-wide opacity-80 truncate">
-            {etiqueta}
-          </p>
-          <p className="mt-2 text-3xl font-bold leading-none">{valor}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs font-semibold uppercase tracking-wide opacity-80 truncate">
+              {etiqueta}
+            </p>
+            {esClickeable && (
+              <span className="inline-flex items-center opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-xs font-bold" title="Acceso directo">
+                <ArrowRight className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+          <p className="mt-2 text-2xl md:text-3xl font-bold leading-none">{valor}</p>
           {subtexto && (
             <p className="mt-2 text-sm opacity-80 truncate" title={subtexto}>
               {subtexto}

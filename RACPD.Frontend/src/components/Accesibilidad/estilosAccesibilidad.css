@@ -12,14 +12,22 @@ html.accesibilidad-texto-extragrande {
   font-size: 130% !important;
 }
 
-/* 2. Modo de Alto Contraste */
+/* 2. Modo de Alto Contraste
+   IMPORTANTE: No usamos `filter: contrast()` porque fuerza al navegador a
+   re-renderizar toda la página como bitmap, lo cual rompe bordes redondeados,
+   sombras, dot indicators del calendario y otros detalles finos.
+   En su lugar, redefinimos tokens de color en cascada para preservar la UI. */
 html.accesibilidad-alto-contraste {
-  filter: contrast(135%);
+  --color-fondo-accesible: #ffffff;
+  --color-texto-accesible: #000000;
+  --color-borde-accesible: #000000;
+  --color-enlace-accesible: #0000ee;
+  --color-foco-accesible: #ffff00;
 }
 
 html.accesibilidad-alto-contraste body {
-  background-color: #ffffff !important;
-  color: #000000 !important;
+  background-color: var(--color-fondo-accesible) !important;
+  color: var(--color-texto-accesible) !important;
 }
 
 html.accesibilidad-alto-contraste button,
@@ -27,8 +35,12 @@ html.accesibilidad-alto-contraste a,
 html.accesibilidad-alto-contraste input,
 html.accesibilidad-alto-contraste select,
 html.accesibilidad-alto-contraste textarea {
-  outline: 2px solid #000000 !important;
-  outline-offset: 1px !important;
+  border-color: var(--color-borde-accesible) !important;
+}
+
+html.accesibilidad-alto-contraste *:focus-visible {
+  outline: 3px solid var(--color-foco-accesible) !important;
+  outline-offset: 2px !important;
 }
 
 /* 3. Escala de Grises para sensibilidad cromática */
@@ -36,9 +48,10 @@ html.accesibilidad-escala-grises {
   filter: grayscale(100%) !important;
 }
 
-/* Manejo simultáneo de escala de grises y alto contraste */
+/* Manejo simultáneo de escala de grises y alto contraste:
+   el filter grayscale sigue siendo seguro porque no rompe geometría. */
 html.accesibilidad-escala-grises.accesibilidad-alto-contraste {
-  filter: grayscale(100%) contrast(135%) !important;
+  filter: grayscale(100%) !important;
 }
 
 /* 4. Fuente Hiperlegible (mayor espaciado e interlineado) */
