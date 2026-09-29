@@ -147,6 +147,35 @@ export const TarjetaBloque = ({
     modalAbierto: modalBitacoraAbierto,
   });
 
+  // === Defensa redundante del cliente (Persona 2 / Semana 2) ===
+  // El backend NO exige 72h para reservar (eso aplica solo a
+  // CancelarReserva). Lo único que valida `ReservarEndpoint` R3 es
+  // que el turno no haya empezado todavía: `inicioOcurrenciaUtc <
+  // DateTimeOffset.UtcNow` → "No se puede reservar una ocurrencia en
+  // fecha pasada".
+  //
+  // Aquí replicamos esa verificación para que el botón "Tomar turno"
+  // se muestre activo SOLO cuando la fecha+hora de inicio aún no se
+  // haya alcanzado. Si ya pasó, el botón aparece deshabilitado con
+  // cursor-not-allowed y un tooltip explicativo.
+  const ocurrenciaYaPaso = useMemo(() => {
+    if (!bloque.fecha || !bloque.horaInicio) return false;
+    const [y, mo, d] = bloque.fecha.split('-').map(Number);
+    const [hh, mm] = bloque.horaInicio.slice(0, 5).split(':').map(Number);
+    if ([y, mo, d, hh, mm].some((v) => v === undefined || Number.isNaN(v))) {
+      return false;
+    }
+    const inicio = new Date(y!, (mo ?? 1) - 1, d!, hh ?? 0, mm ?? 0, 0, 0);
+    return inicio.getTime() < Date.now();
+  }, [bloque.fecha, bloque.horaInicio]);
+
+  const reservasHabilitadasEnCliente =
+    bloque.puedoReservar && !ocurrenciaYaPaso;
+
+  const mensajeBloqueoCliente = ocurrenciaYaPaso
+    ? 'Esta ocurrencia ya pasó y no se puede reservar.'
+    : null;
+
   // Reglas para mostrar el boton "Cerrar turno":
   //   (yaReservé || esMiBloque)  -> el usuario participa del turno
   //   !estaVencido               -> la fecha ya paso
@@ -382,6 +411,15 @@ export const TarjetaBloque = ({
         {bloque.puedoReservar && (
           <Boton
             onClick={() => {
+              // Defensa redundante cliente: si la ocurrencia ya pasó
+              // (R3 del backend), bloqueamos antes del round-trip. Como
+              // regla 72h NO aplica para reservar, no la validamos aquí.
+              if (ocurrenciaYaPaso) {
+                toast.error('Esta ocurrencia ya pasó y no se puede reservar.', {
+                  duration: 5000,
+                });
+                return;
+              }
               // === Persona 2 / Semana 2: enviar fecha de la OCURRENCIA ===
               // Con la proyección de ocurrencias (Persona 1), un bloque recurrente
               // genera múltiples turnos. Enviamos la fecha concreta de esta
@@ -391,8 +429,11 @@ export const TarjetaBloque = ({
               onReservar?.({ id: bloque.id, fecha: bloque.fecha });
             }}
             cargando={isMutating}
-            className="flex-1 py-2 cursor-pointer"
-            title="Tomar este turno de apoyo"
+            disabled={!reservasHabilitadasEnCliente}
+            className="flex-1 py-2 cursor-pointer disabled:cursor-not-allowed"
+            title={
+              mensajeBloqueoCliente ?? 'Tomar este turno de apoyo'
+            }
           >
             Tomar turno
           </Boton>
