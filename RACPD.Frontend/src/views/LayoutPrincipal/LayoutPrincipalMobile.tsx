@@ -65,10 +65,17 @@ export const LayoutPrincipalMobile = () => {
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <CampanaNotificaciones
-            tamanoIcono={20}
-            alineacionPopover="derecha"
-          />
+          {/* La campana de notificaciones resume turnos del dependiente
+              activo. Para el Administrador del Sistema no aporta contexto
+              útil (no gestiona una agenda de cuidados), así que la
+              ocultamos. Coherente con el menú inferior: Agenda y
+              Directorio también se ocultan para admin. */}
+          {!esAdmin && (
+            <CampanaNotificaciones
+              tamanoIcono={20}
+              alineacionPopover="derecha"
+            />
+          )}
           <Link
             to="/configuracion"
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer active:scale-95"

@@ -57,10 +57,18 @@ export const LayoutPrincipalDesktop = () => {
         <div className="p-6 border-b border-blue-200">
           <div className="flex items-start justify-between gap-2">
             <h1 className="text-2xl font-bold text-blue-900">RACPD</h1>
-            <CampanaNotificaciones
-              tamanoIcono={20}
-              alineacionPopover="izquierda"
-            />
+            {/* La campana de notificaciones resume turnos del dependiente
+                activo. Para el Administrador del Sistema no aporta
+                contexto útil (no gestiona una agenda de cuidados), así
+                que la ocultamos en lugar de mostrar un badge "0" sin
+                sentido. Coherente con el menú lateral: Agenda y
+                Directorio también se ocultan para admin. */}
+            {!esAdmin && (
+              <CampanaNotificaciones
+                tamanoIcono={20}
+                alineacionPopover="izquierda"
+              />
+            )}
           </div>
           {perfilData?.data ? (
             <div className="mt-1">
