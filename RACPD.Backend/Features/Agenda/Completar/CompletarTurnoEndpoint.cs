@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json.Serialization;
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
 using RACPD.Backend.Data;
@@ -246,7 +247,10 @@ public class CompletarTurnoEndpoint : Endpoint<CompletarTurnoRequest, CompletarT
 public class CompletarTurnoRequest
 {
     public string Id { get; set; } = default!;
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
     public EstadoAnimoTurno? EstadoAnimo { get; set; }
+
     public string? Sintomas { get; set; }
     public decimal? HorasSueno { get; set; }
     public string? ObservacionesGenerales { get; set; }

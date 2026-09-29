@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -91,6 +92,16 @@ builder.Services.AddAuthorization();
 // Soporte para RFC 7807 ProblemDetails en respuestas de error.
 builder.Services.AddProblemDetails();
 
+// === Serialización JSON: enums como STRING (tanto entrada como salida) ===
+// El frontend envía "estadoAnimo":"MuyMal" (nombre de enum), no 0..4.
+// Sin este converter, System.Text.Json lanza:
+//   "The JSON value could not be converted to EstadoAnimoTurno"
+builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    options.SerializerOptions.PropertyNameCaseInsensitive = true;
+});
+
 builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
 DocumentOptions.SwaggerExportPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "RACPD.Frontend"));
@@ -137,7 +148,14 @@ app.Use(async (context, next) =>
 
 app.UseAuthorization();
 
-app.UseFastEndpoints();
+// Configurar serializador JSON de FastEndpoints: enums como string y case-insensitive
+// para que el binding del request DTO acepte "estadoAnimo":"MuyMal" (PascalCase/camelCase
+// desde el frontend) y lo convierta al enum correspondiente.
+app.UseFastEndpoints(configuracion =>
+{
+    configuracion.Serializer.Options.Converters.Add(new JsonStringEnumConverter());
+    configuracion.Serializer.Options.PropertyNameCaseInsensitive = true;
+});
 app.UseSwaggerGen();
 
 // Si se ejecuta con el flag '--export-swagger', exporta el esquema OpenAPI sin bloquear puertos fijos y finaliza
