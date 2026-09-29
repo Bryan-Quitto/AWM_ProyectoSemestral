@@ -121,13 +121,26 @@ public class NotificacionesResumenEndpoint : EndpointWithoutRequest<Notificacion
         var hoy = new List<NotificacionTurnoDto>();
         var semana = new List<NotificacionTurnoDto>();
 
+        // === Persona 3: Lookup de bitácoras activas para saber qué bloques ya están completados ===
+        var idsBloques = ocurrencias.Select(o => o.Maestro.Id).Distinct().ToArray();
+        var bloquesConBitacora = await _dbContext.BitacorasTurno
+            .AsNoTracking()
+            .Where(bit => idsBloques.Contains(bit.BloqueTurnoId) && bit.Activa)
+            .Select(bit => bit.BloqueTurnoId)
+            .ToHashSetAsync(ct);
+
         foreach (var (b, fechaOc) in ocurrencias)
         {
-            // Estado derivado de las reservas activas (BloqueTurno no tiene campo Estado).
+            var tieneBitacora = bloquesConBitacora.Contains(b.Id);
+
+            // Estado derivado de las reservas activas y bitácora.
+            // Si el bloque ya tiene bitácora registrada, su estado operativo es Completado.
             var reservasActivas = b.Reservas.Where(r => r.Activa).ToList();
-            var estadoStr = reservasActivas.Count > 0
-                ? EstadoRelevo.Asignado.ToString()
-                : EstadoRelevo.Disponible.ToString();
+            var estadoStr = tieneBitacora
+                ? EstadoRelevo.Completado.ToString()
+                : reservasActivas.Count > 0
+                    ? EstadoRelevo.Asignado.ToString()
+                    : EstadoRelevo.Disponible.ToString();
 
             var dto = new NotificacionTurnoDto(
                 BloqueId: b.Id,

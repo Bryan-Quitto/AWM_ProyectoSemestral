@@ -33,9 +33,10 @@ export interface TurnoRelevanteHoy {
 
 /**
  * Determina el turno relevante del día según la hora actual:
- * 1. Si hay un turno cuyo intervalo [inicio, fin] contiene la hora actual -> 'en-curso'.
- * 2. Si no hay ninguno en curso, busca el primer turno futuro de hoy (ahora < fin) -> 'proximo'.
- * 3. Si todos los turnos de hoy ya terminaron (ahora > fin de todos) -> retorna null con tipo 'concluidos'.
+ * 1. Filtra los turnos de hoy que NO estén completados (con bitácora ya cerrada).
+ * 2. Si hay un turno no completado cuyo intervalo [inicio, fin] contiene la hora actual -> 'en-curso'.
+ * 3. Si no hay ninguno en curso, busca el primer turno no completado futuro de hoy (ahora < fin) -> 'proximo'.
+ * 4. Si todos los turnos de hoy ya terminaron o están completados -> retorna null con todosConcluidos: true.
  */
 const calcularTurnoRelevanteHoy = (
   hoy: NotificacionTurno[],
@@ -45,8 +46,16 @@ const calcularTurnoRelevanteHoy = (
   const ahora = new Date();
   const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
 
-  // 1. ¿Hay algún turno ocurriendo en este momento exacto?
-  const enCurso = hoy.find((t) => {
+  // Ignoramos turnos que ya fueron cerrados con bitácora
+  const turnosActivos = hoy.filter((t) => t.estado !== 'Completado');
+
+  // Si había turnos pero todos ya fueron cerrados con bitácora, la jornada está concluida
+  if (turnosActivos.length === 0) {
+    return { resultado: null, todosConcluidos: true };
+  }
+
+  // 1. ¿Hay algún turno activo ocurriendo en este momento exacto?
+  const enCurso = turnosActivos.find((t) => {
     const inicio = parsearHHmm(t.horaInicio);
     const fin = parsearHHmm(t.horaFin);
     return inicio >= 0 && fin >= 0 && inicio <= minutosActuales && minutosActuales <= fin;
@@ -56,8 +65,8 @@ const calcularTurnoRelevanteHoy = (
     return { resultado: { turno: enCurso, tipo: 'en-curso' }, todosConcluidos: false };
   }
 
-  // 2. ¿Hay algún turno futuro que aún no haya concluido hoy?
-  const proximo = hoy.find((t) => {
+  // 2. ¿Hay algún turno activo futuro que aún no haya concluido hoy?
+  const proximo = turnosActivos.find((t) => {
     const fin = parsearHHmm(t.horaFin);
     return fin >= 0 && minutosActuales < fin;
   });
@@ -66,7 +75,7 @@ const calcularTurnoRelevanteHoy = (
     return { resultado: { turno: proximo, tipo: 'proximo' }, todosConcluidos: false };
   }
 
-  // 3. Si no hay ninguno en curso ni futuro, todos los turnos de hoy ya terminaron
+  // 3. Si no hay ninguno en curso ni futuro entre los activos, todos los turnos de hoy concluyeron
   return { resultado: null, todosConcluidos: true };
 };
 

@@ -255,12 +255,20 @@ export const RadarAlertaSemanal = ({
                           </p>
                           <span
                             className={`text-[10px] font-semibold px-2 py-0.2 rounded-full ${
-                              sinAsignar
-                                ? 'bg-amber-200/70 text-amber-900'
-                                : 'bg-emerald-100 text-emerald-800'
+                              turno.estado === 'Completado'
+                                ? 'bg-sky-100 text-sky-800 border border-sky-200'
+                                : sinAsignar
+                                  ? 'bg-amber-200/70 text-amber-900'
+                                  : 'bg-emerald-100 text-emerald-800'
                             }`}
                           >
-                            {sinAsignar ? 'Sin asignar' : turno.cuidadorAsignadoNombre === 'Yo' ? 'Cubierto por ti' : (turno.cuidadorAsignadoNombre ?? 'Asignado')}
+                            {turno.estado === 'Completado'
+                              ? 'Concluido'
+                              : sinAsignar
+                                ? 'Sin asignar'
+                                : turno.cuidadorAsignadoNombre === 'Yo'
+                                  ? 'Cubierto por ti'
+                                  : (turno.cuidadorAsignadoNombre ?? 'Asignado')}
                           </span>
                         </div>
                         <p className="text-[11px] text-slate-600 truncate mt-0.5">
