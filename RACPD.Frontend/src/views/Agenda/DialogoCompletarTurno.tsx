@@ -89,11 +89,18 @@ export const DialogoCompletarTurno = ({
 
   const onSubmit: SubmitHandler<CompletarBitacoraFormData> = async (data) => {
     try {
+      // Normalizar horasSueno: RHF con valueAsNumber produce NaN cuando el input esta vacio.
+      // El backend rechaza NaN en JSON; lo pasamos como null en su lugar.
+      const horasSuenoNormalizadas =
+        typeof data.horasSueno === 'number' && Number.isFinite(data.horasSueno)
+          ? data.horasSueno
+          : null;
+
       const respuesta: any = await completar({
         bloqueId,
         estadoAnimo: data.estadoAnimo,
         sintomas: data.sintomas || null,
-        horasSueno: data.horasSueno ?? null,
+        horasSueno: horasSuenoNormalizadas,
         observacionesGenerales: data.observacionesGenerales || null,
         tareasRealizadasIds: Array.from(tareasSeleccionadas),
       });
