@@ -73,6 +73,20 @@ const formatearFecha = (fecha?: string) => {
 const claveOcurrencia = (id?: string, fecha?: string): string =>
   fecha ? `${id}-${fecha}` : (id ?? '');
 
+/**
+ * Determina si la fecha y hora de inicio del turno ya quedaron en el pasado.
+ */
+const verificarTurnoEnPasado = (fecha?: string, horaInicio?: string): boolean => {
+  if (!fecha || !horaInicio) return false;
+  const [y, mo, d] = fecha.split('-').map(Number);
+  const [hh, mm] = horaInicio.slice(0, 5).split(':').map(Number);
+  if ([y, mo, d, hh, mm].some((v) => v === undefined || Number.isNaN(v))) {
+    return false;
+  }
+  const inicio = new Date(y!, (mo ?? 1) - 1, d!, hh ?? 0, mm ?? 0, 0, 0);
+  return inicio.getTime() < new Date().getTime();
+};
+
 export const TarjetaBloque = ({
   bloque,
   esMiBloque,
@@ -158,16 +172,7 @@ export const TarjetaBloque = ({
   // se muestre activo SOLO cuando la fecha+hora de inicio aún no se
   // haya alcanzado. Si ya pasó, el botón aparece deshabilitado con
   // cursor-not-allowed y un tooltip explicativo.
-  const ocurrenciaYaPaso = useMemo(() => {
-    if (!bloque.fecha || !bloque.horaInicio) return false;
-    const [y, mo, d] = bloque.fecha.split('-').map(Number);
-    const [hh, mm] = bloque.horaInicio.slice(0, 5).split(':').map(Number);
-    if ([y, mo, d, hh, mm].some((v) => v === undefined || Number.isNaN(v))) {
-      return false;
-    }
-    const inicio = new Date(y!, (mo ?? 1) - 1, d!, hh ?? 0, mm ?? 0, 0, 0);
-    return inicio.getTime() < Date.now();
-  }, [bloque.fecha, bloque.horaInicio]);
+  const ocurrenciaYaPaso = verificarTurnoEnPasado(bloque.fecha, bloque.horaInicio);
 
   const reservasHabilitadasEnCliente =
     bloque.puedoReservar && !ocurrenciaYaPaso;
