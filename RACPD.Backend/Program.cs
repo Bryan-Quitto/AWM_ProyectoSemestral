@@ -22,6 +22,8 @@ var origenesPermitidosCORS = new[]
 {
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "http://localhost:5174",
     "http://127.0.0.1:5174"
 };
@@ -32,10 +34,21 @@ builder.Services.AddCors(opciones =>
     // en .NET 10 cuando se usa AddDefaultPolicy con UseCors().
     opciones.AddPolicy("RACPD", politica =>
     {
-        politica.WithOrigins(origenesPermitidosCORS)
-            .AllowAnyHeader()
-            .AllowAnyMethod()
-            .AllowCredentials();
+        if (builder.Environment.IsDevelopment())
+        {
+            // En desarrollo se permite cualquier origen (túneles Cloudflare, IPs locales, localhost)
+            politica.SetIsOriginAllowed(_ => true)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+        else
+        {
+            politica.WithOrigins(origenesPermitidosCORS)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
     });
 });
 

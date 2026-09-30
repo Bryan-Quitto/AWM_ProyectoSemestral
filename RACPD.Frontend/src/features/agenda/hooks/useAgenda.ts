@@ -15,7 +15,7 @@ import type {
 } from '../../../api/generated/model';
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000';
+  (import.meta.env['VITE_API_URL'] as string | undefined) || '';
 
 /**
  * Parametros que AgendaDesktop/Mobile pasan al hook para que el BACKEND

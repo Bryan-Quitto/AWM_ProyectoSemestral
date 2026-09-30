@@ -21,7 +21,7 @@ import type { RACPDBackendFeaturesAgendaBitacoraTurnoDetalleDto } from '../../..
  */
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000';
+  (import.meta.env['VITE_API_URL'] as string | undefined) || '';
 
 const URL_ULTIMA_BITACORA = `${URL_BASE_API}/api/agenda/ultima-bitacora`;
 

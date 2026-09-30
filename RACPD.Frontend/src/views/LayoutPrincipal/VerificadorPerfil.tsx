@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { CargadorPantallaCompleta } from '../_compartido/CargadorPantallaCompleta'
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000'
+  (import.meta.env['VITE_API_URL'] as string | undefined) || ''
 
 const KEY_MI_PERFIL = '/api/usuarios/mi-perfil'
 

@@ -10,7 +10,7 @@
 import { supabase } from '../lib/supabase'
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000'
+  (import.meta.env['VITE_API_URL'] as string | undefined) || ''
 
 export const customFetch = async <T>(
   url: string,
@@ -20,7 +20,7 @@ export const customFetch = async <T>(
 
   // Inyectar Authorization solo si la URL apunta al backend.
   const esLlamadaAlBackend =
-    url.startsWith(URL_BASE_API) || url.startsWith('/api/')
+    (URL_BASE_API !== '' && url.startsWith(URL_BASE_API)) || url.startsWith('/api/')
 
   if (esLlamadaAlBackend && !headers.has('Authorization')) {
     const { data: { session } } = await supabase.auth.getSession()

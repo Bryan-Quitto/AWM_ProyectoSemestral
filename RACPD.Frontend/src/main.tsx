@@ -32,3 +32,14 @@ createRoot(document.getElementById('root')!).render(
     <RouterProvider router={router} />
   </StrictMode>,
 )
+
+// Registro del Service Worker para capacidades PWA e instalabilidad móvil
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error: unknown) => {
+      // eslint-disable-next-line no-console
+      console.warn('[PWA] Advertencia al registrar el Service Worker:', error)
+    })
+  })
+}
+

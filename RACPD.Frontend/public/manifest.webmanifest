@@ -1,0 +1,26 @@
+{
+  "name": "RACPD - Red de Apoyo para Cuidadores",
+  "short_name": "RACPD",
+  "description": "Red de Apoyo y Coordinación para Cuidadores de Personas con Dependencia",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f0f9ff",
+  "theme_color": "#0284c7",
+  "categories": ["medical", "health", "lifestyle"],
+  "lang": "es",
+  "icons": [
+    {
+      "src": "/icono-racpd.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icono-racpd.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

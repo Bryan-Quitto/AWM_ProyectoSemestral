@@ -34,7 +34,7 @@ export interface NotificacionesResumen {
 }
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000';
+  (import.meta.env['VITE_API_URL'] as string | undefined) || '';
 
 const construirUrl = (): string => `${URL_BASE_API}/api/agenda/notificaciones-resumen`;
 

@@ -26,7 +26,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { supabase } from '../lib/supabase'
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000'
+  (import.meta.env['VITE_API_URL'] as string | undefined) || ''
 
 /** Mensaje único, reutilizado por InicioSesion.tsx y este hook. */
 export const MENSAJE_CUENTA_DESACTIVADA =
