@@ -292,7 +292,10 @@ export const RadarAlertaSemanal = ({
                       to="/agenda"
                       search={
                         turno.bloqueId
-                          ? { bloqueIdDestacado: turno.bloqueId }
+                          ? {
+                              bloqueIdDestacado: turno.bloqueId,
+                              fechaDestacada: turno.fecha,
+                            }
                           : undefined
                       }
                       className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-900 cursor-pointer whitespace-nowrap pl-2"

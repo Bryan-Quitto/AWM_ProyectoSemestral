@@ -10,7 +10,7 @@ import type { NotificacionTurno } from '../../features/agenda/hooks/useNotificac
 interface DashboardMobileProps {
   nombreCuidador: string;
   kpiTurnosHoy: { total: number; cubiertos: number };
-  kpiCoberturaSemanal: { cubiertos: number; pendientes: number };
+  kpiCoberturaSemanal: { cubiertos: number; pendientes: number; rango: string };
   cuidadoresDisponibles: number;
   kpiEstadoAnimo: {
     valor: string;
@@ -74,6 +74,7 @@ export const DashboardMobile = ({
         />
         <TarjetaMetrica
           etiqueta="Cobertura semanal"
+          badge={kpiCoberturaSemanal.rango}
           valor={`${kpiCoberturaSemanal.cubiertos}/${kpiCoberturaSemanal.cubiertos + kpiCoberturaSemanal.pendientes}`}
           subtexto={`${kpiCoberturaSemanal.pendientes} pendiente${kpiCoberturaSemanal.pendientes === 1 ? '' : 's'}`}
           icono={CalendarCheck2}

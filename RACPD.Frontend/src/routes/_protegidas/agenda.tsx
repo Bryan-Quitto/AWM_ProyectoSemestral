@@ -18,6 +18,7 @@ import { protegerRutaPorRol } from '../../autenticacion/politicas'
  */
 const agendaSearchSchema = z.object({
   bloqueIdDestacado: z.string().min(1).max(64).optional(),
+  fechaDestacada: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 })
 
 export const Route = createFileRoute('/_protegidas/agenda')({
@@ -44,9 +45,13 @@ export const Route = createFileRoute('/_protegidas/agenda')({
     const rawSearch = Route.useSearch();
     const parsed = agendaSearchSchema.safeParse(rawSearch);
     const bloqueIdDestacado = parsed.success ? parsed.data.bloqueIdDestacado : undefined;
+    const fechaDestacada = parsed.success ? parsed.data.fechaDestacada : undefined;
     return (
       <div className="h-full">
-        <AgendaContenedor bloqueIdDestacado={bloqueIdDestacado} />
+        <AgendaContenedor
+          bloqueIdDestacado={bloqueIdDestacado}
+          fechaDestacada={fechaDestacada}
+        />
       </div>
     );
   },

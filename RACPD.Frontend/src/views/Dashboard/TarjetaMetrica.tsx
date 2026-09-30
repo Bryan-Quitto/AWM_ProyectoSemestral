@@ -7,6 +7,7 @@ interface TarjetaMetricaProps {
   etiqueta: string;
   valor: string | number;
   subtexto?: string;
+  badge?: string;
   icono: LucideIcon;
   tono?: TonoKpi;
   /** Si true, renderiza esqueletos animate-pulse en lugar del contenido (Zero-Wait). */
@@ -44,6 +45,7 @@ export const TarjetaMetrica = ({
   etiqueta,
   valor,
   subtexto,
+  badge,
   icono: Icono,
   tono = 'primario',
   cargando = false,
@@ -97,10 +99,15 @@ export const TarjetaMetrica = ({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <p className="text-xs font-semibold uppercase tracking-wide opacity-80 truncate">
               {etiqueta}
             </p>
+            {badge && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-white/70 border border-current/20 opacity-90">
+                {badge}
+              </span>
+            )}
             {esClickeable && (
               <span className="inline-flex items-center opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all text-xs font-bold" title="Acceso directo">
                 <ArrowRight className="w-3.5 h-3.5" />

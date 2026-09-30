@@ -24,6 +24,53 @@ const parsearHHmm = (hhmm: string | undefined): number => {
   return h * 60 + m;
 };
 
+/**
+ * Parsea string YYYY-MM-DD sin desfasar la zona horaria (año, mes, día exactos).
+ */
+const parsearFechaLocal = (yyyyMmDd: string): Date | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(yyyyMmDd);
+  if (!match) return null;
+  const [, y, m, d] = match;
+  return new Date(Number(y), Number(m) - 1, Number(d));
+};
+
+const capitalizar = (texto: string): string =>
+  texto.charAt(0).toUpperCase() + texto.slice(1);
+
+const formatearFechaCorta = (d: Date): string =>
+  capitalizar(
+    d.toLocaleDateString('es-EC', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+    }),
+  );
+
+/**
+ * Obtiene el rango de la semana calendario (Lunes a Domingo) que contiene a la fecha base.
+ */
+const obtenerLimitesSemanaCalendario = (fechaBase: Date): { lunes: Date; domingo: Date; lunesStr: string; domingoStr: string } => {
+  const d = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), fechaBase.getDate());
+  const diaSemana = d.getDay(); // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  // Diferencia de días hasta el lunes anterior/actual: si es Domingo (0), restamos 6 días.
+  const diffLunes = diaSemana === 0 ? -6 : 1 - diaSemana;
+  const lunes = new Date(d);
+  lunes.setDate(d.getDate() + diffLunes);
+
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const aStr = (date: Date) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+  return {
+    lunes,
+    domingo,
+    lunesStr: aStr(lunes),
+    domingoStr: aStr(domingo),
+  };
+};
+
 export type TipoEstadoTemporalTurno = 'en-curso' | 'proximo' | 'concluidos';
 
 export interface TurnoRelevanteHoy {
@@ -155,18 +202,28 @@ export const DashboardContenedor = () => {
   }, [datos]);
 
   const kpiCoberturaSemanal = useMemo(() => {
-    // Cobertura semanal = bloque cubierto (Asignado) en la semana actual
-    // excluyendo los de hoy (que ya se cuentan en el KPI "Turnos de hoy").
-    // Pendientes = bloques visibles (hoy + semana) SIN reserva activa.
-    // IMPORTANTE: usamos `estado === 'Disponible'` como único criterio de
-    // "pendiente". El campo `cuidadorAsignadoNombre` no es fiable porque el
-    // backend lo setea a "Yo" cuando el cuidador principal crea el bloque
-    // (aunque NO haya reserva activa). El estado es la fuente de verdad.
-    const cubiertos = turnosSemana.filter((t) => t.estado === 'Asignado').length;
-    const pendientes = [...turnosHoy, ...turnosSemana].filter(
+    // Cobertura semanal: delimitada a la semana calendario natural en curso (Lunes a Domingo).
+    // Esto lo diferencia deliberadamente del Radar de la Semana (que es una ventana deslizante de 7 días).
+    const fechaAncla = turnosHoy[0]?.fecha ? parsearFechaLocal(turnosHoy[0].fecha) ?? new Date() : new Date();
+    const { lunes, domingo, lunesStr, domingoStr } = obtenerLimitesSemanaCalendario(fechaAncla);
+
+    // Filtramos los turnos de la semana dentro de la semana natural [lunes, domingo]
+    const turnosEnSemanaCalendario = turnosSemana.filter(
+      (t) => t.fecha >= lunesStr && t.fecha <= domingoStr,
+    );
+
+    // Cubiertos = turnos con cuidador asignado en los días restantes de la semana actual
+    const cubiertos = turnosEnSemanaCalendario.filter((t) => t.estado === 'Asignado').length;
+
+    // Pendientes = turnos por cubrir en la semana calendario (hoy + días restantes de la semana actual)
+    const turnosHoyEnSemana = turnosHoy.filter((t) => t.fecha >= lunesStr && t.fecha <= domingoStr);
+    const pendientes = [...turnosHoyEnSemana, ...turnosEnSemanaCalendario].filter(
       (t) => t.estado === 'Disponible',
     ).length;
-    return { cubiertos, pendientes };
+
+    const rango = `${formatearFechaCorta(lunes)} - ${formatearFechaCorta(domingo)}`;
+
+    return { cubiertos, pendientes, rango };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [datos]);
 

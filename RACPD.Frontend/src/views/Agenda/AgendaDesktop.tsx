@@ -95,7 +95,13 @@ const extraerMensajeError = (respuesta: any, fallback: string): string => {
   return fallback;
 };
 
-export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: string } = {}) => {
+export const AgendaDesktop = ({
+  bloqueIdDestacado,
+  fechaDestacada,
+}: {
+  bloqueIdDestacado?: string;
+  fechaDestacada?: string;
+} = {}) => {
   const navigate = useNavigate();
   const [dialogoAbierto, setDialogoAbierto] = useState(false);
   const [bloqueEditando, setBloqueEditando] = useState<RACPDBackendFeaturesAgendaBloqueTurnoDto | null>(null);
@@ -105,7 +111,9 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
   // y para evitar colisión de nombres se llama `toastLocal`.
   const [toastLocal, setToastLocal] = useState<{ mensaje: string; tipo: 'exito' | 'error' } | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('Todos');
-  const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(null);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState<string | null>(
+    () => fechaDestacada ?? null,
+  );
 
   const [confirmCancelar, setConfirmCancelar] = useState<{
     abierto: boolean;
@@ -125,11 +133,40 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
   // Lifting State Up (antes lo tenia CalendarioAgenda):
   // El padre controla el mes visible y lo envia al hijo para que se
   // re-renderice, y a su vez lo usa para acotar el rango del fetch.
-  // Inicializamos en "hoy" (1ro del mes actual) para que la primera
-  // carga coincida con el mes natural por defecto del backend.
-  const [mesActual, setMesActual] = useState<Date>(
-    () => new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  );
+  // Si llegamos con `fechaDestacada` (deep-link desde el Dashboard),
+  // inicializamos `mesActual` directamente en el mes de ese turno.
+  const [mesActual, setMesActual] = useState<Date>(() => {
+    if (fechaDestacada) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaDestacada);
+      if (match) {
+        const [, y, m] = match;
+        return new Date(Number(y), Number(m) - 1, 1);
+      }
+    }
+    return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  });
+
+  // Sincroniza fechaSeleccionada y mesActual cuando llega un nuevo deep-link
+  // (por ejemplo si el usuario ya estaba en la agenda y navega a otra fecha)
+  useEffect(() => {
+    if (fechaDestacada) {
+      setFechaSeleccionada(fechaDestacada);
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaDestacada);
+      if (match) {
+        const [, y, m] = match;
+        const targetMes = new Date(Number(y), Number(m) - 1, 1);
+        setMesActual((prev) => {
+          if (
+            prev.getFullYear() !== targetMes.getFullYear() ||
+            prev.getMonth() !== targetMes.getMonth()
+          ) {
+            return targetMes;
+          }
+          return prev;
+        });
+      }
+    }
+  }, [fechaDestacada]);
 
   // Helpers locales: forman YYYY-MM-DD respetando el huso horario del
   // navegador (Regla de Negocio: America/Guayaquil = UTC-5). Usamos el
@@ -171,7 +208,7 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
   // natural en curso y al navegar a octubre el padre no se enteraba.
   // Ahora pasamos el rango del mes que el hijo esta mostrando, lo que
   // dispara refetch automatico via SWR al cambiar `mesActual`.
-  const { bloques, mutate } = useAgenda({ filtro, fechaDesde, fechaHasta });
+  const { bloques, isLoading, mutate } = useAgenda({ filtro, fechaDesde, fechaHasta });
   const { trigger: crearBloque, isMutating: creando } = useCrearBloque();
   const { trigger: editarBloque, isMutating: editando } = useEditarBloque();
   const { trigger: eliminarBloque, isMutating: eliminando } = useEliminarBloque();
@@ -182,25 +219,36 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
 
   // === Deep-link desde el Dashboard ===
   // Cuando llegamos con `?bloqueIdDestacado=<id>`:
-  //   1. Esperamos a que `bloques` se hidrate (SWR).
-  //   2. Si el bloque está en el mes actual → resaltamos.
-  //   3. Si está en otro mes → saltamos al mes y dejamos que el siguiente
-  //      ciclo de render (cuando SWR devuelva el nuevo rango) lo destaque.
-  //   4. Si NO existe (otro cuidador lo tomó/eliminó) → toast informativo.
-  //   5. Tras ~3s limpiamos el search param para que F5 no vuelva a animar.
-  // Usamos `useRef` como bandera "ya procesado" para evitar re-disparar el
-  // efecto cuando SWR refetchea (mutate tras una reserva, etc.).
+  //   1. Si `fechaDestacada` viene informada, nos aseguramos de que `mesActual`
+  //      haya sincronizado con dicho mes y SWR haya terminado de cargar (`!isLoading`).
+  //   2. Si el bloque está en los datos → resaltamos y hacemos scroll.
+  //   3. Si NO existe (otro cuidador lo tomó/eliminó) tras terminar la carga
+  //      del mes correcto → emitimos el toast informativo.
+  //   4. Tras ~3s limpiamos el search param para que F5 no vuelva a animar.
   const deepLinkProcesadoRef = useRef<string | null>(null);
   useEffect(() => {
     if (!bloqueIdDestacado) return;
     if (deepLinkProcesadoRef.current === bloqueIdDestacado) return;
-    if (!bloques || bloques.length === 0) return; // esperar hidratación
+    if (isLoading) return; // esperar a que SWR finalice la petición del mes actual
+
+    // Si viene fechaDestacada, asegurar que mesActual ya coincide con el mes de la fecha
+    if (fechaDestacada) {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaDestacada);
+      if (match) {
+        const [, y, m] = match;
+        const anioT = Number(y);
+        const mesT = Number(m) - 1;
+        if (mesActual.getFullYear() !== anioT || mesActual.getMonth() !== mesT) {
+          // El estado mesActual aún está en transición; esperamos al siguiente ciclo
+          return;
+        }
+      }
+    }
 
     const bloque = bloques.find((b) => b.id === bloqueIdDestacado);
     if (!bloque) {
       // Bloque fantasma (otro cuidador lo tomó/cubrió/eliminó mientras
-      // el nuestro estaba en el Dashboard). Tu decisión: toast + aterrizar
-      // sin highlight.
+      // el nuestro estaba en el Dashboard). Toast + aterrizar sin highlight.
       deepLinkProcesadoRef.current = bloqueIdDestacado;
       toast.info('Este turno ya no está disponible o fue cubierto por otra persona.', {
         duration: 5000,
@@ -215,11 +263,8 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
 
     deepLinkProcesadoRef.current = bloqueIdDestacado;
 
-    // Si el bloque cae en otro mes distinto al que muestra el calendario,
-    // saltamos al mes del bloque. Esto disparará el refetch de SWR y,
-    // cuando lleguen los datos, la tarjeta ya estará en pantalla y será
-    // visible con `destacado=true` por el sub-filtro de `fechaSeleccionada`
-    // + el ID match.
+    // Si el bloque cae en otro mes distinto al que muestra el calendario
+    // (fallback por si no vino fechaDestacada en URL), saltamos a su mes.
     if (bloque.fecha) {
       const [year, month] = bloque.fecha.split('-').map(Number);
       if (Number.isFinite(year) && Number.isFinite(month)) {
@@ -229,8 +274,6 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
           mesDelBloque.getMonth() !== mesActual.getMonth()
         ) {
           setMesActual(mesDelBloque);
-          // Marcamos la fecha para que el sub-filtro de la lista lo muestre
-          // de inmediato si ya está en caché.
           setFechaSeleccionada(bloque.fecha);
         }
       }
@@ -243,7 +286,7 @@ export const AgendaDesktop = ({ bloqueIdDestacado }: { bloqueIdDestacado?: strin
 
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bloqueIdDestacado, bloques]);
+  }, [bloqueIdDestacado, fechaDestacada, bloques, isLoading, mesActual]);
 
   const mostrarToast = (mensaje: string, tipo: 'exito' | 'error') => {
     setToastLocal({ mensaje, tipo });

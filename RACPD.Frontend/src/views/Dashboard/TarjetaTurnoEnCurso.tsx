@@ -170,7 +170,14 @@ export const TarjetaTurnoEnCurso = ({
       <div className="mt-4">
         <Link
           to="/agenda"
-          search={turno.bloqueId ? { bloqueIdDestacado: turno.bloqueId } : undefined}
+          search={
+            turno.bloqueId
+              ? {
+                  bloqueIdDestacado: turno.bloqueId,
+                  fechaDestacada: turno.fecha,
+                }
+              : undefined
+          }
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors cursor-pointer active:scale-[0.98]"
           aria-label="Ver detalles en la agenda"
         >
