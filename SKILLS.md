@@ -64,5 +64,5 @@ Estas reglas de compilación estricta (TS/ESLint) deben configurarse e imponerse
 
 ### 🏢 REGLAS DE NEGOCIO Y DOMINIO
 1. **Huso Horario Estricto:** Operar bajo `America/Guayaquil`. Crítico para la sincronización de la Agenda Compartida.
-2. **Evidencia Fotográfica:** La captura de evidencia en la Bitácora (recetas, heridas) no se guarda en Base64. Se persiste mediante Object Storage devolviendo la URL.
+2. **Evidencia Fotográfica (Persistencia):** La captura de evidencia en la Bitácora (recetas, heridas) no se guarda en Base64. El mecanismo exacto de persistencia (almacenamiento local en el backend servido como archivos estáticos, o servicios cloud como Cloudflare R2 / Supabase Storage) será una decisión técnica que tomará el equipo próximamente. La única condición obligatoria es que el servicio devuelva una URL accesible para asociarla a la bitácora.
 3. **Optimistic UI:** Acciones como asignarse voluntariamente a un turno de relevo deben reflejarse instantáneamente en UI.
