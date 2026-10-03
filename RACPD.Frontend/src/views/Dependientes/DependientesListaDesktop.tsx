@@ -108,6 +108,20 @@ export function DependientesListaDesktop({ puedeCrear }: Props) {
                         </p>
                       ) : null;
                     })()}
+                    {/* H21 — insignia de rol del cuidador en el dependiente */}
+                    {d.rolEnDependiente && (
+                      <span
+                        className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          d.rolEnDependiente === 'CuidadorPrincipal'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        {d.rolEnDependiente === 'CuidadorPrincipal'
+                          ? 'Cuidador Principal'
+                          : 'Apoyo'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

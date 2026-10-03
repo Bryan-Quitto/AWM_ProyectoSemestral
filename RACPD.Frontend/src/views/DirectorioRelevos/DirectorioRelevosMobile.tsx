@@ -54,16 +54,18 @@ export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }
             <h1 className="text-xl font-bold text-blue-900">Directorio</h1>
             <p className="text-sm text-gray-500">{totalLabel}</p>
           </div>
-          {header.onAgregar && (
-            <button
-              onClick={header.onAgregar}
-              title={header.tooltipBloqueado}
-              aria-label="Agregar relevo"
-              className="!w-11 !h-11 !p-0 !rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 inline-flex items-center justify-center cursor-pointer"
-            >
-              <Plus className="w-5 h-5" />
-            </button>
-          )}
+          {/* H10 — el botón se renderiza SIEMPRE. Cuando no hay handler, queda
+              bloqueado con tooltip explicativo y microinteracciones de
+              accesibilidad (cursor-not-allowed + opacidad reducida). */}
+          <button
+            onClick={header.onAgregar ?? undefined}
+            disabled={!header.onAgregar}
+            title={header.tooltipBloqueado ?? ''}
+            aria-label="Agregar relevo al directorio"
+            className="!w-11 !h-11 !p-0 !rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md active:scale-95 inline-flex items-center justify-center cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-600 disabled:shadow-none"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Buscador */}

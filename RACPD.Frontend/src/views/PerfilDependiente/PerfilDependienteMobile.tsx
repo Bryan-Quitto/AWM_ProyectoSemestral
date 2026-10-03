@@ -7,7 +7,7 @@ import { formatearFechaAsignacion } from '../../schemas/fechaAsignacion';
 import { ContactosEmergenciaForm } from './ContactosEmergenciaForm';
 import { Boton } from '../../components/Boton';
 import { SelectorDinamico } from '../../components/SelectorDinamico';
-import { AlertTriangle, Edit3, X, Plus, Trash2, AlertCircle, CheckCircle2, User, Droplets, Pill } from 'lucide-react';
+import { AlertTriangle, Edit3, X, Plus, Trash2, AlertCircle, CheckCircle2, User, Droplets, Pill, Phone, MessageCircle, RotateCcw } from 'lucide-react';
 import {
   useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint,
   useRACPDBackendFeaturesPerfilesDependientesCrearPerfilDependienteCrearPerfilDependienteEndpoint,
@@ -323,45 +323,60 @@ export function PerfilDependienteMobile({
                     Sin contactos registrados.
                   </p>
                 )}
-                {(perfilExistente.contactosEmergencia as ContactoEmergenciaForm[] | undefined)?.map(
-                  (c, idx) => (
-                    <div key={`${c?.telefonoWhatsApp ?? idx}-${idx}`} className="p-4">
+                {contactos.map((campo, idx) => {
+                  // H7 — fuente de verdad: los campos del RHF (no el DTO
+                  // crudo). Esto evita desincronizaciones entre lo que el
+                  // cuidador editó y lo que la vista de lectura muestra.
+                  const c: ContactoEmergenciaForm = {
+                    nombre: campo.nombre,
+                    relacion: campo.relacion,
+                    telefonoWhatsApp: campo.telefonoWhatsApp,
+                  };
+                  // H7 — sanitizamos el teléfono en TODOS los href sensibles
+                  // (tel:, wa.me) para que espacios, guiones o símbolos
+                  // de formato del DTO no rompan el enlace del SO.
+                  const telefonoSanitizado = (c.telefonoWhatsApp ?? '').replace(/\D/g, '');
+                  return (
+                    <div
+                      key={campo.id ?? `${c.telefonoWhatsApp ?? ''}-${idx}`}
+                      className="p-4"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-800 truncate">
-                            {c?.nombre ?? 'Contacto'}
+                            {c.nombre ?? 'Contacto'}
                           </p>
-                          <p className="text-xs text-gray-500">{c?.relacion ?? ''}</p>
+                          <p className="text-xs text-gray-500">{c.relacion ?? ''}</p>
                           <p className="text-sm text-blue-600 mt-0.5 font-mono">
-                            {c?.telefonoWhatsApp ?? ''}
+                            {c.telefonoWhatsApp ?? ''}
                           </p>
                         </div>
                         <div className="flex gap-1.5">
                           <a
-                            href={`tel:${c?.telefonoWhatsApp ?? ''}`}
+                            href={`tel:${telefonoSanitizado}`}
                             className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
-                            aria-label={`Llamar a ${c?.nombre ?? ''}`}
+                            aria-label={`Llamar a ${c.nombre ?? ''}`}
                           >
-                            ��
+                            <Phone className="w-4 h-4" />
+                            Llamar
                           </a>
                           <a
-                            href={`https://wa.me/${
-                              (c?.telefonoWhatsApp ?? '').replace(/\D/g, '')
-                            }?text=${encodeURIComponent(
+                            href={`https://wa.me/${telefonoSanitizado}?text=${encodeURIComponent(
                               'Hola, te contactamos desde RACPD por una emergencia con el dependiente.'
                             )}`}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
-                            aria-label={`Enviar WhatsApp a ${c?.nombre ?? ''}`}
+                            aria-label={`Enviar WhatsApp a ${c.nombre ?? ''}`}
                           >
-                            ��
+                            <MessageCircle className="w-4 h-4" />
+                            WhatsApp
                           </a>
                         </div>
                       </div>
                     </div>
-                  )
-                )}
+                  );
+                })}
               </div>
             </section>
           </div>
@@ -448,7 +463,28 @@ export function PerfilDependienteMobile({
 
             {/* Alergias compacto */}
             <section className="bg-white rounded-2xl shadow-sm border border-blue-100 p-4">
-              <h2 className="text-lg font-semibold text-blue-900 mb-3">Alergias</h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-blue-900">Alergias</h2>
+                {/* H15 — botón "Limpiar todas" las alergias. Solo aparece
+                    cuando hay al menos una alergia registrada. Se bloquea
+                    durante una mutación para no interrumpir el guardado. */}
+                {alergias.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      form.setValue('alergiasEstructuradas', [], {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    disabled={isActualizando}
+                    className="flex items-center gap-1 text-xs text-red-600 hover:text-red-800 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    Limpiar todas
+                  </button>
+                )}
+              </div>
               <div className="flex gap-2 mb-3">
                 <input
                   type="text"
@@ -515,6 +551,20 @@ export function PerfilDependienteMobile({
             </section>
 
             <div className="pt-2 flex gap-2">
+              {/* H14 — Deshacer cambios. Visible solo en modo edición de un
+                  perfil existente. Se bloquea si no hay cambios o si hay
+                  una mutación en curso (cumple REGLA-UX-INTERACCIONES). */}
+              {existePerfil && (
+                <Boton
+                  type="button"
+                  variante="secundario"
+                  disabled={!form.formState.isDirty || isActualizando}
+                  onClick={() => form.reset(valoresIniciales)}
+                  className="flex-1 py-3 rounded-xl font-semibold"
+                >
+                  Deshacer Cambios
+                </Boton>
+              )}
               {!existePerfil && onVolverALista && (
                 <Boton
                   type="button"

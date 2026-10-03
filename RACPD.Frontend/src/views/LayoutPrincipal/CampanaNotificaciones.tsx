@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { Bell, ChevronDown, Clock, User } from 'lucide-react';
 import {
   useNotificacionesResumen,
@@ -64,8 +65,14 @@ export const CampanaNotificaciones = ({
     'p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer active:scale-95';
 
   const clasesPopover =
-    `absolute top-full mt-2 ${alineacionPopover === 'derecha' ? 'right-0' : 'left-0'} ` +
-    'w-80 sm:w-96 bg-white border border-blue-200 rounded-2xl shadow-xl z-50 overflow-hidden ' +
+    // Mobile: popover fixed centrado horizontalmente con margen lateral para
+    // evitar que se salga del viewport cuando la campana está pegada al borde
+    // del header. Desktop (≥640px): vuelve al anclaje absoluto al lado de la
+    // campana, comportamiento de la versión anterior.
+    `fixed sm:absolute inset-x-4 sm:inset-x-auto top-16 sm:top-full mt-0 sm:mt-2 ` +
+    `${alineacionPopover === 'derecha' ? 'sm:right-0' : 'sm:left-0'} ` +
+    'w-auto sm:w-96 max-w-sm mx-auto sm:mx-0 z-50 overflow-hidden ' +
+    'rounded-xl bg-white shadow-2xl border border-gray-100 ' +
     'animate-in fade-in slide-in-from-top-2 ' +
     'max-h-[80vh] flex flex-col';
 
@@ -119,7 +126,7 @@ export const CampanaNotificaciones = ({
                 ) : (
                   <ul className="divide-y divide-blue-50">
                     {datos.hoy.map((t) => (
-                      <ItemNotificacion key={t.bloqueId} turno={t} />
+                      <ItemNotificacion key={t.bloqueId} turno={t} onCerrar={() => setAbierto(false)} />
                     ))}
                   </ul>
                 )}
@@ -148,7 +155,7 @@ export const CampanaNotificaciones = ({
                       </li>
                     ) : (
                       datos.semana.map((t) => (
-                        <ItemNotificacion key={t.bloqueId} turno={t} compacto />
+                        <ItemNotificacion key={t.bloqueId} turno={t} compacto onCerrar={() => setAbierto(false)} />
                       ))
                     )}
                   </ul>
@@ -206,17 +213,39 @@ const Seccion = ({ titulo, cantidad, conScroll = false, flexible = false, childr
 interface ItemNotificacionProps {
   turno: NotificacionTurno;
   compacto?: boolean;
+  onCerrar: () => void;
 }
 
-const ItemNotificacion = ({ turno, compacto = false }: ItemNotificacionProps) => {
+const ItemNotificacion = ({ turno, compacto = false, onCerrar }: ItemNotificacionProps) => {
+  const navigate = useNavigate();
   const estadoColor = getEstadoColor(turno.estado);
   const padding = compacto ? 'py-2' : 'py-2.5';
+
+  // Deep-link al turno: el id de la notificación es el bloqueId de la
+  // ocurrencia (regla del backend). Usamos ese mismo id para destacar la
+  // tarjeta en la agenda.
+  const idOcurrencia = turno.bloqueId;
+  const irALaAgenda = () => {
+    onCerrar();
+    if (idOcurrencia.length === 0) return;
+    void navigate({ to: '/agenda', search: { bloqueIdDestacado: idOcurrencia } });
+  };
+
+  const etiquetaAccesible = `Abrir turno de ${turno.dependienteNombre ?? 'dependiente'} de ${turno.horaInicio ?? ''} a ${turno.horaFin ?? ''}`;
 
   return (
     <li
       className={`${padding} px-1 hover:bg-blue-50/60 rounded-md transition-colors cursor-pointer`}
       role="button"
       tabIndex={0}
+      aria-label={etiquetaAccesible}
+      onClick={irALaAgenda}
+      onKeyDown={(evento) => {
+        if (evento.key === 'Enter' || evento.key === ' ') {
+          evento.preventDefault();
+          irALaAgenda();
+        }
+      }}
     >
       <div className="flex items-start gap-2">
         <div className={`shrink-0 mt-0.5 w-2 h-2 rounded-full ${estadoColor.dot}`} aria-hidden="true" />

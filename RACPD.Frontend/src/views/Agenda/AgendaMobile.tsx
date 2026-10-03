@@ -514,12 +514,15 @@ export const AgendaMobile = ({
           <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
             <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">
-              {filtro === 'Disponibles' 
-                ? 'No hay disponibles' 
+              {/* H6 — mensaje específico por filtro para que el cuidador
+                  sepa por qué no ve turnos en este rango. */}
+              {filtro === 'MisBloques'
+                ? 'No tienes bloques creados en este rango de fechas.'
+                : filtro === 'Disponibles'
+                ? 'No hay turnos disponibles para reservar.'
                 : filtro === 'MisReservas'
-                ? 'Sin reservas'
-                : 'Sin turnos'
-              }
+                ? 'No tienes reservas en este rango.'
+                : 'No hay turnos programados en esta fecha.'}
             </p>
           </div>
         ) : (

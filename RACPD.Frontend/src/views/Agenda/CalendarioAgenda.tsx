@@ -117,14 +117,21 @@ export const CalendarioAgenda = ({
           return (
             <button
               key={dia.fecha}
-              onClick={() => onSeleccionarFecha(dia.fecha === fechaSeleccionada ? null : dia.fecha)}
+              onClick={() => {
+                // H5 — defensa redundante: nunca se debe poder abrir/seleccionar
+                // un día pasado sin información (no tiene sentido clínico).
+                if (dia.esPasado && !info) return;
+                onSeleccionarFecha(dia.fecha === fechaSeleccionada ? null : dia.fecha);
+              }}
+              disabled={dia.esPasado && !info}
+              aria-disabled={dia.esPasado && !info}
               className={`
                 aspect-square rounded-lg flex flex-col items-center justify-center text-sm
                 transition-all cursor-pointer relative
                 ${estaSeleccionado ? 'bg-blue-600 text-white ring-2 ring-blue-300' : ''}
                 ${!estaSeleccionado && info ? 'bg-blue-50 text-blue-700 hover:bg-blue-100' : ''}
                 ${!estaSeleccionado && !info && !dia.esPasado ? 'hover:bg-gray-100 text-gray-700' : ''}
-                ${dia.esPasado && !info ? 'text-gray-300 cursor-not-allowed' : ''}
+                ${dia.esPasado && !info ? 'text-gray-300 cursor-not-allowed disabled:opacity-40' : ''}
               `}
             >
               <span className="font-medium">{dia.dia}</span>

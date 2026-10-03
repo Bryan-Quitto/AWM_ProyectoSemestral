@@ -9,6 +9,7 @@ import {
 } from '../../api/generated/api/api';
 import { Boton } from '../../components/Boton';
 import { BuscadorDinamico, type OpcionBuscador } from '../../components/BuscadorDinamico';
+import { ConfirmarAccion } from '../Agenda/ConfirmarAccion';
 
 interface Props {
   perfilId: string;
@@ -31,6 +32,10 @@ export function PersonasAccesoPanel({ perfilId, variant = 'desktop' }: Props) {
   // con `trigger(arg)`. Llamamos directamente al fetcher pasando el id real
   // y gestionamos `isDesactivando` con state local.
   const [isDesactivando, setIsDesactivando] = useState(false);
+  // H4 — confirmación explícita antes de revocar: el cuidador principal debe
+  // confirmar la acción irreversible desde un diálogo, evitando pérdidas
+  // accidentales de acceso del equipo de apoyo.
+  const [vinculoAConfirmar, setVinculoAConfirmar] = useState<string | null>(null);
 
   // Lista de usuarios de apoyo del sistema (solo accesible para CuidadorPrincipal).
   const { data: dataUsuariosApoyo } =
@@ -230,7 +235,7 @@ export function PersonasAccesoPanel({ perfilId, variant = 'desktop' }: Props) {
                   {!esCuidador && (
                     <button
                       type="button"
-                      onClick={() => v.vinculoId && handleDesactivar(v.vinculoId)}
+                      onClick={() => v.vinculoId && setVinculoAConfirmar(v.vinculoId)}
                       disabled={isDesactivando}
                       className="cursor-pointer disabled:cursor-not-allowed p-2 rounded-full text-red-600 hover:bg-red-50 transition disabled:opacity-50"
                       aria-label={`Desactivar acceso de ${v.nombreCompletoUsuario ?? ''}`}
@@ -244,6 +249,19 @@ export function PersonasAccesoPanel({ perfilId, variant = 'desktop' }: Props) {
           </ul>
         )}
       </div>
+      <ConfirmarAccion
+         abierto={vinculoAConfirmar !== null}
+         titulo="Revocar acceso"
+         mensaje="Esta persona perderá el acceso inmediatamente a la agenda y bitácoras del dependiente. ¿Confirmas la revocación?"
+         tipo="peligro"
+         onConfirmar={() => {
+           const idObjetivo = vinculoAConfirmar;
+           if (idObjetivo === null) return;
+           void handleDesactivar(idObjetivo);
+           setVinculoAConfirmar(null);
+         }}
+         onCancelar={() => setVinculoAConfirmar(null)}
+       />
     </section>
   );
 }

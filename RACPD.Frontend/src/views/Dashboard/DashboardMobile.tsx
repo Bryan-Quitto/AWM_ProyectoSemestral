@@ -65,9 +65,9 @@ export const DashboardMobile = ({
       {/* === KPIs en grid 2×2 === */}
       <section className="grid grid-cols-2 gap-4" aria-label="Indicadores clave">
         <TarjetaMetrica
-          etiqueta="Turnos hoy"
+          etiqueta="Turnos de hoy"
           valor={kpiTurnosHoy.total}
-          subtexto={`${kpiTurnosHoy.cubiertos} cubiertos`}
+          subtexto={`${kpiTurnosHoy.cubiertos} cubiertos · ${kpiTurnosHoy.total - kpiTurnosHoy.cubiertos} pendientes`}
           icono={CalendarDays}
           tono="primario"
           cargando={cargandoNotificaciones}

@@ -6,11 +6,13 @@ import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
 import { CampanaNotificaciones } from './CampanaNotificaciones'
+import { SelectorDependienteActivo } from './SelectorDependienteActivo'
+import { extraerRolDelToken, type Rol } from '../../autenticacion/roles'
 
 type UsuarioSesion = {
   id?: string
   correo?: string
-  rol?: string
+  rol?: Rol | null
 }
 
 export const LayoutPrincipalDesktop = () => {
@@ -28,17 +30,9 @@ export const LayoutPrincipalDesktop = () => {
         setUsuario(null)
         return
       }
-      // El rol está en app_metadata.role del JWT. Lo extraemos del token.
-      const token = session.access_token
-      const payloadSegment = token.split('.')[1]
-      let rol: string | undefined
-      try {
-        const json = atob(payloadSegment.replace(/-/g, '+').replace(/_/g, '/'))
-        const payload = JSON.parse(json) as { app_metadata?: { role?: string } }
-        rol = payload.app_metadata?.role
-      } catch {
-        rol = undefined
-      }
+      // El rol está en app_metadata.role del JWT. Lo extraemos vía helper
+      // tipado (sin bloque artesanal con `atob` + cast del payload).
+      const rol = extraerRolDelToken(session.access_token)
       setUsuario({ id: user.id, correo: user.email, rol })
     }
     void cargarUsuario()
@@ -78,6 +72,13 @@ export const LayoutPrincipalDesktop = () => {
               <p className="text-xs text-blue-500 truncate" title={usuario?.correo}>
                 {usuario?.correo}
               </p>
+              {/* Selector del dependiente activo: solo si NO es admin y
+                  tiene más de un dependiente vinculado. */}
+              {!esAdmin && (
+                <div className="mt-2">
+                  <SelectorDependienteActivo visible={puedeVerFichaDependiente} />
+                </div>
+              )}
             </div>
           ) : usuario?.correo ? (
             <p className="text-xs text-blue-600 mt-1 truncate" title={usuario.correo}>

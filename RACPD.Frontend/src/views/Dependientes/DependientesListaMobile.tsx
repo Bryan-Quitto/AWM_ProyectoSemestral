@@ -127,6 +127,20 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                         </p>
                       ) : null;
                     })()}
+                    {/* H21 — insignia de rol del cuidador en el dependiente */}
+                    {d.rolEnDependiente && (
+                      <span
+                        className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          d.rolEnDependiente === 'CuidadorPrincipal'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-emerald-100 text-emerald-700'
+                        }`}
+                      >
+                        {d.rolEnDependiente === 'CuidadorPrincipal'
+                          ? 'Cuidador Principal'
+                          : 'Apoyo'}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -134,7 +148,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 text-gray-700 min-w-0">
                     <Droplets className="w-4 h-4 text-red-600 shrink-0" />
-                    <span className="text-xs font-medium">Sangre:</span>
+                    <span className="text-xs font-medium">Tipo de sangre:</span>
                     <span className="text-xs font-bold text-gray-900 truncate">
                       {etiquetaTipoSangre(d.tipoSangre)}
                     </span>
@@ -174,7 +188,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                 <div className="mt-2 space-y-1">
                   <div className="flex items-start gap-1.5 text-gray-700">
                     <HeartPulse className="w-3.5 h-3.5 text-rose-600 mt-0.5 shrink-0" />
-                    <span className="text-xs font-medium shrink-0">Cond:</span>
+                    <span className="text-xs font-medium shrink-0">Condiciones:</span>
                     <TruncadorLinea
                       className="text-xs text-gray-800"
                       texto={d.condicionesCronicas ?? ''}
@@ -190,7 +204,7 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
                   </div>
                   <div className="flex items-start gap-1.5 text-gray-700">
                     <ShieldAlert className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
-                    <span className="text-xs font-medium shrink-0">Alerg:</span>
+                    <span className="text-xs font-medium shrink-0">Alergias:</span>
                     <TruncadorLinea
                       className="text-xs text-gray-800"
                       texto={(d.alergiasEstructuradas ?? []).join(', ')}

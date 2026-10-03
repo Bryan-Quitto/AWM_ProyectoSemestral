@@ -65,16 +65,19 @@ export const DirectorioRelevosDesktop = ({ header }: { header: DirectorioHeader 
             Cuidadores de apoyo disponibles para coordinar relevos.
           </p>
         </div>
-        {header.onAgregar && (
-          <button
-            onClick={header.onAgregar}
-            title={header.tooltipBloqueado}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm hover:shadow-md cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Agregar relevo
-          </button>
-        )}
+        {/* H10 — el botón se renderiza SIEMPRE. Cuando no hay handler, queda
+            bloqueado con tooltip explicativo y microinteracciones de
+            accesibilidad (cursor-not-allowed + opacidad reducida). */}
+        <button
+          onClick={header.onAgregar ?? undefined}
+          disabled={!header.onAgregar}
+          title={header.tooltipBloqueado ?? ''}
+          aria-label="Agregar relevo al directorio"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors shadow-sm hover:shadow-md cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-600 disabled:hover:shadow-sm"
+        >
+          <Plus className="w-4 h-4" />
+          Agregar relevo
+        </button>
       </div>
 
       {/* Buscador */}

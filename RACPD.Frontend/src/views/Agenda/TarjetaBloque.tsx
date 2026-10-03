@@ -1,5 +1,5 @@
 import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat, ClipboardCheck, Eye, CheckCircle2, Moon, FileText, AlertCircle, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
 import { TruncadorLinea } from '../../components/TruncadorLinea';
@@ -247,10 +247,34 @@ export const TarjetaBloque = ({
     }
   }, [destacado]);
 
+  // H13 — la tarjeta completa es interactiva solo cuando puedo reservar.
+  // Al pulsarla (Enter/Espacio o click) se abre el modal de detalle.
+  const abrirDetalle = () => {
+    if (!bloque.puedoReservar) return;
+    setDetalleAbierto(true);
+  };
+
+  const manejarTeclado = (evento: KeyboardEvent<HTMLDivElement>) => {
+    if (!bloque.puedoReservar) return;
+    if (evento.key === 'Enter' || evento.key === ' ') {
+      evento.preventDefault();
+      abrirDetalle();
+    }
+  };
+
   return (
     <div
       ref={tarjetaRef}
       data-bloque-id={bloque.id}
+      role={bloque.puedoReservar ? 'button' : undefined}
+      tabIndex={bloque.puedoReservar ? 0 : undefined}
+      onClick={bloque.puedoReservar ? abrirDetalle : undefined}
+      onKeyDown={bloque.puedoReservar ? manejarTeclado : undefined}
+      aria-label={
+        bloque.puedoReservar
+          ? `Ver detalle del bloque del ${formatearFecha(bloque.fecha)} de ${bloque.horaInicio?.slice(0, 5) ?? ''} a ${bloque.horaFin?.slice(0, 5) ?? ''}`
+          : undefined
+      }
       className={`
         rounded-xl border-2 p-4 transition-all duration-200
         ${getBorderColor()} ${getBgColor()}

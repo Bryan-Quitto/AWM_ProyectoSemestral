@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { z } from 'zod';
 import { X, AlertTriangle, Check } from 'lucide-react';
 import { Boton } from '../../components/Boton';
@@ -169,7 +169,12 @@ export const DialogoRelevo = ({
   const [tocados, setTocados] = useState<Partial<Record<string, boolean>>>({});
   // En modo editar, marca los campos que el usuario cambió
   // explícitamente. Solo esos viajan al PUT (PATCH-like semantics real).
-  const dirtyRef = useRef<Set<string>>(new Set());
+  // Usamos estado (no ref) para que el derivado `hayCambios` pueda leerse
+  // durante el render sin violar la regla "no refs durante render".
+  const [camposDirty, setCamposDirty] = useState<Set<string>>(() => new Set());
+  // H11 — error de nivel formulario (no por campo). Se muestra cuando el
+  // cuidador intenta enviar sin cambios en modo editar.
+  const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
 
   // Helpers de blur/change que marcan el campo como tocado y revalidan
   // solo ese campo si ya fue tocado antes (UX de no spamear errores).
@@ -208,7 +213,13 @@ export const DialogoRelevo = ({
   );
 
   const marcarDirty = useCallback((campo: string) => {
-    dirtyRef.current.add(campo);
+    setCamposDirty((prev) => {
+      if (prev.has(campo)) return prev;
+      const siguiente = new Set(prev);
+      siguiente.add(campo);
+      return siguiente;
+    });
+    setErrorFormulario(null);
   }, []);
 
   if (!abierto) return null;
@@ -260,7 +271,16 @@ export const DialogoRelevo = ({
       if (!relevoEditar) return;
       // PATCH-like semantics: solo enviamos los campos que el usuario
       // tocó explícitamente desde que abrió el modal de edición.
-      const dirty = dirtyRef.current;
+      const dirty = camposDirty;
+      if (dirty.size === 0) {
+        // H11 — defensa redundante: si el botón está deshabilitado, este
+        // camino no debería dispararse, pero si el cuidador lo fuerza por
+        // teclado (Enter sobre un botón deshabilitado en algunos browsers),
+        // mostramos el mensaje y salimos sin llamar al backend.
+        setErrorFormulario('No hay cambios para guardar.');
+        return;
+      }
+      setErrorFormulario(null);
       const body: EditarRelevoBody = {};
 
       if (dirty.has('nombre')) body.nombre = colapsarEspacios(nombre);
@@ -301,11 +321,20 @@ export const DialogoRelevo = ({
   const handleCerrar = () => {
     setErrores({});
     setTocados({});
-    dirtyRef.current.clear();
+    setCamposDirty(new Set());
+    setErrorFormulario(null);
     onCerrar();
   };
 
   const esCrear = modo === 'crear';
+
+  // H11 — en modo editar el botón se bloquea si no hay cambios. En crear,
+  // la creación siempre es válida (los errores por campo ya se muestran).
+  const hayCambios = esCrear || camposDirty.size > 0;
+  const botonBloqueado =
+    isMutating ||
+    !hayCambios ||
+    (esCrear && Object.keys(errores).length > 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -344,6 +373,17 @@ export const DialogoRelevo = ({
         {apiError && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700">
             {apiError}
+          </div>
+        )}
+
+        {/* H11 — error de formulario (no por campo). Aparece si el cuidador
+            intenta guardar una edición sin haber tocado ningún campo. */}
+        {!esCrear && errorFormulario && (
+          <div
+            role="alert"
+            className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-xl text-sm text-amber-900"
+          >
+            {errorFormulario}
           </div>
         )}
 
@@ -569,11 +609,9 @@ export const DialogoRelevo = ({
           </Boton>
           <Boton
             onClick={handleSubmit}
-            className="flex-1 cursor-pointer disabled:cursor-not-allowed"
-            disabled={
-              isMutating ||
-              (esCrear && Object.keys(errores).length > 0)
-            }
+            className="flex-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={botonBloqueado}
+            title={!hayCambios && !esCrear ? 'No hay cambios para guardar' : undefined}
             cargando={isMutating}
           >
             {isMutating ? 'Guardando...' : esCrear ? 'Agregar relevo' : 'Guardar cambios'}

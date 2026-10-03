@@ -6,11 +6,13 @@ import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
 import { CampanaNotificaciones } from './CampanaNotificaciones'
+import { SelectorDependienteActivo } from './SelectorDependienteActivo'
+import { extraerRolDelToken, type Rol } from '../../autenticacion/roles'
 
 type UsuarioSesion = {
   id?: string
   correo?: string
-  rol?: string
+  rol?: Rol | null
 }
 
 export const LayoutPrincipalMobile = () => {
@@ -28,15 +30,9 @@ export const LayoutPrincipalMobile = () => {
         setUsuario(null)
         return
       }
-      const payloadSegment = session.access_token.split('.')[1]
-      let rol: string | undefined
-      try {
-        const json = atob(payloadSegment.replace(/-/g, '+').replace(/_/g, '/'))
-        const payload = JSON.parse(json) as { app_metadata?: { role?: string } }
-        rol = payload.app_metadata?.role
-      } catch {
-        rol = undefined
-      }
+      // Decodificación segura del JWT vía helper tipado (cumple REGLA-TS-ESTRICTO
+      // y elimina el bloque artesanal con `atob` + casting del payload).
+      const rol = extraerRolDelToken(session.access_token)
       setUsuario({ id: user.id, correo: user.email, rol })
     }
     void cargarUsuario()
@@ -48,15 +44,22 @@ export const LayoutPrincipalMobile = () => {
     usuario?.rol === 'CuidadorPrincipal' || usuario?.rol === 'Apoyo'
 
   return (
-    <div className="flex flex-col h-screen bg-blue-50">
+    <div className="flex flex-col min-h-dvh h-dvh bg-blue-50" style={{ minHeight: '100dvh' }}>
       <header className="bg-white p-4 border-b border-blue-200 flex justify-between items-center shadow-sm">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-xl font-bold text-blue-900">RACPD</h1>
           {perfilData?.data ? (
             <div className="mt-0.5">
               <p className="text-sm font-semibold text-blue-800 truncate max-w-[180px]" title={`${perfilData.data.nombre} ${perfilData.data.apellido}`}>
                 {perfilData.data.nombre} {perfilData.data.apellido}
               </p>
+              {/* Selector del dependiente activo: solo si NO es admin y
+                  tiene más de un dependiente vinculado. */}
+              {!esAdmin && (
+                <div className="mt-1.5">
+                  <SelectorDependienteActivo visible={puedeVerFichaDependiente} />
+                </div>
+              )}
             </div>
           ) : usuario?.correo ? (
             <p className="text-[10px] text-blue-600 truncate max-w-[180px]" title={usuario.correo}>
