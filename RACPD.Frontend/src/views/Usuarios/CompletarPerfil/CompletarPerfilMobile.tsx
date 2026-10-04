@@ -72,7 +72,7 @@ export const CompletarPerfilMobile = ({
               disabled
               className="w-full p-3 bg-gray-50 border border-blue-100 rounded-xl text-blue-900 cursor-not-allowed"
             />
-            <p className="text-xs text-blue-600 mt-1">Asignado por el administrador, no puede modificarse.</p>
+            <p className="text-xs text-blue-600 mt-1">Asignado por el administrador. Si no es el rol esperado, solicita a administración que reenvíe la invitación.</p>
           </div>
 
           <div className="space-y-1.5">
@@ -83,15 +83,17 @@ export const CompletarPerfilMobile = ({
               id="contrasena"
               name="contrasena"
               value={form.watch('contrasena')}
-              onChange={(v) => form.setValue('contrasena', v, { shouldValidate: true })}
+              onChange={(v) =>
+                form.setValue('contrasena', v, {
+                  shouldValidate: !!form.formState.touchedFields.contrasena,
+                  shouldDirty: true,
+                })
+              }
               error={form.formState.errors.contrasena?.message}
               disabled={isMutating}
               autoComplete="new-password"
             />
             <IndicadorFortalezaContrasena contrasena={form.watch('contrasena')} />
-            {form.formState.errors.contrasena && (
-              <p className="text-xs text-red-500">{form.formState.errors.contrasena.message}</p>
-            )}
           </div>
 
           <div className="space-y-1.5">
@@ -102,7 +104,12 @@ export const CompletarPerfilMobile = ({
               id="confirmarContrasena"
               name="confirmarContrasena"
               value={form.watch('confirmarContrasena')}
-              onChange={(v) => form.setValue('confirmarContrasena', v, { shouldValidate: true })}
+              onChange={(v) =>
+                form.setValue('confirmarContrasena', v, {
+                  shouldValidate: !!form.formState.touchedFields.confirmarContrasena,
+                  shouldDirty: true,
+                })
+              }
               error={form.formState.errors.confirmarContrasena?.message}
               disabled={isMutating}
               autoComplete="new-password"

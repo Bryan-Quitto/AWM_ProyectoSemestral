@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { mutate } from 'swr';
+import { toast } from 'sonner';
 import {
   configuracionPerfilSchema,
   configuracionContrasenaSchema
@@ -86,7 +87,7 @@ export function ConfiguracionMobile() {
       void mutate(getRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpointKey());
       setTimeout(() => setPerfilExito(false), 3000);
     } catch {
-      // Errores de red
+      toast.error('No se pudo establecer conexión con el servidor. Revisa tu red e inténtalo nuevamente.');
     }
   };
 
@@ -114,7 +115,7 @@ export function ConfiguracionMobile() {
       formContrasena.reset();
       setTimeout(() => setContrasenaExito(false), 5000);
     } catch {
-      // Errores de red
+      toast.error('No se pudo establecer conexión con el servidor. Revisa tu red e inténtalo nuevamente.');
     }
   };
 
@@ -125,7 +126,7 @@ export function ConfiguracionMobile() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-8">
       <div className="bg-white px-4 py-4 shadow-sm border-b">
-        <h1 className="text-xl font-bold text-gray-800">Mi Perfil</h1>
+        <h1 className="text-xl font-bold text-gray-800">Configuración de Usuario</h1>
       </div>
       
       <div className="flex-1 space-y-4 px-4 py-6">
@@ -159,6 +160,32 @@ export function ConfiguracionMobile() {
                 {formPerfil.formState.errors.apellido && (
                   <p className="text-red-500 text-xs mt-1">{formPerfil.formState.errors.apellido.message}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+                <input 
+                  type="email" 
+                  value={perfilData?.data?.correo ?? ''}
+                  disabled
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 text-sm cursor-not-allowed"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">Vinculado a tu cuenta; no puede modificarse.</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Rol Asignado</label>
+                <div className="pt-0.5">
+                  <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                    {perfilData?.data?.rol === 'AdministradorSistema'
+                      ? 'Administrador del Sistema'
+                      : perfilData?.data?.rol === 'CuidadorPrincipal'
+                      ? 'Cuidador Principal'
+                      : perfilData?.data?.rol === 'Apoyo'
+                      ? 'Apoyo'
+                      : perfilData?.data?.rol ?? 'Sin rol asignado'}
+                  </span>
+                </div>
               </div>
 
               <div className="pt-2">
@@ -243,7 +270,7 @@ export function ConfiguracionMobile() {
               </div>
               {contrasenaExito && (
                 <div className="p-3 bg-green-50 border border-green-200 text-green-700 rounded-lg text-sm mt-3 text-center">
-                  Contraseña modificada exitosamente.
+                  Contraseña actualizada correctamente. Por seguridad, te recomendamos cerrar sesiones activas en otros dispositivos si consideras que estaban comprometidas.
                 </div>
               )}
             </form>

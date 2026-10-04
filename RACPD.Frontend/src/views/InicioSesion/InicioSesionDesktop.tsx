@@ -47,8 +47,10 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
               </label>
               <input
                 type="email"
+                autoComplete="email"
+                autoCapitalize="none"
                 {...register('correo')}
-                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/50 transition-colors"
+                className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/50 transition-colors [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
                 placeholder="ejemplo@correo.com"
                 disabled={isMutating}
               />
@@ -64,8 +66,9 @@ export const InicioSesionDesktop = ({ form, onSubmit, isMutating, apiError }: Pr
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
                   {...register('contrasena')}
-                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/50 transition-colors pr-12"
+                  className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/50 transition-colors pr-12 [&::-ms-reveal]:hidden [&::-webkit-credentials-auto-fill-button]:hidden"
                   placeholder="••••••••"
                   disabled={isMutating}
                 />

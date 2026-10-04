@@ -78,9 +78,17 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
             </h3>
             <p className="text-sm text-gray-600">
               {puedeCrear
-                ? 'Crea la ficha del paciente que vas a cuidar.'
-                : 'Pídele al cuidador principal que te invite como Apoyo.'}
+                ? 'Crea la ficha del paciente que vas a cuidar. Podrás agregar contactos de emergencia y compartir el acceso con familiares.'
+                : 'Pídele al cuidador principal que te invite como Apoyo desde la sección "Personas con acceso" de la ficha del paciente.'}
             </p>
+            {puedeCrear && (
+              <Boton
+                onClick={() => navigate({ to: '/dependientes/nuevo' })}
+                className="mt-4 cursor-pointer"
+              >
+                Crear primera ficha
+              </Boton>
+            )}
           </div>
         ) : (
           dependientes.map((d) => (

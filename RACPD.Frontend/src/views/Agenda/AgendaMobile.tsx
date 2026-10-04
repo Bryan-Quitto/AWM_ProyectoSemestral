@@ -432,9 +432,9 @@ export const AgendaMobile = ({
 
   const filtros: { id: Filtro; label: string }[] = [
     { id: 'Todos', label: 'Todos' },
-    { id: 'MisBloques', label: 'Míos' },
-    { id: 'Disponibles', label: 'Disp.' },
-    { id: 'MisReservas', label: 'Mis Res.' },
+    { id: 'MisBloques', label: 'Mis Bloques' },
+    { id: 'Disponibles', label: 'Disponibles' },
+    { id: 'MisReservas', label: 'Mis Reservas' },
   ];
 
   return (
@@ -469,7 +469,7 @@ export const AgendaMobile = ({
         </div>
 
         {/* Filtros compactos */}
-        <div className="flex gap-2 mt-3">
+        <div className="flex gap-2 mt-3 overflow-x-auto">
           {filtros.map(f => (
             <button
               key={f.id}
@@ -605,7 +605,7 @@ export const AgendaMobile = ({
       />
 
       {toastLocal && (
-        <div className={`fixed bottom-24 left-4 right-4 p-3 rounded-xl shadow-lg text-center font-medium ${
+        <div className={`fixed bottom-24 left-4 right-4 z-50 p-3 rounded-xl shadow-lg text-center font-medium ${
           toastLocal.tipo === 'exito' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
         }`}>
           {toastLocal.mensaje}

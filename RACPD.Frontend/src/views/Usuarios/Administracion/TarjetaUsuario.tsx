@@ -130,66 +130,68 @@ export const TarjetaUsuario = ({
             </span>
           </div>
 
-          <div className="mt-auto flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
-            {/*
-              TODO DEUDA TÉCNICA (deuda deliberada y prudente — decidir en próxima iteración):
-              El botón "Cambiar rol" está DESHABILITADO en esta iteración y NO se
-              renderiza en la UI. Por ahora solo se ofrece Activar/Desactivar.
+          {(puedeDesactivar || puedeActivar) && (
+            <div className="mt-auto flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
+              {/*
+                TODO DEUDA TÉCNICA (deuda deliberada y prudente — decidir en próxima iteración):
+                El botón "Cambiar rol" está DESHABILITADO en esta iteración y NO se
+                renderiza en la UI. Por ahora solo se ofrece Activar/Desactivar.
 
-              Motivo: cambiar el rol de un usuario tiene implicaciones profundas
-              que requieren diseño cuidadoso en una plataforma de cuidadores.
-              Ejemplos de problemas que hay que resolver ANTES de habilitarlo:
-                1. Si un usuario Apoyo pasa a CuidadorPrincipal, automáticamente
-                   adquiere permisos de edición sobre TODAS las fichas donde ya
-                   tiene vínculo activo (incluso si nunca fue creado por él).
-                   → ¿Se debería exigir re-firma de responsabilidad civil?
-                2. Si un CuidadorPrincipal pasa a Apoyo, podría perder acceso a
-                   sus propias fichas. ¿Qué pasa con los vínculos que creó?
-                3. Si un Apoyo pasa a AdministradorSistema, podría ver datos
-                   sensibles de toda la plataforma sin pasar por un proceso
-                   formal de aceptación.
-              Mientras no se defina el modelo de transición de roles (auditoría,
-              aceptación explícita, ventana de gracia, reversión), esta acción
-              queda deshabilitada en UI. El endpoint de backend
-              PATCH /api/usuarios/{id}/rol SIGUE EXISTIENDO y compila; se
-              ocultará/eliminarán juntos cuando se tome la decisión final.
+                Motivo: cambiar el rol de un usuario tiene implicaciones profundas
+                que requieren diseño cuidadoso en una plataforma de cuidadores.
+                Ejemplos de problemas que hay que resolver ANTES de habilitarlo:
+                  1. Si un usuario Apoyo pasa a CuidadorPrincipal, automáticamente
+                     adquiere permisos de edición sobre TODAS las fichas donde ya
+                     tiene vínculo activo (incluso si nunca fue creado por él).
+                     → ¿Se debería exigir re-firma de responsabilidad civil?
+                  2. Si un CuidadorPrincipal pasa a Apoyo, podría perder acceso a
+                     sus propias fichas. ¿Qué pasa con los vínculos que creó?
+                  3. Si un Apoyo pasa a AdministradorSistema, podría ver datos
+                     sensibles de toda la plataforma sin pasar por un proceso
+                     formal de aceptación.
+                Mientras no se defina el modelo de transición de roles (auditoría,
+                aceptación explícita, ventana de gracia, reversión), esta acción
+                queda deshabilitada en UI. El endpoint de backend
+                PATCH /api/usuarios/{id}/rol SIGUE EXISTIENDO y compila; se
+                ocultará/eliminarán juntos cuando se tome la decisión final.
 
-              Cuando se reactive:
-                1. Restaurar el <Boton> "Cambiar rol" (ver historial git).
-                2. Restaurar el <ModalCambiarRol> al final del componente.
-                3. Restaurar import de ModalCambiarRol y UserCog arriba.
-                4. Restaurar estado modalRolAbierto con useState.
-                5. Restaurar prop onCambiarRol en TarjetaUsuarioProps.
-                6. Restaurar import del endpoint y handler handleCambiarRol
-                   en UsuariosAdministracionContenedor.
-                7. Restaurar prop onCambiarRol en Props de Desktop y Mobile.
-                8. Eliminar el toast de "deshabilitado temporalmente" del handler.
-            */}
-            {puedeDesactivar && (
-              <Boton
-                type="button"
-                onClick={() =>
-                  setConfirmarEstado({ abierto: true, objetivo: 'Desactivado' })
-                }
-                cargando={isMutating}
-                className="flex-1 py-2 rounded-xl text-sm !bg-red-600 hover:!bg-red-700"
-              >
-                <Power className="w-4 h-4 mr-1.5" /> Desactivar
-              </Boton>
-            )}
-            {puedeActivar && (
-              <Boton
-                type="button"
-                onClick={() =>
-                  setConfirmarEstado({ abierto: true, objetivo: 'Activo' })
-                }
-                cargando={isMutating}
-                className="flex-1 py-2 rounded-xl text-sm"
-              >
-                <Power className="w-4 h-4 mr-1.5" /> Activar
-              </Boton>
-            )}
-          </div>
+                Cuando se reactive:
+                  1. Restaurar el <Boton> "Cambiar rol" (ver historial git).
+                  2. Restaurar el <ModalCambiarRol> al final del componente.
+                  3. Restaurar import de ModalCambiarRol y UserCog arriba.
+                  4. Restaurar estado modalRolAbierto con useState.
+                  5. Restaurar prop onCambiarRol en TarjetaUsuarioProps.
+                  6. Restaurar import del endpoint y handler handleCambiarRol
+                     en UsuariosAdministracionContenedor.
+                  7. Restaurar prop onCambiarRol en Props de Desktop y Mobile.
+                  8. Eliminar el toast de "deshabilitado temporalmente" del handler.
+              */}
+              {puedeDesactivar && (
+                <Boton
+                  type="button"
+                  onClick={() =>
+                    setConfirmarEstado({ abierto: true, objetivo: 'Desactivado' })
+                  }
+                  cargando={isMutating}
+                  className="flex-1 py-2 rounded-xl text-sm !bg-red-600 hover:!bg-red-700"
+                >
+                  <Power className="w-4 h-4 mr-1.5" /> Desactivar
+                </Boton>
+              )}
+              {puedeActivar && (
+                <Boton
+                  type="button"
+                  onClick={() =>
+                    setConfirmarEstado({ abierto: true, objetivo: 'Activo' })
+                  }
+                  cargando={isMutating}
+                  className="flex-1 py-2 rounded-xl text-sm"
+                >
+                  <Power className="w-4 h-4 mr-1.5" /> Activar
+                </Boton>
+              )}
+            </div>
+          )}
         </div>
       </article>
 

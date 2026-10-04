@@ -1,5 +1,6 @@
 import type { UseFormReturn } from 'react-hook-form';
 import { Link } from '@tanstack/react-router';
+import { Boton } from '../../components/Boton';
 import type { RecuperarContrasenaValores } from './schema';
 
 interface Props {
@@ -74,13 +75,14 @@ export const RecuperarContrasenaMobile = ({
               )}
             </div>
 
-            <button
+            <Boton
               type="submit"
+              cargando={estaMutando}
               disabled={estaMutando}
-              className="w-full py-3 rounded-lg mt-4 bg-blue-600 text-white font-medium hover:bg-blue-700 hover:shadow-md active:scale-[0.98] transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center"
+              className="w-full py-3 mt-4"
             >
               {estaMutando ? 'Enviando enlace…' : 'Enviar enlace de recuperación'}
-            </button>
+            </Boton>
           </form>
         )}
 

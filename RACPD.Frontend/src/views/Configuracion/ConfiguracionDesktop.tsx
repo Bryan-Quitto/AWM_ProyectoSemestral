@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { mutate } from 'swr';
+import { toast } from 'sonner';
 import {
   configuracionPerfilSchema,
   configuracionContrasenaSchema
@@ -86,7 +87,7 @@ export function ConfiguracionDesktop() {
       void mutate(getRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpointKey());
       setTimeout(() => setPerfilExito(false), 3000);
     } catch {
-      // Errores de red
+      toast.error('No se pudo establecer conexión con el servidor. Revisa tu red e inténtalo nuevamente.');
     }
   };
 
@@ -114,7 +115,7 @@ export function ConfiguracionDesktop() {
       formContrasena.reset();
       setTimeout(() => setContrasenaExito(false), 5000);
     } catch {
-      // Errores de red
+      toast.error('No se pudo establecer conexión con el servidor. Revisa tu red e inténtalo nuevamente.');
     }
   };
 
@@ -154,6 +155,32 @@ export function ConfiguracionDesktop() {
               {formPerfil.formState.errors.apellido && (
                 <p className="text-red-500 text-sm mt-1">{formPerfil.formState.errors.apellido.message}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+              <input 
+                type="email" 
+                value={perfilData?.data?.correo ?? ''}
+                disabled
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-600 cursor-not-allowed"
+              />
+              <p className="text-xs text-gray-500 mt-1">El correo electrónico está vinculado a tu cuenta y no puede modificarse.</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rol Asignado</label>
+              <div className="pt-0.5">
+                <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-800">
+                  {perfilData?.data?.rol === 'AdministradorSistema'
+                    ? 'Administrador del Sistema'
+                    : perfilData?.data?.rol === 'CuidadorPrincipal'
+                    ? 'Cuidador Principal'
+                    : perfilData?.data?.rol === 'Apoyo'
+                    ? 'Apoyo'
+                    : perfilData?.data?.rol ?? 'Sin rol asignado'}
+                </span>
+              </div>
             </div>
 
             <div className="pt-4 flex items-center justify-between">

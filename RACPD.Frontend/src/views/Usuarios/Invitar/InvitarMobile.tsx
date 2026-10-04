@@ -6,7 +6,7 @@ import { Boton } from '../../../components/Boton'
 const opcionesRol = [
   { valor: 1, etiqueta: 'Cuidador Principal' },
   { valor: 2, etiqueta: 'Apoyo' },
-  { valor: 0, etiqueta: 'Administrador' },
+  { valor: 0, etiqueta: 'Administrador del Sistema' },
 ]
 
 export const InvitarMobile = ({ form, onSubmit, isMutating, apiError, exito }: InvitarProps) => {

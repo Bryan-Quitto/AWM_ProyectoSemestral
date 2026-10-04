@@ -3,6 +3,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { RestablecerContrasenaValores } from './schema';
 import { CampoContrasena } from '../../components/Seguridad/CampoContrasena';
 import { IndicadorFortalezaContrasena } from '../../components/Seguridad/IndicadorFortalezaContrasena';
+import { Boton } from '../../components/Boton';
 
 interface Props {
   form: UseFormReturn<RestablecerContrasenaValores>;
@@ -119,13 +120,14 @@ export const RestablecerContrasenaDesktop = ({
                 )}
               </div>
 
-              <button
+              <Boton
                 type="submit"
+                cargando={estaMutando}
                 disabled={estaMutando}
-                className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 hover:shadow-md active:scale-[0.98] transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 inline-flex items-center justify-center"
+                className="w-full py-3"
               >
                 {estaMutando ? 'Actualizando…' : 'Actualizar contraseña'}
-              </button>
+              </Boton>
             </form>
           )}
 

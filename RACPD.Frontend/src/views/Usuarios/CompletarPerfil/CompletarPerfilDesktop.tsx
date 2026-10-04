@@ -83,15 +83,17 @@ export const CompletarPerfilDesktop = ({
               id="contrasena"
               name="contrasena"
               value={form.watch('contrasena')}
-              onChange={(v) => form.setValue('contrasena', v, { shouldValidate: true })}
+              onChange={(v) =>
+                form.setValue('contrasena', v, {
+                  shouldValidate: !!form.formState.touchedFields.contrasena,
+                  shouldDirty: true,
+                })
+              }
               error={form.formState.errors.contrasena?.message}
               disabled={isMutating}
               autoComplete="new-password"
             />
             <IndicadorFortalezaContrasena contrasena={form.watch('contrasena')} />
-            {form.formState.errors.contrasena && (
-              <p className="text-sm text-red-500">{form.formState.errors.contrasena.message}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -102,7 +104,12 @@ export const CompletarPerfilDesktop = ({
               id="confirmarContrasena"
               name="confirmarContrasena"
               value={form.watch('confirmarContrasena')}
-              onChange={(v) => form.setValue('confirmarContrasena', v, { shouldValidate: true })}
+              onChange={(v) =>
+                form.setValue('confirmarContrasena', v, {
+                  shouldValidate: !!form.formState.touchedFields.confirmarContrasena,
+                  shouldDirty: true,
+                })
+              }
               error={form.formState.errors.confirmarContrasena?.message}
               disabled={isMutating}
               autoComplete="new-password"

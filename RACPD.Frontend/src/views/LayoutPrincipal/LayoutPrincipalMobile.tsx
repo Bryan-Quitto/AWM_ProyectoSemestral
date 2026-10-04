@@ -53,6 +53,11 @@ export const LayoutPrincipalMobile = () => {
               <p className="text-sm font-semibold text-blue-800 truncate max-w-[180px]" title={`${perfilData.data.nombre} ${perfilData.data.apellido}`}>
                 {perfilData.data.nombre} {perfilData.data.apellido}
               </p>
+              {usuario?.correo && (
+                <p className="text-[10px] text-blue-400 truncate max-w-[140px] leading-tight" title={usuario.correo}>
+                  {usuario.correo}
+                </p>
+              )}
               {/* Selector del dependiente activo: solo si NO es admin y
                   tiene más de un dependiente vinculado. */}
               {!esAdmin && (
@@ -79,13 +84,6 @@ export const LayoutPrincipalMobile = () => {
               alineacionPopover="derecha"
             />
           )}
-          <Link
-            to="/configuracion"
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors cursor-pointer active:scale-95"
-            title="Configuración"
-          >
-            <Settings size={20} />
-          </Link>
           <Boton
             variante="icono"
             onClick={cerrarSesion}
@@ -150,6 +148,13 @@ export const LayoutPrincipalMobile = () => {
             <span className="text-[10px] mt-1 font-medium">Usuarios</span>
           </Link>
         )}
+        <Link
+          to="/configuracion"
+          className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"
+        >
+          <Settings size={24} />
+          <span className="text-[10px] mt-1 font-medium">Config.</span>
+        </Link>
       </nav>
     </div>
   )

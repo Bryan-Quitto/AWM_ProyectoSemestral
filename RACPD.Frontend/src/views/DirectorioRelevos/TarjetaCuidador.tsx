@@ -89,7 +89,7 @@ export const TarjetaCuidador = ({
               : 'bg-gray-100 text-gray-600'
           }`}
         >
-          {estado}
+          {esDisponible ? 'Disponible' : 'No disponible'}
         </span>
       </div>
 

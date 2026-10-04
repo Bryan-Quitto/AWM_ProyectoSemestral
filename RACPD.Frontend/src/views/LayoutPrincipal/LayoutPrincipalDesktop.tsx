@@ -145,7 +145,7 @@ export const LayoutPrincipalDesktop = () => {
             cargando={cerrando}
             className="w-full py-3 rounded-lg gap-2"
           >
-            <LogOut size={20} />
+            {!cerrando && <LogOut size={20} className="mr-2" />}
             {cerrando ? 'Cerrando...' : 'Cerrar Sesión'}
           </Boton>
         </div>
