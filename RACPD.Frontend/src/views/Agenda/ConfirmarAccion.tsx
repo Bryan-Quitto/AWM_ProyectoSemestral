@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { X, AlertTriangle } from 'lucide-react';
 import { Boton } from '../../components/Boton';
 
@@ -22,7 +23,7 @@ export const ConfirmarAccion = ({
 }: ConfirmarAccionProps) => {
   if (!abierto) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
@@ -73,6 +74,7 @@ export const ConfirmarAccion = ({
           </Boton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

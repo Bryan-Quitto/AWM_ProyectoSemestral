@@ -32,7 +32,7 @@ export type CambiarEstadoFormValues = z.infer<typeof cambiarEstadoSchema>
  * Etiquetas legibles para mostrar los roles en la UI.
  * Mantiene la regla "Spanish-Only" del proyecto.
  */
-export const ETIQUETAS_ROL: Record<number, string> = {
+export const ETIQUETAS_ROL: Record<string, string> = {
   [RACPDBackendDomainEnumsRol.AdministradorSistema]: 'Administrador del Sistema',
   [RACPDBackendDomainEnumsRol.CuidadorPrincipal]: 'Cuidador Principal',
   [RACPDBackendDomainEnumsRol.Apoyo]: 'Apoyo'

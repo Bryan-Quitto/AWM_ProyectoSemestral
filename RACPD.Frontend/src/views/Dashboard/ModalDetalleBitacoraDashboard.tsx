@@ -8,9 +8,12 @@ import {
   ArrowRight,
   User,
   Calendar,
+  Camera,
+  ExternalLink,
 } from 'lucide-react';
 import { ModalDetalle } from '../../components/ModalDetalle';
 import { Boton } from '../../components/Boton';
+import { TruncadorLinea } from '../../components/TruncadorLinea';
 import {
   ETIQUETAS_ESTADO_ANIMO,
   type EstadoAnimoBitacora,
@@ -163,6 +166,53 @@ export const ModalDetalleBitacoraDashboard = ({
               </div>
             )}
 
+            {/* Evidencia fotográfica médica */}
+            {bitacora.evidenciaUrl && (
+              <div className="p-3.5 bg-sky-50/70 border border-sky-200 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-blue-950 uppercase tracking-wide inline-flex items-center gap-1.5">
+                    <Camera className="w-4 h-4 text-sky-600" />
+                    Evidencia fotográfica adjunta
+                  </p>
+                  <a
+                    href={
+                      bitacora.evidenciaUrl.startsWith('http')
+                        ? bitacora.evidenciaUrl
+                        : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                    }
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="cursor-pointer inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-900 font-semibold"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    Ver original
+                  </a>
+                </div>
+                <div className="rounded-lg overflow-hidden border border-sky-200 bg-slate-900/5 max-h-64 flex items-center justify-center p-1">
+                  <a
+                    href={
+                      bitacora.evidenciaUrl.startsWith('http')
+                        ? bitacora.evidenciaUrl
+                        : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                    }
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="block max-h-60 cursor-pointer"
+                  >
+                    <img
+                      src={
+                        bitacora.evidenciaUrl.startsWith('http')
+                          ? bitacora.evidenciaUrl
+                          : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                      }
+                      alt="Evidencia médica del reporte"
+                      className="max-h-60 w-auto max-w-full object-contain rounded-md shadow-sm hover:scale-102 transition-transform duration-200"
+                    />
+                  </a>
+                </div>
+              </div>
+            )}
+
             {/* Tareas del turno registradas */}
             {bitacora.tareasDelBloque && bitacora.tareasDelBloque.length > 0 && (
               <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
@@ -177,7 +227,7 @@ export const ModalDetalleBitacoraDashboard = ({
                     return (
                       <li
                         key={tarea.id ?? idx}
-                        className={`flex items-start gap-2 p-2 rounded-lg border text-xs ${
+                        className={`flex items-start gap-2 p-2 rounded-lg border text-xs min-w-0 ${
                           realizada
                             ? 'bg-emerald-50 border-emerald-200'
                             : 'bg-white border-slate-200'
@@ -193,15 +243,15 @@ export const ModalDetalleBitacoraDashboard = ({
                         >
                           {realizada ? '✓' : '·'}
                         </span>
-                        <span
+                        <TruncadorLinea
+                          texto={tarea.descripcion ?? ''}
+                          maxLineas={2}
                           className={`leading-snug ${
                             realizada
                               ? 'line-through text-emerald-900/70'
                               : 'text-slate-800'
                           }`}
-                        >
-                          {tarea.descripcion}
-                        </span>
+                        />
                       </li>
                     );
                   })}

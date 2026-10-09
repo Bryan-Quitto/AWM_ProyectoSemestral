@@ -1,7 +1,7 @@
 import { ChevronDown, User } from 'lucide-react';
 import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint } from '../../api/generated/api/api';
 import {
-  CLAVE_STORAGE_DEPENDIENTE_ACTIVO,
+  cambiarDependienteActivo,
   useDependienteActivo,
 } from './useDependienteActivo';
 
@@ -29,9 +29,8 @@ interface SelectorDependienteActivoProps {
  *
  * El id seleccionado se persiste en `localStorage` bajo la clave
  * `racpd.dependienteActivoId` (exportada desde `useDependienteActivo.ts`)
- * para mantener el contexto entre navegaciones y pestañas (criterio UX:
- * la campana y la agenda deben seguir mostrando al mismo dependiente
- * aunque el cuidador cambie de ruta).
+ * mediante `cambiarDependienteActivo()` con `useSyncExternalStore`
+ * para mantener el contexto entre navegaciones y pestañas.
  */
 export const SelectorDependienteActivo = ({
   visible,
@@ -46,14 +45,7 @@ export const SelectorDependienteActivo = ({
   if (!visible || lista.length <= 1) return null;
 
   const handleCambio = (nuevoId: string) => {
-    try {
-      window.localStorage.setItem(CLAVE_STORAGE_DEPENDIENTE_ACTIVO, nuevoId);
-    } catch {
-      // Almacenamiento no disponible (modo privado, cuota, etc.):
-      // el cambio no se persiste entre recargas, pero el siguiente SWR
-      // fetch + re-render del hook verá la lista y mantendrá al usuario
-      // en el primer dependiente hasta que el almacenamiento vuelva.
-    }
+    cambiarDependienteActivo(nuevoId);
   };
 
   return (

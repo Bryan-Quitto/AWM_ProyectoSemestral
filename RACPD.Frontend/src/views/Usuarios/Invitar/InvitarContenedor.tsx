@@ -64,7 +64,7 @@ export const InvitarContenedor = () => {
     resolver: zodResolver(invitarUsuarioSchema),
     defaultValues: {
       correo: '',
-      rol: 1
+      rol: 'CuidadorPrincipal'
     }
   })
 

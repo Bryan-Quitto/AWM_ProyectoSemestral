@@ -103,6 +103,7 @@ public class ObtenerBitacoraEndpoint : EndpointWithoutRequest<BitacoraTurnoDetal
                 bit.ObservacionesGenerales,
                 bit.FechaCierre,
                 bit.TareasRealizadasIds,
+                bit.EvidenciaUrl,
                 RegistradoPor = new
                 {
                     bit.RegistradoPor.Id,
@@ -170,7 +171,8 @@ public class ObtenerBitacoraEndpoint : EndpointWithoutRequest<BitacoraTurnoDetal
             TareasDelBloque: bloque.Tareas
                 .OrderBy(t => t.Orden)
                 .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
-                .ToList()
+                .ToList(),
+            EvidenciaUrl: bit.EvidenciaUrl
         );
 
         await Send.OkAsync(dto, ct);

@@ -20,6 +20,7 @@ import { Route as ProtegidasConfiguracionRouteImport } from './routes/_protegida
 import { Route as ProtegidasDependientesRouteImport } from './routes/_protegidas/dependientes'
 import { Route as ProtegidasDirectorioRelevosRouteImport } from './routes/_protegidas/directorio-relevos'
 import { Route as ProtegidasFichaPacienteRouteImport } from './routes/_protegidas/ficha-paciente'
+import { Route as ProtegidasSosRouteImport } from './routes/_protegidas/sos'
 import { Route as ProtegidasDependientesIndexRouteImport } from './routes/_protegidas/dependientes/index'
 import { Route as ProtegidasDependientesPerfilIdRouteImport } from './routes/_protegidas/dependientes/$perfilId'
 import { Route as ProtegidasDependientesNuevoRouteImport } from './routes/_protegidas/dependientes/nuevo'
@@ -82,6 +83,11 @@ const ProtegidasFichaPacienteRoute = ProtegidasFichaPacienteRouteImport.update({
   path: '/ficha-paciente',
   getParentRoute: () => ProtegidasRoute,
 } as any)
+const ProtegidasSosRoute = ProtegidasSosRouteImport.update({
+  id: '/sos',
+  path: '/sos',
+  getParentRoute: () => ProtegidasRoute,
+} as any)
 const ProtegidasDependientesIndexRoute =
   ProtegidasDependientesIndexRouteImport.update({
     id: '/',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
+  '/sos': typeof ProtegidasSosRoute
   '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
   '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
   '/usuarios/invitar': typeof ProtegidasUsuariosInvitarRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/configuracion': typeof ProtegidasConfiguracionRoute
   '/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/ficha-paciente': typeof ProtegidasFichaPacienteRoute
+  '/sos': typeof ProtegidasSosRoute
   '/': typeof ProtegidasIndexRoute
   '/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
   '/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_protegidas/dependientes': typeof ProtegidasDependientesRouteWithChildren
   '/_protegidas/directorio-relevos': typeof ProtegidasDirectorioRelevosRoute
   '/_protegidas/ficha-paciente': typeof ProtegidasFichaPacienteRoute
+  '/_protegidas/sos': typeof ProtegidasSosRoute
   '/_protegidas/': typeof ProtegidasIndexRoute
   '/_protegidas/dependientes/$perfilId': typeof ProtegidasDependientesPerfilIdRoute
   '/_protegidas/dependientes/nuevo': typeof ProtegidasDependientesNuevoRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/dependientes'
     | '/directorio-relevos'
     | '/ficha-paciente'
+    | '/sos'
     | '/dependientes/$perfilId'
     | '/dependientes/nuevo'
     | '/usuarios/invitar'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/configuracion'
     | '/directorio-relevos'
     | '/ficha-paciente'
+    | '/sos'
     | '/'
     | '/dependientes/$perfilId'
     | '/dependientes/nuevo'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/_protegidas/dependientes'
     | '/_protegidas/directorio-relevos'
     | '/_protegidas/ficha-paciente'
+    | '/_protegidas/sos'
     | '/_protegidas/'
     | '/_protegidas/dependientes/$perfilId'
     | '/_protegidas/dependientes/nuevo'
@@ -317,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProtegidasFichaPacienteRouteImport
       parentRoute: typeof ProtegidasRoute
     }
+    '/_protegidas/sos': {
+      id: '/_protegidas/sos'
+      path: '/sos'
+      fullPath: '/sos'
+      preLoaderRoute: typeof ProtegidasSosRouteImport
+      parentRoute: typeof ProtegidasRoute
+    }
     '/_protegidas/dependientes/': {
       id: '/_protegidas/dependientes/'
       path: '/'
@@ -389,6 +408,7 @@ interface ProtegidasRouteChildren {
   ProtegidasDependientesRoute: typeof ProtegidasDependientesRouteWithChildren
   ProtegidasDirectorioRelevosRoute: typeof ProtegidasDirectorioRelevosRoute
   ProtegidasFichaPacienteRoute: typeof ProtegidasFichaPacienteRoute
+  ProtegidasSosRoute: typeof ProtegidasSosRoute
   ProtegidasIndexRoute: typeof ProtegidasIndexRoute
   ProtegidasUsuariosInvitarRoute: typeof ProtegidasUsuariosInvitarRoute
   ProtegidasUsuariosIndexRoute: typeof ProtegidasUsuariosIndexRoute
@@ -400,6 +420,7 @@ const ProtegidasRouteChildren: ProtegidasRouteChildren = {
   ProtegidasDependientesRoute: ProtegidasDependientesRouteWithChildren,
   ProtegidasDirectorioRelevosRoute: ProtegidasDirectorioRelevosRoute,
   ProtegidasFichaPacienteRoute: ProtegidasFichaPacienteRoute,
+  ProtegidasSosRoute: ProtegidasSosRoute,
   ProtegidasIndexRoute: ProtegidasIndexRoute,
   ProtegidasUsuariosInvitarRoute: ProtegidasUsuariosInvitarRoute,
   ProtegidasUsuariosIndexRoute: ProtegidasUsuariosIndexRoute,

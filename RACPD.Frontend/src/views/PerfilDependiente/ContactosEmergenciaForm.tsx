@@ -55,7 +55,7 @@ export function ContactosEmergenciaForm<
                 <button
                   type="button"
                   onClick={() => remove(idx)}
-                  className="cursor-pointer disabled:cursor-not-allowed p-2 rounded-full text-red-600 hover:bg-red-50 transition disabled:opacity-50"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation cursor-pointer active:scale-95 rounded-full text-red-600 hover:bg-red-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   aria-label={`Eliminar contacto ${idx + 1}`}
                 >
                   <Trash2 className="w-4 h-4" />

@@ -60,6 +60,11 @@ export const POLITICAS_RUTAS = {
     rolesPermitidos: ['CuidadorPrincipal', 'Apoyo'] as const,
     mensajeAccesoDenegado:
       'Tu rol no tiene permisos para acceder al directorio de relevos.'
+  },
+  '/sos': {
+    rolesPermitidos: ['CuidadorPrincipal', 'Apoyo'] as const,
+    mensajeAccesoDenegado:
+      'Tu rol no tiene permisos para acceder al modo SOS de emergencias.'
   }
 } satisfies Record<string, PoliticaRuta>
 

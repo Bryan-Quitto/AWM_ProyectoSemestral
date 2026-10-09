@@ -118,8 +118,27 @@ public class CompletarTurnoEndpoint : Endpoint<CompletarTurnoRequest, CompletarT
             return;
         }
 
-        // R2 — Ventana de olvido: hasta 24h después del fin del bloque.
-        var finOcurrenciaUtc = bloque.CalcularInicioDeOcurrenciaEnEcuador(bloque.Fecha)
+        // R2 — Ventana de olvido: hasta 24h después del fin de la ocurrencia.
+        // Si el cliente envía la fecha concreta de la ocurrencia proyectada (ej. turnos recurrentes),
+        // se evalúa contra esa fecha en lugar de la fecha base del maestro.
+        DateOnly fechaOc;
+        if (!string.IsNullOrWhiteSpace(req.Fecha))
+        {
+            if (!DateOnly.TryParseExact(req.Fecha, "yyyy-MM-dd", out fechaOc))
+            {
+                await ProblemDetailsHelper.EnviarErroresValidacionAsync(
+                    HttpContext,
+                    new Dictionary<string, IEnumerable<string>> { ["fecha"] = ["Formato YYYY-MM-dd esperado."] },
+                    "La fecha de la ocurrencia es inválida.");
+                return;
+            }
+        }
+        else
+        {
+            fechaOc = bloque.Fecha;
+        }
+
+        var finOcurrenciaUtc = bloque.CalcularInicioDeOcurrenciaEnEcuador(fechaOc)
             .AddHours(bloque.HoraFin.Hour - bloque.HoraInicio.Hour)
             .AddMinutes(bloque.HoraFin.Minute - bloque.HoraInicio.Minute);
         var ahoraUtc = DateTimeOffset.UtcNow;
@@ -174,7 +193,8 @@ public class CompletarTurnoEndpoint : Endpoint<CompletarTurnoRequest, CompletarT
             req.Sintomas,
             req.HorasSueno,
             req.ObservacionesGenerales,
-            req.TareasRealizadasIds ?? new List<Guid>()
+            req.TareasRealizadasIds ?? new List<Guid>(),
+            req.EvidenciaUrl
         );
 
         _dbContext.BitacorasTurno.Add(bitacora);
@@ -229,7 +249,8 @@ public class CompletarTurnoEndpoint : Endpoint<CompletarTurnoRequest, CompletarT
             bitacora.Id,
             bloqueId,
             bitacora.FechaCierre,
-            req.EstadoAnimo!.Value.ToString()
+            req.EstadoAnimo!.Value.ToString(),
+            bitacora.EvidenciaUrl
         );
 
         await Send.CreatedAtAsync(
@@ -255,11 +276,14 @@ public class CompletarTurnoRequest
     public decimal? HorasSueno { get; set; }
     public string? ObservacionesGenerales { get; set; }
     public List<Guid>? TareasRealizadasIds { get; set; }
+    public string? EvidenciaUrl { get; set; }
+    public string? Fecha { get; set; }
 }
 
 public record CompletarTurnoResponse(
     Guid BitacoraId,
     Guid BloqueId,
     DateTimeOffset FechaCierre,
-    string EstadoAnimo
+    string EstadoAnimo,
+    string? EvidenciaUrl = null
 );

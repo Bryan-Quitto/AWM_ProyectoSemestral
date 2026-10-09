@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import { useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint } from '../../api/generated/api/api';
 
 export const CLAVE_STORAGE_DEPENDIENTE_ACTIVO = 'racpd.dependienteActivoId';
@@ -24,18 +24,59 @@ const leerIdAlmacenado = (): string | null => {
   }
 };
 
+// Store singleton en memoria para suscripción reactiva y sincronización multi-pestaña
+type Listener = () => void;
+const listeners = new Set<Listener>();
+
+let snapshotActual: string | null = leerIdAlmacenado();
+
+const notificar = () => {
+  snapshotActual = leerIdAlmacenado();
+  listeners.forEach((listener) => listener());
+};
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event: StorageEvent) => {
+    if (event.key === CLAVE_STORAGE_DEPENDIENTE_ACTIVO) {
+      notificar();
+    }
+  });
+}
+
+const suscribir = (listener: Listener): (() => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+const obtenerSnapshot = (): string | null => snapshotActual;
+
+const obtenerServidorSnapshot = (): string | null => null;
+
+/**
+ * Mutador reactivo del dependiente activo.
+ * Persiste en localStorage y notifica sincrónicamente a los componentes suscritos.
+ */
+export const cambiarDependienteActivo = (nuevoId: string | null) => {
+  if (typeof window === 'undefined') return;
+  try {
+    if (nuevoId) {
+      window.localStorage.setItem(CLAVE_STORAGE_DEPENDIENTE_ACTIVO, nuevoId);
+    } else {
+      window.localStorage.removeItem(CLAVE_STORAGE_DEPENDIENTE_ACTIVO);
+    }
+  } catch {
+    // Almacenamiento no disponible (modo privado, cuota, etc.)
+  } finally {
+    notificar();
+  }
+};
+
 /**
  * Hook compartido que devuelve el dependiente activo persistido en
- * localStorage. Si el id almacenado ya no existe en la lista, se
- * recalcula al primero de la lista (preferentemente el Principal).
- *
- * IMPORTANTE: este hook NO usa useEffect ni setState. La derivación es
- * 100% durante render, de modo que cumple las reglas de React Compiler
- * (no cascading renders) y se mantiene simple.
- *
- * Si el usuario cambia el dependiente activo desde `SelectorDependienteActivo`
- * (que sí escribe en localStorage), basta refrescar el árbol SWR para
- * que el nuevo id aparezca reflejado.
+ * localStorage utilizando `useSyncExternalStore` para prevenir condiciones de carrera
+ * y garantizar sincronización multi-pestaña instantánea.
  */
 export const useDependienteActivo = (): {
   dependienteId: string | null;
@@ -44,9 +85,14 @@ export const useDependienteActivo = (): {
   const { data } =
     useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint();
 
+  const idAlmacenado = useSyncExternalStore(
+    suscribir,
+    obtenerSnapshot,
+    obtenerServidorSnapshot
+  );
+
   return useMemo(() => {
     const lista = (data?.data ?? []) as DependienteResumen[];
-    const idAlmacenado = leerIdAlmacenado();
     const almacenadoValido =
       idAlmacenado !== null && lista.some((d) => d.perfilId === idAlmacenado);
 
@@ -61,5 +107,5 @@ export const useDependienteActivo = (): {
       dependienteId: dependienteElegido?.perfilId ?? null,
       dependienteNombre: dependienteElegido?.nombreCompleto ?? '',
     };
-  }, [data]);
+  }, [data, idAlmacenado]);
 };

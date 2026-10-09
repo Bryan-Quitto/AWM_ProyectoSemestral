@@ -1,4 +1,4 @@
-import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat, ClipboardCheck, Eye, CheckCircle2, Moon, FileText, AlertCircle, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, Users, Trash2, Edit2, User, ListChecks, Repeat, ClipboardCheck, Eye, CheckCircle2, Moon, FileText, AlertCircle, RefreshCw, Camera, ExternalLink } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { toast } from 'sonner';
 import { Boton } from '../../components/Boton';
@@ -635,6 +635,7 @@ export const TarjetaBloque = ({
             orden: 0,
           }))}
           nombreDependiente={bloque.nombreDependiente ?? 'Dependiente'}
+          fecha={bloque.fecha}
           onCerrar={() => setDialogoCerrarAbierto(false)}
           onCompletado={handleCerradoExitoso}
         />
@@ -742,6 +743,53 @@ export const TarjetaBloque = ({
                 </p>
               </div>
 
+              {/* Evidencia fotográfica médica adjunta */}
+              {bitacora.evidenciaUrl && (
+                <div className="p-3 bg-sky-50/70 border border-sky-200 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-bold text-blue-950 uppercase tracking-wide inline-flex items-center gap-1.5">
+                      <Camera className="w-4 h-4 text-sky-600" />
+                      Evidencia fotográfica adjunta
+                    </p>
+                    <a
+                      href={
+                        bitacora.evidenciaUrl.startsWith('http')
+                          ? bitacora.evidenciaUrl
+                          : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                      }
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="cursor-pointer inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-900 font-semibold"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Ver original
+                    </a>
+                  </div>
+                  <div className="rounded-lg overflow-hidden border border-sky-200 bg-slate-900/5 max-h-64 flex items-center justify-center p-1">
+                    <a
+                      href={
+                        bitacora.evidenciaUrl.startsWith('http')
+                          ? bitacora.evidenciaUrl
+                          : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                      }
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="block max-h-60 cursor-pointer"
+                    >
+                      <img
+                        src={
+                          bitacora.evidenciaUrl.startsWith('http')
+                            ? bitacora.evidenciaUrl
+                            : `${(import.meta.env['VITE_API_URL'] as string | undefined) || ''}${bitacora.evidenciaUrl}`
+                        }
+                        alt="Evidencia médica del turno"
+                        className="max-h-60 w-auto max-w-full object-contain rounded-md shadow-sm hover:scale-102 transition-transform duration-200"
+                      />
+                    </a>
+                  </div>
+                </div>
+              )}
+
               {/* Checklist: realizadas vs pendientes */}
               {bitacora.tareasDelBloque && bitacora.tareasDelBloque.length > 0 && (
                 <div className="p-3 bg-gray-50 border border-gray-200 rounded-xl">
@@ -756,7 +804,7 @@ export const TarjetaBloque = ({
                       return (
                         <li
                           key={t.id ?? i}
-                          className={`flex items-start gap-2 p-2 rounded-lg border ${
+                          className={`flex items-start gap-2 p-2 rounded-lg border min-w-0 ${
                             esRealizada
                               ? 'bg-emerald-50 border-emerald-200'
                               : 'bg-white border-gray-200'
@@ -772,15 +820,15 @@ export const TarjetaBloque = ({
                           >
                             {esRealizada ? '✓' : '·'}
                           </span>
-                          <span
+                          <TruncadorLinea
+                            texto={t.descripcion ?? ''}
+                            maxLineas={2}
                             className={`text-sm leading-snug ${
                               esRealizada
                                 ? 'line-through text-emerald-900/70'
                                 : 'text-gray-800'
                             }`}
-                          >
-                            {t.descripcion}
-                          </span>
+                          />
                         </li>
                       );
                     })}

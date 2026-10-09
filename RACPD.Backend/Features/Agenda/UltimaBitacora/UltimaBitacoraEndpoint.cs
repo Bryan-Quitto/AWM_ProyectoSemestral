@@ -94,7 +94,8 @@ public class UltimaBitacoraEndpoint : EndpointWithoutRequest<BitacoraTurnoDetall
             TareasDelBloque: (bloque?.Tareas ?? new List<Domain.Entities.TareaTurnoItem>())
                 .OrderBy(t => t.Orden)
                 .Select(t => new TareaTurnoDto(t.Id, t.Descripcion, t.Orden))
-                .ToList()
+                .ToList(),
+            EvidenciaUrl: bitacora.EvidenciaUrl
         );
 
         await Send.OkAsync(dto, ct);

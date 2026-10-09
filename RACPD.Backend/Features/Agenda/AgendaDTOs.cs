@@ -156,5 +156,9 @@ public record BitacoraTurnoDetalleDto(
     /// Tareas del bloque maestro (checklist completo). Permite al frontend
     /// diferenciar visualmente realizadas vs. pendientes en el modal de lectura.
     /// </summary>
-    IReadOnlyList<TareaTurnoDto> TareasDelBloque
+    IReadOnlyList<TareaTurnoDto> TareasDelBloque,
+    /// <summary>
+    /// URL de la evidencia fotográfica registrada en la bitácora (opcional).
+    /// </summary>
+    string? EvidenciaUrl = null
 );

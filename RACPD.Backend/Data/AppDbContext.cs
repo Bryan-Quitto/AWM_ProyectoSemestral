@@ -211,6 +211,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ObservacionesGenerales)
                 .HasMaxLength(2000);
 
+            entity.Property(e => e.EvidenciaUrl)
+                .HasMaxLength(500);
+
             entity.Property(e => e.HorasSueno)
                 .HasPrecision(4, 2);
 

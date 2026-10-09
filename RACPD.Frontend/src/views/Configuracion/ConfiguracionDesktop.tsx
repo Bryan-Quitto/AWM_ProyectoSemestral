@@ -17,6 +17,7 @@ import {
   usePoliticaContrasena
 } from '../../components/Seguridad';
 import { Boton } from '../../components/Boton';
+import { SeccionConfiguracionAccesibilidad } from '../../components/Accesibilidad/SeccionConfiguracionAccesibilidad';
 import {
   useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint,
   useRACPDBackendFeaturesUsuariosMiPerfilActualizarPerfilEndpoint,
@@ -265,6 +266,11 @@ export function ConfiguracionDesktop() {
               </div>
             )}
           </form>
+        </div>
+
+        {/* Panel Accesibilidad */}
+        <div className="md:col-span-2">
+          <SeccionConfiguracionAccesibilidad />
         </div>
 
       </div>

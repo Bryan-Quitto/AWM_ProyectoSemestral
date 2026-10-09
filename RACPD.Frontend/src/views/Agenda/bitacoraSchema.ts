@@ -37,7 +37,7 @@ export const completarBitacoraSchema = z.object({
     .optional()
     .or(z.literal('')),
   horasSueno: z
-    .number({ error: 'Debe ser un numero entre 0 y 24' })
+    .number({ error: 'Debe ser un número válido' })
     .min(0, 'Minimo 0 horas')
     .max(24, 'Maximo 24 horas')
     .optional(),
@@ -47,6 +47,7 @@ export const completarBitacoraSchema = z.object({
     .optional()
     .or(z.literal('')),
   tareasRealizadasIds: z.array(z.string().uuid()).optional(),
+  evidenciaUrl: z.string().optional().nullable(),
 });
 
 export type CompletarBitacoraFormData = z.infer<typeof completarBitacoraSchema>;

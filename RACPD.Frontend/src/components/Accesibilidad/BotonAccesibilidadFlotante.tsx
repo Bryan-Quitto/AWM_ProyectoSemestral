@@ -58,10 +58,14 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
     };
   }, [panelAbierto]);
 
+  if (!preferencias.botonFlotanteVisible) {
+    return null;
+  }
+
   return (
     <aside 
       aria-label="Panel de accesibilidad"
-      className="fixed bottom-6 right-6 z-50 flex flex-col items-end pointer-events-auto"
+      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col items-end pointer-events-auto"
     >
       {/* Ventana Flotante de Opciones de Accesibilidad */}
       {panelAbierto && (

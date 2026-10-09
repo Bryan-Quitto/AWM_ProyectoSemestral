@@ -27,7 +27,8 @@ public class BitacoraTurno
         string? sintomas,
         decimal? horasSueno,
         string? observacionesGenerales,
-        List<Guid> tareasRealizadasIds)
+        List<Guid> tareasRealizadasIds,
+        string? evidenciaUrl = null)
     {
         Id = Guid.NewGuid();
         BloqueTurnoId = bloqueTurnoId;
@@ -37,6 +38,7 @@ public class BitacoraTurno
         HorasSueno = horasSueno;
         ObservacionesGenerales = observacionesGenerales;
         TareasRealizadasIds = tareasRealizadasIds;
+        EvidenciaUrl = evidenciaUrl;
         Activa = true;
         FechaCierre = DateTimeOffset.UtcNow;
     }
@@ -65,6 +67,11 @@ public class BitacoraTurno
 
     /// <summary>Observaciones libres del cuidador. Máx. 2000 caracteres.</summary>
     public string? ObservacionesGenerales { get; private set; }
+
+    /// <summary>
+    /// URL de la evidencia fotográfica (máx 500 chars). Servida localmente bajo /uploads/evidencias.
+    /// </summary>
+    public string? EvidenciaUrl { get; private set; }
 
     /// <summary>
     /// IDs de TareaTurnoItem marcadas como realizadas en este turno.

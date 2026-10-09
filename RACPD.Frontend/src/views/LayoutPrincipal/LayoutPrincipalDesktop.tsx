@@ -6,7 +6,6 @@ import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
 import { CampanaNotificaciones } from './CampanaNotificaciones'
-import { SelectorDependienteActivo } from './SelectorDependienteActivo'
 import { extraerRolDelToken, type Rol } from '../../autenticacion/roles'
 
 type UsuarioSesion = {
@@ -72,13 +71,6 @@ export const LayoutPrincipalDesktop = () => {
               <p className="text-xs text-blue-500 truncate" title={usuario?.correo}>
                 {usuario?.correo}
               </p>
-              {/* Selector del dependiente activo: solo si NO es admin y
-                  tiene más de un dependiente vinculado. */}
-              {!esAdmin && (
-                <div className="mt-2">
-                  <SelectorDependienteActivo visible={puedeVerFichaDependiente} />
-                </div>
-              )}
             </div>
           ) : usuario?.correo ? (
             <p className="text-xs text-blue-600 mt-1 truncate" title={usuario.correo}>

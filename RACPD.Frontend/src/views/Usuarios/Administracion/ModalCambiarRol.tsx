@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,14 +12,14 @@ interface ModalCambiarRolProps {
   abierto: boolean
   usuario: RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse
   onCerrar: () => void
-  onConfirmar: (nuevoRolNumero: number) => Promise<void>
+  onConfirmar: (nuevoRol: RACPDBackendDomainEnumsRol) => Promise<void>
   isMutating: boolean
 }
 
 const OPCIONES_ROL = [
-  { valor: RACPDBackendDomainEnumsRol.AdministradorSistema, etiqueta: ETIQUETAS_ROL[0] },
-  { valor: RACPDBackendDomainEnumsRol.CuidadorPrincipal, etiqueta: ETIQUETAS_ROL[1] },
-  { valor: RACPDBackendDomainEnumsRol.Apoyo, etiqueta: ETIQUETAS_ROL[2] }
+  { valor: RACPDBackendDomainEnumsRol.AdministradorSistema, etiqueta: ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.AdministradorSistema] },
+  { valor: RACPDBackendDomainEnumsRol.CuidadorPrincipal, etiqueta: ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.CuidadorPrincipal] },
+  { valor: RACPDBackendDomainEnumsRol.Apoyo, etiqueta: ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.Apoyo] }
 ]
 
 /**
@@ -58,7 +59,7 @@ export const ModalCambiarRol = ({
     await onConfirmar(values.rol)
   })
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
@@ -122,6 +123,7 @@ export const ModalCambiarRol = ({
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

@@ -7,6 +7,7 @@ import { ConfirmarAccion } from '../../Agenda/ConfirmarAccion'
 // transición de roles (ver comentario en el botón "Cambiar rol" más abajo).
 // import { ModalCambiarRol } from './ModalCambiarRol'
 import { ETIQUETAS_ROL, ETIQUETAS_ESTADO } from './schema'
+import { RACPDBackendDomainEnumsRol } from '../../../api/generated/model'
 import type { RACPDBackendFeaturesUsuariosAdministracionUsuarioAdministracionResponse } from '../../../api/generated/model'
 
 interface TarjetaUsuarioProps {
@@ -52,11 +53,11 @@ export const TarjetaUsuario = ({
   const etiquetaRolActual = (() => {
     switch (usuario.rol) {
       case 'AdministradorSistema':
-        return ETIQUETAS_ROL[0]
+        return ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.AdministradorSistema]
       case 'CuidadorPrincipal':
-        return ETIQUETAS_ROL[1]
+        return ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.CuidadorPrincipal]
       case 'Apoyo':
-        return ETIQUETAS_ROL[2]
+        return ETIQUETAS_ROL[RACPDBackendDomainEnumsRol.Apoyo]
       default:
         return usuario.rol ?? '—'
     }

@@ -5,7 +5,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 export const Route = createFileRoute('/_protegidas/configuracion')({
   component: function ConfiguracionRoute() {
-    const isMobile = useMediaQuery('(max-width: 768px)');
+    const isMobile = useMediaQuery('(max-width: 767.98px)');
     return isMobile ? <ConfiguracionMobile /> : <ConfiguracionDesktop />;
   }
 });

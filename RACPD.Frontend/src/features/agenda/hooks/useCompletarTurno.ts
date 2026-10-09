@@ -14,7 +14,7 @@ import type { EstadoAnimoBitacora } from '../../../views/Agenda/bitacoraSchema';
  */
 
 const URL_BASE_API: string =
-  (import.meta.env['VITE_API_URL'] as string | undefined) ?? 'http://localhost:5000';
+  (import.meta.env['VITE_API_URL'] as string | undefined) || '';
 
 export interface CompletarTurnoPayload {
   bloqueId: string;
@@ -23,6 +23,8 @@ export interface CompletarTurnoPayload {
   horasSueno?: number | null;
   observacionesGenerales?: string | null;
   tareasRealizadasIds?: string[];
+  evidenciaUrl?: string | null;
+  fecha?: string | null;
 }
 
 export interface CompletarTurnoRespuesta {
@@ -30,6 +32,7 @@ export interface CompletarTurnoRespuesta {
   bloqueId: string;
   fechaCierre: string; // ISO 8601
   estadoAnimo: string;
+  evidenciaUrl?: string | null;
 }
 
 export const useCompletarTurno = () => {
@@ -46,6 +49,8 @@ export const useCompletarTurno = () => {
           horasSueno: arg.horasSueno ?? null,
           observacionesGenerales: arg.observacionesGenerales ?? null,
           tareasRealizadasIds: arg.tareasRealizadasIds ?? [],
+          evidenciaUrl: arg.evidenciaUrl ?? null,
+          fecha: arg.fecha ?? null,
         }),
       });
     }

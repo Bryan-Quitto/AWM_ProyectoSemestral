@@ -39,6 +39,10 @@ namespace RACPD.Backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("EvidenciaUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTimeOffset>("FechaCierre")
                         .HasColumnType("timestamp with time zone");
 

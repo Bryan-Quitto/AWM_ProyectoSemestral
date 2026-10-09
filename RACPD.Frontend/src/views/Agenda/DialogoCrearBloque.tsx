@@ -1,4 +1,5 @@
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { createPortal } from 'react-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { X, Info } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
@@ -168,7 +169,7 @@ export const DialogoCrearBloque = ({
 
   if (!abierto) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay decorativo: NO cierra el diálogo al hacer clic fuera.
           Solo se cierra por la X, el botón "Cancelar" o el submit.
@@ -488,6 +489,7 @@ export const DialogoCrearBloque = ({
           </Boton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

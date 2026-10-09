@@ -14,6 +14,7 @@ import {
   useRACPDBackendFeaturesPerfilesDependientesActualizarPerfilDependienteActualizarPerfilDependienteEndpoint,
 } from '../../api/generated/api/api';
 import { useInvalidarPerfilesDependientes } from '../../features/perfiles-dependientes/useInvalidarPerfilesDependientes';
+import { construirEnlaceWhatsApp } from '../DirectorioRelevos/construirEnlaceWhatsApp';
 
 const TIPO_SANGRE_LABELS = TIPO_SANGRE_ETIQUETAS;
 
@@ -361,9 +362,10 @@ export function PerfilDependienteMobile({
                             Llamar
                           </a>
                           <a
-                            href={`https://wa.me/${telefonoSanitizado}?text=${encodeURIComponent(
-                              'Hola, te contactamos desde RACPD por una emergencia con el dependiente.'
-                            )}`}
+                            href={construirEnlaceWhatsApp(
+                              c.telefonoWhatsApp ?? '',
+                              `Hola ${c.nombre ?? ''}, te contactamos desde RACPD por una novedad con el dependiente.`
+                            )}
                             target="_blank"
                             rel="noreferrer noopener"
                             className="cursor-pointer disabled:cursor-not-allowed px-3 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 text-sm font-semibold inline-flex items-center gap-1.5 transition disabled:opacity-50"
@@ -522,10 +524,10 @@ export function PerfilDependienteMobile({
                     <button
                       type="button"
                       onClick={() => quitarAlergia(idx)}
-                      className="cursor-pointer disabled:cursor-not-allowed p-0.5 rounded-full hover:bg-amber-200 transition disabled:opacity-50"
+                      className="cursor-pointer disabled:cursor-not-allowed p-2.5 -mr-1 rounded-full hover:bg-amber-200 active:scale-95 touch-manipulation transition disabled:opacity-50 inline-flex items-center justify-center"
                       aria-label={`Quitar alergia ${a}`}
                     >
-                      <Trash2 className="w-3 h-3" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </span>
                 ))}

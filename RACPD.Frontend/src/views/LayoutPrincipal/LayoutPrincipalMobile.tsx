@@ -6,7 +6,6 @@ import { useCerrarSesion } from './useCerrarSesion'
 import { useRACPDBackendFeaturesUsuariosMiPerfilObtenerMiPerfilEndpoint } from '../../api/generated/api/api'
 import { Boton } from '../../components/Boton'
 import { CampanaNotificaciones } from './CampanaNotificaciones'
-import { SelectorDependienteActivo } from './SelectorDependienteActivo'
 import { extraerRolDelToken, type Rol } from '../../autenticacion/roles'
 
 type UsuarioSesion = {
@@ -58,13 +57,6 @@ export const LayoutPrincipalMobile = () => {
                   {usuario.correo}
                 </p>
               )}
-              {/* Selector del dependiente activo: solo si NO es admin y
-                  tiene más de un dependiente vinculado. */}
-              {!esAdmin && (
-                <div className="mt-1.5">
-                  <SelectorDependienteActivo visible={puedeVerFichaDependiente} />
-                </div>
-              )}
             </div>
           ) : usuario?.correo ? (
             <p className="text-[10px] text-blue-600 truncate max-w-[180px]" title={usuario.correo}>
@@ -95,16 +87,20 @@ export const LayoutPrincipalMobile = () => {
           </Boton>
           
           {/* DECISIÓN DE DISEÑO: El botón SOS es exclusivo de la vista móvil por su naturaleza de emergencia y acceso rápido en terreno. No es una inconsistencia con Desktop. */}
-          <div className="px-3 py-1 flex items-center gap-1 bg-red-50 text-red-700 rounded-lg font-bold border border-red-200 text-sm cursor-pointer hover:bg-red-100 active:bg-red-200 transition-colors select-none">
+          <Link
+            to="/sos"
+            aria-label="Abrir modo de emergencia SOS"
+            className="px-3 py-1 flex items-center justify-center gap-1 bg-red-50 text-red-700 rounded-lg font-bold border border-red-200 text-sm touch-manipulation cursor-pointer hover:bg-red-100 active:scale-95 transition-transform min-h-[44px] min-w-[44px] select-none"
+          >
             <AlertTriangle size={16} />
             SOS
-          </div>
+          </Link>
         </div>
       </header>
       <main className="flex-1 overflow-y-auto pb-16">
         <Outlet />
       </main>
-      <nav className="fixed bottom-0 w-full bg-white border-t border-blue-200 flex justify-around items-center h-16 pb-safe z-50">
+      <nav className="fixed bottom-0 w-full bg-white border-t border-blue-200 flex justify-around items-center h-16 pb-safe z-30">
         <Link
           to="/"
           className="flex flex-col items-center justify-center w-full h-full text-blue-400 [&.active]:text-blue-900 cursor-pointer active:scale-95 transition-transform"

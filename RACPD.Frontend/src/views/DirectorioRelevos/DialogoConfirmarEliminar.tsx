@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X } from 'lucide-react';
 import { Boton } from '../../components/Boton';
 
@@ -39,7 +40,7 @@ export const DialogoConfirmarEliminar = ({
 }: DialogoConfirmarEliminarProps) => {
   if (!abierto) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
@@ -105,6 +106,7 @@ export const DialogoConfirmarEliminar = ({
           </Boton>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

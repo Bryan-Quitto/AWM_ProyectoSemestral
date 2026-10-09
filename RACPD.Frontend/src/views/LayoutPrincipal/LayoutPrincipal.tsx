@@ -1,18 +1,12 @@
-import { useEffect, useState } from 'react'
 import { LayoutPrincipalDesktop } from './LayoutPrincipalDesktop'
 import { LayoutPrincipalMobile } from './LayoutPrincipalMobile'
 import { VerificadorPerfil } from './VerificadorPerfil'
 import { useVerificarCuentaActiva } from '../../autenticacion/useVerificarCuentaActiva'
 import { IndicadorConexion } from '../../components/common/IndicadorConexion'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 
 export const LayoutPrincipal = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
-
-  useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  const isMobile = useMediaQuery('(max-width: 767.98px)')
 
   // Verifica en eventos del navegador (F5, focus, visibilitychange y
   // timer en background) que la cuenta del usuario siga activa. Si el

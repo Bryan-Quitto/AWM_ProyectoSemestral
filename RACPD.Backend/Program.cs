@@ -143,6 +143,24 @@ var app = builder.Build();
 // correctamente.
 app.UseCors("RACPD");
 
+// Servir archivos estáticos subidos localmente (evidencias fotográficas médicas)
+var rutaUploads = Path.Combine(app.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(rutaUploads))
+{
+    Directory.CreateDirectory(rutaUploads);
+}
+var rutaEvidencias = Path.Combine(rutaUploads, "evidencias");
+if (!Directory.Exists(rutaEvidencias))
+{
+    Directory.CreateDirectory(rutaEvidencias);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(rutaUploads),
+    RequestPath = "/uploads"
+});
+
 app.UseAuthentication();
 
 // Middleware de diagnóstico: imprime los claims efectivos que ve FastEndpoints
