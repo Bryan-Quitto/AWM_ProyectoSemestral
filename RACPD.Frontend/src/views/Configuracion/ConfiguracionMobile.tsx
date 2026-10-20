@@ -1,3 +1,4 @@
+import { NotificacionesMobile } from './NotificacionesMobile'
 import { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -278,6 +279,7 @@ export function ConfiguracionMobile() {
           </div>
         </div>
 
+        <NotificacionesMobile />
         {/* Panel Accesibilidad */}
         <SeccionConfiguracionAccesibilidad />
 

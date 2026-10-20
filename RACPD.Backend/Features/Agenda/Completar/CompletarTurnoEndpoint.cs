@@ -206,14 +206,8 @@ public class CompletarTurnoEndpoint : Endpoint<CompletarTurnoRequest, CompletarT
             {
                 Id = Guid.NewGuid(),
                 Tipo = "BITACORA_ANIMO_CRITICO",
-                PayloadJson = global::System.Text.Json.JsonSerializer.Serialize(new
-                {
-                    bitacoraId = bitacora.Id,
-                    bloqueId,
-                    registradoPorId = usuarioId,
-                    estadoAnimo = req.EstadoAnimo!.Value.ToString(),
-                    fechaCierre = bitacora.FechaCierre,
-                }),
+                PayloadJson = global::System.Text.Json.JsonSerializer.Serialize(new RACPD.Backend.Features.Notificaciones.CargaAnimoCritico(
+                    bitacora.Id, bloqueId, usuarioId, req.EstadoAnimo.Value.ToString(), bitacora.FechaCierre)),
                 Fecha = DateTimeOffset.UtcNow,
                 Procesado = false,
             });

@@ -13,6 +13,10 @@ namespace RACPD.Backend.Domain.Entities;
 /// </summary>
 public class OutboxMensaje
 {
+    public int VersionCarga { get; set; } = 1;
+    public bool DestinatariosResueltos { get; set; }
+    public DateTimeOffset? FechaProcesamiento { get; set; }
+    public string? UltimoErrorClasificado { get; set; }
     public Guid Id { get; set; } = Guid.NewGuid();
 
     /// <summary>Tipo de evento: BITACORA_ANIMO_CRITICO, INVITACION_USUARIO, etc.</summary>

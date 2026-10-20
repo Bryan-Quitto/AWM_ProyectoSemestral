@@ -1,3 +1,4 @@
+import { useSeguridadDispositivoPush } from '../../features/notificaciones/hooks/useSeguridadDispositivoPush'
 import { LayoutPrincipalDesktop } from './LayoutPrincipalDesktop'
 import { LayoutPrincipalMobile } from './LayoutPrincipalMobile'
 import { VerificadorPerfil } from './VerificadorPerfil'
@@ -12,6 +13,7 @@ export const LayoutPrincipal = () => {
   // timer en background) que la cuenta del usuario siga activa. Si el
   // admin la desactivó, este hook fuerza signOut + redirect con mensaje.
   useVerificarCuentaActiva()
+  useSeguridadDispositivoPush()
 
   return (
     <>

@@ -234,16 +234,76 @@ namespace RACPD.Backend.Migrations
                     b.ToTable("DirectorioRelevos");
                 });
 
+            modelBuilder.Entity("RACPD.Backend.Domain.Entities.EntregaPush", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("ArrendamientoHasta")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTimeOffset?>("FechaAceptacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Intentos")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OutboxMensajeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PerfilDependienteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ProximoIntento")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("SuscripcionPushId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("TokenReclamacion")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("UltimoCodigoHttp")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("UltimoErrorClasificado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SuscripcionPushId");
+
+                    b.HasIndex("Estado", "ProximoIntento");
+
+                    b.HasIndex("OutboxMensajeId", "SuscripcionPushId")
+                        .IsUnique();
+
+                    b.ToTable("EntregasPush");
+                });
+
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.OutboxMensaje", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("DestinatariosResueltos")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("Fallo")
                         .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FechaProcesamiento")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Intentos")
@@ -260,6 +320,15 @@ namespace RACPD.Backend.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("UltimoErrorClasificado")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("VersionCarga")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(1);
 
                     b.HasKey("Id");
 
@@ -345,6 +414,60 @@ namespace RACPD.Backend.Migrations
                         .HasFilter("\"Activa\" = true");
 
                     b.ToTable("ReservasTurno");
+                });
+
+            modelBuilder.Entity("RACPD.Backend.Domain.Entities.SuscripcionPush", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Activa")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ClavePublica")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTimeOffset>("FechaActualizacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("FechaCreacion")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("HuellaDestino")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SecretoAutenticacion")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UrlDestino")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HuellaDestino")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("SuscripcionesPush");
                 });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.Usuario", b =>
@@ -522,6 +645,21 @@ namespace RACPD.Backend.Migrations
                     b.Navigation("UsuarioApoyo");
                 });
 
+            modelBuilder.Entity("RACPD.Backend.Domain.Entities.EntregaPush", b =>
+                {
+                    b.HasOne("RACPD.Backend.Domain.Entities.OutboxMensaje", null)
+                        .WithMany()
+                        .HasForeignKey("OutboxMensajeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("RACPD.Backend.Domain.Entities.SuscripcionPush", null)
+                        .WithMany()
+                        .HasForeignKey("SuscripcionPushId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.PerfilDependiente", b =>
                 {
                     b.OwnsMany("RACPD.Backend.Domain.Entities.ContactoEmergencia", "ContactosEmergencia", b1 =>
@@ -572,6 +710,15 @@ namespace RACPD.Backend.Migrations
                     b.Navigation("BloqueTurno");
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("RACPD.Backend.Domain.Entities.SuscripcionPush", b =>
+                {
+                    b.HasOne("RACPD.Backend.Domain.Entities.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("RACPD.Backend.Domain.Entities.VinculoDependiente", b =>

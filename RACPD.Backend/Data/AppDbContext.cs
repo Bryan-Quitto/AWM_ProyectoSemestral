@@ -21,9 +21,13 @@ public class AppDbContext : DbContext
     public DbSet<BitacoraTurno> BitacorasTurno { get; set; } = null!;
     public DbSet<OutboxMensaje> OutboxMensajes { get; set; } = null!;
 
+    public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
+    public DbSet<EntregaPush> EntregasPush => Set<EntregaPush>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.ConfigurarPush();
 
         // === Usuario ===
         modelBuilder.Entity<Usuario>()

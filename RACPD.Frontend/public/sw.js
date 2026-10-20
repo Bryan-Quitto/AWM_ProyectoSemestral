@@ -54,3 +54,32 @@ self.addEventListener('fetch', (evento) => {
       .catch(() => caches.match(evento.request).then((respuesta) => respuesta || caches.match('/')))
   );
 });
+
+// No incluir información clínica en la pantalla bloqueada.
+self.addEventListener('push', (evento) => {
+  evento.waitUntil((async () => {
+    let datos;
+    try { datos = evento.data?.json(); } catch { datos = null; }
+    const valido = datos && typeof datos === 'object' && typeof datos.idMensaje === 'string'
+      && /^[0-9a-f-]{36}$/i.test(datos.idMensaje);
+    const ruta = valido && typeof datos.ruta === 'string' && /^\/agenda(?:\?bloqueIdDestacado=[0-9a-f-]{36})?$/i.test(datos.ruta) ? datos.ruta : '/agenda';
+    await self.registration.showNotification('RACPD', {
+      body: 'Hay una actualización importante en tu red de cuidados. Abre la aplicación para revisarla.',
+      tag: valido ? datos.idMensaje : 'racpd-aviso',
+      icon: '/icono-racpd.svg',
+      data: { ruta },
+    });
+  })());
+});
+self.addEventListener('notificationclick', (evento) => {
+  evento.notification.close();
+  evento.waitUntil((async () => {
+    const ruta = evento.notification.data?.ruta;
+    const destino = typeof ruta === 'string' && /^\/agenda(?:\?bloqueIdDestacado=[0-9a-f-]{36})?$/i.test(ruta) ? ruta : '/agenda';
+    const url = new URL(destino, self.location.origin);
+    const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const ventana = ventanas.find(v => new URL(v.url).origin === self.location.origin);
+    if (ventana) { await ventana.navigate(url.href); await ventana.focus(); }
+    else await self.clients.openWindow(url.href);
+  })());
+});

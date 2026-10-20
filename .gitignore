@@ -95,3 +95,6 @@ RACPD.Frontend/src/api/generated/
 !AGENTS.md
 !RACPD.Backend/appsettings.json
 !RACPD.Backend/.env.example
+
+# Credenciales VAPID locales
+RACPD.Backend/appsettings.Push.local.json

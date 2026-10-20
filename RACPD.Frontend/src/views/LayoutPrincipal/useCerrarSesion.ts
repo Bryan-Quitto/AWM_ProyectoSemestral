@@ -1,3 +1,4 @@
+import { desvincularPush } from '../../features/notificaciones/dispositivoPush'
 import { useCallback, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { mutate } from 'swr'
@@ -24,6 +25,7 @@ export const useCerrarSesion = () => {
     setCerrando(true)
     setError(null)
     try {
+      await desvincularPush()
       const { error: errorSupabase } = await supabase.auth.signOut()
       if (errorSupabase) {
         setError(errorSupabase.message)
@@ -35,7 +37,7 @@ export const useCerrarSesion = () => {
       localStorage.removeItem('rol')
 
       // Invalidar caché SWR del perfil para el próximo inicio de sesión.
-      await mutate('/api/usuarios/mi-perfil', undefined, { revalidate: false })
+      await mutate(() => true, undefined, { revalidate: false })
 
       navigate({ to: '/inicio-sesion' })
     } catch (err) {

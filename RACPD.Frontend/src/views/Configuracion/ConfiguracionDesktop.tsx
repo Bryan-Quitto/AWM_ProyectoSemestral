@@ -1,3 +1,4 @@
+import { NotificacionesDesktop } from './NotificacionesDesktop'
 import { useState, useEffect } from 'react';
 import { useForm, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -268,6 +269,7 @@ export function ConfiguracionDesktop() {
           </form>
         </div>
 
+        <NotificacionesDesktop />
         {/* Panel Accesibilidad */}
         <div className="md:col-span-2">
           <SeccionConfiguracionAccesibilidad />

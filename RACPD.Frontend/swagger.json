@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:62584"
+      "url": "http://127.0.0.1:50127"
     }
   ],
   "paths": {
@@ -870,6 +870,218 @@
             "JWTBearerAuth": [
               "CuidadorPrincipal"
             ]
+          }
+        ]
+      }
+    },
+    "/api/notificaciones/configuracion": {
+      "get": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesNotificacionesConfiguracionNotificacionesEndpoint",
+        "parameters": [
+          {
+            "name": "idSuscripcion",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "guid",
+              "nullable": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesNotificacionesRespuestaConfiguracionPush"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/notificaciones/desuscribir": {
+      "delete": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesNotificacionesDesuscribirNotificacionesEndpoint",
+        "requestBody": {
+          "x-name": "SolicitudDesuscripcionPush",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesNotificacionesSolicitudDesuscripcionPush"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesNotificacionesRespuestaSuscripcionPush"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/notificaciones/suscribir": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesNotificacionesSuscribirNotificacionesEndpoint",
+        "requestBody": {
+          "x-name": "SolicitudSuscripcionPush",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesNotificacionesSolicitudSuscripcionPush"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesNotificacionesRespuestaSuscripcionPush"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": []
           }
         ]
       }
@@ -2222,6 +2434,93 @@
           }
         }
       },
+      "RACPDBackendFeaturesNotificacionesRespuestaConfiguracionPush": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "disponible": {
+            "type": "boolean"
+          },
+          "clavePublicaVapid": {
+            "type": "string",
+            "nullable": true
+          },
+          "suscripcionActiva": {
+            "type": "boolean"
+          }
+        }
+      },
+      "MicrosoftAspNetCoreMvcProblemDetails": {
+        "type": "object",
+        "additionalProperties": {
+          "nullable": true
+        },
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "RACPDBackendFeaturesNotificacionesSolicitudConfiguracionPush": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "RACPDBackendFeaturesNotificacionesRespuestaSuscripcionPush": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "guid"
+          },
+          "activa": {
+            "type": "boolean"
+          }
+        }
+      },
+      "RACPDBackendFeaturesNotificacionesSolicitudDesuscripcionPush": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "idSuscripcion": {
+            "type": "string",
+            "format": "guid"
+          }
+        }
+      },
+      "RACPDBackendFeaturesNotificacionesSolicitudSuscripcionPush": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "urlDestino": {
+            "type": "string"
+          },
+          "clavePublica": {
+            "type": "string"
+          },
+          "secretoAutenticacion": {
+            "type": "string"
+          }
+        }
+      },
       "RACPDBackendFeaturesIdentidadInicioSesionIniciarSesionResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -2935,6 +3234,10 @@
             }
           },
           "evidenciaUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fecha": {
             "type": "string",
             "nullable": true
           }

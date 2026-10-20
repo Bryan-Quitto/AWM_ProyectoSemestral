@@ -30,7 +30,8 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
 
         // 1) Intentar resolver la cadena real desde .env en la raíz del backend.
-        var cadenaConexion = ResolverCadenaConexion() ?? CadenaDummy;
+        var cadenaConexion = Environment.GetEnvironmentVariable("MIGRATION_DB_CONNECTION_STRING")
+            ?? ResolverCadenaConexion() ?? CadenaDummy;
 
         optionsBuilder.UseNpgsql(cadenaConexion);
 

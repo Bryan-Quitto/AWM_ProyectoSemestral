@@ -13,7 +13,6 @@ const backendProject = resolve(webRoot, '..', 'RACPD.Backend', 'RACPD.Backend.cs
 const args = [
   'run',
   '--project', backendProject,
-  '--no-build',
   '--',
   '--export-swagger'
 ];

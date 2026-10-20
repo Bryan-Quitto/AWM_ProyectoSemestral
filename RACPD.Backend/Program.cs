@@ -1,3 +1,4 @@
+using RACPD.Backend.Features.Notificaciones;
 using System.Text.Json.Serialization;
 using FastEndpoints;
 using FastEndpoints.Swagger;
@@ -6,9 +7,15 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RACPD.Backend.Data;
 
+if (args.Contains("--generar-claves-push"))
+{
+    await GeneradorClavesPush.Ejecutar();
+    return;
+}
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddJsonFile("appsettings.Push.local.json", optional: true).AddEnvironmentVariables();
 
 // Determinar el string de conexión (Priorizar Migración directa si existe)
 var connectionString = builder.Configuration["MIGRATION_DB_CONNECTION_STRING"]?.Trim('"')
@@ -90,6 +97,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
+            ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
             ValidAudience = "authenticated",
             ValidIssuer = $"{urlSupabase}/auth/v1",
             // Claim raíz del JWT que .NET debe usar para User.IsInRole().
@@ -119,6 +127,13 @@ builder.Services.AddFastEndpoints();
 builder.Services.SwaggerDocument();
 DocumentOptions.SwaggerExportPath = Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, "..", "RACPD.Frontend"));
 builder.Services.AddHttpClient();
+builder.Services.Configure<OpcionesPush>(builder.Configuration.GetSection("NotificacionesPush"));
+builder.Services.AddHttpClient("push", c => c.Timeout = TimeSpan.FromSeconds(10))
+    .ConfigurePrimaryHttpMessageHandler(TransportePush.CrearManejador);
+builder.Services.AddScoped<MaterializadorPush>();
+builder.Services.AddScoped<DespachadorPush>();
+builder.Services.AddScoped<TransportePush>();
+if (!args.Contains("--export-swagger")) builder.Services.AddHostedService<ProcesadorOutbox>();
 
 // Configurar Supabase Client.
 // urlSupabase y claveServicioSupabase ya fueron validados arriba como
@@ -161,6 +176,23 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/uploads"
 });
 
+app.Use(async (contexto, siguiente) =>
+{
+    if (!contexto.Request.Path.StartsWithSegments("/api/notificaciones")) { await siguiente(); return; }
+    try
+    {
+        if (contexto.Request.ContentLength > 8192) { await ErroresPush.Enviar(contexto, 413, "La suscripción supera el tamaño permitido."); return; }
+        await siguiente();
+        if (contexto.Response.StatusCode >= 400 && !contexto.Response.HasStarted && contexto.Response.ContentLength is null or 0)
+            await ErroresPush.Enviar(contexto, contexto.Response.StatusCode, "No se pudo completar la solicitud. Verifica tu sesión y los datos enviados.");
+    }
+    catch (Exception ex) when (!contexto.Response.HasStarted && !contexto.RequestAborted.IsCancellationRequested)
+    {
+        app.Logger.LogError("Error en notificaciones ({Tipo}).", ex.GetType().Name);
+        await ErroresPush.Enviar(contexto, ex is BadHttpRequestException or global::System.Text.Json.JsonException ? 400 : 500,
+            "No se pudo completar la solicitud de notificaciones. Revisa los datos e inténtalo de nuevo.");
+    }
+});
 app.UseAuthentication();
 
 // Middleware de diagnóstico: imprime los claims efectivos que ve FastEndpoints
@@ -184,6 +216,13 @@ app.UseAuthorization();
 // desde el frontend) y lo convierta al enum correspondiente.
 app.UseFastEndpoints(configuracion =>
 {
+    configuracion.Errors.ContentType = "application/problem+json";
+    configuracion.Errors.ResponseBuilder = (fallos, contexto, codigo) => new Microsoft.AspNetCore.Mvc.ValidationProblemDetails(
+        fallos.GroupBy(f => f.PropertyName).ToDictionary(g => g.Key, g => g.Select(f => f.ErrorMessage).ToArray()))
+    {
+        Status = codigo, Title = "Datos de solicitud inválidos", Detail = "Revisa los campos indicados y vuelve a intentarlo.",
+        Type = "https://racpd.app/errors/validacion", Instance = contexto.Request.Path
+    };
     configuracion.Serializer.Options.Converters.Add(new JsonStringEnumConverter());
     configuracion.Serializer.Options.PropertyNameCaseInsensitive = true;
 });
