@@ -12,7 +12,8 @@
     "api:clean": "node -e \"fs.rmSync('src/api/generated', { recursive: true, force: true })\"",
     "api:fetch": "node scripts/swagger-fetch.mjs",
     "api:gen": "npm run api:clean && orval",
-    "api:generate": "npm run swagger:export && npm run api:gen"
+    "api:generate": "npm run swagger:export && npm run api:gen",
+    "pruebas:push:interfaz": "vite --config pruebas/notificaciones/vite.config.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

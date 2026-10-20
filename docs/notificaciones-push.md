@@ -54,3 +54,13 @@ Resultados obtenidos: compilación de backend sin errores ni advertencias; tres 
 ## Hallazgo en el historial de migraciones
 
 Al aplicar todo el historial sobre una base vacía aislada, la migración preexistente 20260910131906_AgregarRecurrenciaYTareasBloqueTurno falla porque intenta modificar BloquesTurno cuando la tabla todavía no existe. Esto impide inicializar una base nueva mediante el historial actual. La migración push se verificó por separado sobre su esquema previo. No se modificó el historial anterior ni se aplicaron cambios a bases compartidas. Antes de inicializar una base desde cero, el equipo debe reconciliar ese historial con su esquema real.
+
+## Pruebas adicionales del recorrido completo
+
+Se amplió el ejecutable de pruebas con un servidor ASP.NET de integración. Usa el manejador JWT real y firmas RS256 temporales; la fuente de claves del emisor se sustituye por una configuración pública local, sin contactar Supabase. Se comprobaron rechazo sin sesión y con token vencido; alta y baja idempotentes; consulta de estado; rechazo de reasignación a otra cuenta; rechazo de baja ajena y destinos internos; cierre HTTP de turnos Mal, MuyMal y Neutral; rechazo de cierres repetidos; y procesamiento de los dos eventos críticos hasta cuatro envíos cifrados al transporte simulado. No se modificó el correo VAPID del entorno.
+
+También se ejercitaron las vistas React reales en un navegador mediante un banco de pruebas local: activación desde móvil, desactivación desde escritorio, permiso bloqueado, error de servidor y falta de compatibilidad. Los permisos y suscripciones en ese banco son simulados y no generan avisos del sistema operativo. La vista se comprobó con un tamaño móvil y sin desbordamiento horizontal (375 píxeles de contenido y de área visible).
+
+Para repetir la comprobación visual, ejecutar npm run pruebas:push:interfaz desde RACPD.Frontend; en Windows PowerShell usar npm --script-shell=cmd.exe run pruebas:push:interfaz. Solo abre un servidor de pruebas en 127.0.0.1:55441 y no usa cuentas reales. Las capturas están en docs/evidencias/notificaciones-interfaz.jpg y docs/evidencias/notificaciones-movil.jpg.
+
+No se ha comprobado la recepción real desde FCM, Mozilla o Apple, ni una PWA instalada en Android o Safari iOS: este equipo no dispone de esos teléfonos conectados. Esa prueba necesita el contacto VAPID configurado y dispositivos con permiso concedido. No se aplicaron migraciones a Supabase ni se fusionó la rama en main.

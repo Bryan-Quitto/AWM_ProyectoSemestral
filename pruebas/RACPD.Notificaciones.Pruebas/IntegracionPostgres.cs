@@ -104,6 +104,7 @@ static class IntegracionPostgres
             if (await db.SuscripcionesPush.Where(x => x.Id == reintento.SuscripcionPushId).Select(x => x.Activa).SingleAsync()) throw new InvalidOperationException("No desactivó destino vencido.");
             if (!await db.OutboxMensajes.Where(x => x.Id == segundo.Id).Select(x => x.Procesado).SingleAsync()) throw new InvalidOperationException("No finalizó evento con entregas terminales.");
             Console.WriteLine("Correcto: PostgreSQL valida destinatarios, idempotencia, workers concurrentes, recuperación, revocación, fallos parciales, reintentos y baja de destinos vencidos.");
+            await RecorridoApiPush.Ejecutar(opcionesDb);
         }
         finally
         {
