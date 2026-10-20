@@ -55,6 +55,7 @@ using (var db = new AppDbContext(new DbContextOptionsBuilder<AppDbContext>().Use
     Verificar((db.Model.FindEntityType(typeof(EntregaPush)) ?? throw new InvalidOperationException("Falta entidad")).GetIndexes().Any(i => i.IsUnique && i.Properties.Count == 2), "Restricción de idempotencia por dispositivo");
 }
 Console.WriteLine($"Correcto: {verificaciones} verificaciones de seguridad, modelo y transporte cifrado.");
+ConexionMigracionesPrueba.Ejecutar();
 await IntegracionPostgres.Ejecutar();
 
 sealed class FabricaPrueba : IHttpClientFactory

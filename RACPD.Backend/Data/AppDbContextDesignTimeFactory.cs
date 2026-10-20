@@ -56,6 +56,7 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
             if (!File.Exists(rutaEnv))
                 return null;
 
+            string? cadenaSupabase = null;
             foreach (var linea in File.ReadAllLines(rutaEnv))
             {
                 // Ignorar comentarios y líneas vacías.
@@ -79,12 +80,10 @@ public class AppDbContextDesignTimeFactory : IDesignTimeDbContextFactory<AppDbCo
                     valor = valor[1..^1];
                 }
 
-                if (clave == "MIGRATION_DB_CONNECTION_STRING" ||
-                    clave == "SUPABASE_DB_CONNECTION_STRING")
-                {
-                    return valor;
-                }
+                if (clave == "MIGRATION_DB_CONNECTION_STRING" && !string.IsNullOrWhiteSpace(valor)) return valor;
+                if (clave == "SUPABASE_DB_CONNECTION_STRING" && !string.IsNullOrWhiteSpace(valor)) cadenaSupabase = valor;
             }
+            return cadenaSupabase;
         }
         catch
         {

@@ -64,3 +64,9 @@ También se ejercitaron las vistas React reales en un navegador mediante un banc
 Para repetir la comprobación visual, ejecutar npm run pruebas:push:interfaz desde RACPD.Frontend; en Windows PowerShell usar npm --script-shell=cmd.exe run pruebas:push:interfaz. Solo abre un servidor de pruebas en 127.0.0.1:55441 y no usa cuentas reales. Las capturas están en docs/evidencias/notificaciones-interfaz.jpg y docs/evidencias/notificaciones-movil.jpg.
 
 No se ha comprobado la recepción real desde FCM, Mozilla o Apple, ni una PWA instalada en Android o Safari iOS: este equipo no dispone de esos teléfonos conectados. Esa prueba necesita el contacto VAPID configurado y dispositivos con permiso concedido. No se aplicaron migraciones a Supabase ni se fusionó la rama en main.
+
+## Preparación del entorno local
+
+La configuración local VAPID ya incluye el contacto aprobado por el usuario. Las claves y el contacto se conservan en appsettings.Push.local.json, excluido de Git. La fábrica de EF Core ahora prioriza MIGRATION_DB_CONNECTION_STRING frente a la conexión general, independientemente del orden del archivo .env, y respeta la variable de entorno explícita; una prueba de regresión comprueba ambos casos.
+
+La consulta del historial contra las conexiones Supabase configuradas falló: el destino directo no se resolvió y el pooler no reconoció al usuario/proyecto. No se aplicó ninguna migración remota. Para continuar es necesario verificar que el proyecto Supabase esté activo y obtener sus cadenas actuales desde el panel Connect, sin publicar credenciales en el repositorio.
