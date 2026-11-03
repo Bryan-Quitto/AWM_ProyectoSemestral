@@ -43,14 +43,14 @@ export function DependientesListaMobile({ puedeCrear }: Props) {
 
   if (isLoading) {
     return (
-      <div className="p-6 text-center text-gray-500 bg-blue-50 min-h-screen">
+      <div className="p-6 text-center text-gray-500 bg-blue-50 min-h-full w-full">
         Cargando dependientes...
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-blue-50 pb-24">
+    <div className="min-h-full w-full bg-blue-50 pb-16 flex flex-col">
       <header className="bg-white px-5 py-4 shadow-sm border-b border-blue-100 sticky top-0 z-20">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">

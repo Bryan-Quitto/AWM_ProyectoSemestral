@@ -36,8 +36,7 @@ interface DashboardMobileProps {
  * DashboardMobile
  *
  * Layout <768px: stack vertical full-width, espaciado táctil (gap-4 p-4).
- * KPIs en grid 2×2, luego turno, radar y banner. Misma lógica derivada
- * que Desktop; la única diferencia es el grid.
+ * KPIs en grid 2×2, luego turno, radar y banner con padding inferior de respiración (pb-16).
  */
 export const DashboardMobile = ({
   nombreCuidador,
@@ -59,7 +58,7 @@ export const DashboardMobile = ({
   onAbrirBitacora,
 }: DashboardMobileProps) => {
   return (
-    <div className="min-h-full bg-gradient-to-br from-sky-50 via-white to-blue-50 p-4 space-y-4">
+    <div className="min-h-full w-full bg-gradient-to-br from-sky-50 via-white to-blue-50 p-4 space-y-4 pb-16">
       <EncabezadoEmpatico nombreCuidador={nombreCuidador} />
 
       {/* === KPIs en grid 2×2 === */}

@@ -12,8 +12,11 @@ import {
   Accessibility
 } from 'lucide-react';
 import { usePreferenciasAccesibilidad } from './usePreferenciasAccesibilidad';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 export const SeccionConfiguracionAccesibilidad: React.FC = () => {
+  const esMovil = useMediaQuery('(max-width: 767.98px)');
+
   const {
     preferencias,
     totalModificacionesActivas,
@@ -25,6 +28,13 @@ export const SeccionConfiguracionAccesibilidad: React.FC = () => {
     alternarBotonFlotanteVisible,
     restablecerTodo,
   } = usePreferenciasAccesibilidad();
+
+  const tituloBoton = esMovil ? 'Botón en encabezado' : 'Botón flotante en pantalla';
+  const descripcionBoton = preferencias.botonFlotanteVisible
+    ? (esMovil
+        ? 'Visible en el encabezado superior. Puedes desactivarlo si prefieres mayor espacio.'
+        : 'Visible en la esquina inferior. Puedes ocultarlo si prefieres mayor espacio.')
+    : 'Oculto. Puedes seguir configurando la accesibilidad desde esta sección.';
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -41,7 +51,7 @@ export const SeccionConfiguracionAccesibilidad: React.FC = () => {
       </div>
 
       <div className="p-4 space-y-5">
-        {/* Interruptor del Botón Flotante */}
+        {/* Interruptor del Botón en Encabezado */}
         <div 
           onClick={alternarBotonFlotanteVisible}
           className="p-3 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between gap-3 cursor-pointer select-none active:bg-blue-100/60 transition-colors"
@@ -53,18 +63,17 @@ export const SeccionConfiguracionAccesibilidad: React.FC = () => {
               ) : (
                 <EyeOff className="w-4 h-4 text-gray-500" aria-hidden="true" />
               )}
-              Botón flotante en pantalla
+              {tituloBoton}
             </span>
             <p className="text-xs text-gray-500 leading-snug">
-              {preferencias.botonFlotanteVisible
-                ? 'Visible en la esquina inferior. Puedes ocultarlo si prefieres mayor espacio.'
-                : 'Oculto. Puedes seguir configurando la accesibilidad desde esta sección.'}
+              {descripcionBoton}
             </p>
           </div>
           <button
             type="button"
             role="switch"
             aria-checked={preferencias.botonFlotanteVisible}
+            aria-label={`Alternar visibilidad del ${tituloBoton.toLowerCase()}`}
             onClick={(e) => {
               e.stopPropagation();
               alternarBotonFlotanteVisible();

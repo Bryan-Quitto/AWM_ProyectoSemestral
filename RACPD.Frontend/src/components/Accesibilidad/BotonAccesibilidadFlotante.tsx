@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   Accessibility, 
   X, 
@@ -14,13 +14,15 @@ import { usePreferenciasAccesibilidad } from './usePreferenciasAccesibilidad';
 import './estilosAccesibilidad.css';
 
 export const BotonAccesibilidadFlotante: React.FC = () => {
-  const [panelAbierto, setPanelAbierto] = useState<boolean>(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const botonActivadorRef = useRef<HTMLButtonElement>(null);
 
   const {
     preferencias,
     totalModificacionesActivas,
+    panelAbierto,
+    alternarPanel,
+    cerrarPanel,
     cambiarTamanoTexto,
     alternarAltoContraste,
     alternarEscalaGrises,
@@ -29,23 +31,25 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
     restablecerTodo,
   } = usePreferenciasAccesibilidad();
 
-  // Cerrar al hacer clic fuera
+  // Cerrar al hacer clic fuera (considerando el disparador del header móvil)
   useEffect(() => {
     const manejarClicFuera = (evento: MouseEvent) => {
+      const target = evento.target as HTMLElement | null;
       if (
         panelAbierto &&
         panelRef.current &&
-        !panelRef.current.contains(evento.target as Node) &&
+        !panelRef.current.contains(target as Node) &&
         botonActivadorRef.current &&
-        !botonActivadorRef.current.contains(evento.target as Node)
+        !botonActivadorRef.current.contains(target as Node) &&
+        !target?.closest('[data-accesibilidad-trigger]')
       ) {
-        setPanelAbierto(false);
+        cerrarPanel();
       }
     };
 
     const manejarTeclaEscape = (evento: KeyboardEvent) => {
       if (evento.key === 'Escape' && panelAbierto) {
-        setPanelAbierto(false);
+        cerrarPanel();
         botonActivadorRef.current?.focus();
       }
     };
@@ -56,16 +60,16 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
       document.removeEventListener('mousedown', manejarClicFuera);
       document.removeEventListener('keydown', manejarTeclaEscape);
     };
-  }, [panelAbierto]);
+  }, [panelAbierto, cerrarPanel]);
 
-  if (!preferencias.botonFlotanteVisible) {
+  if (!preferencias.botonFlotanteVisible && !panelAbierto) {
     return null;
   }
 
   return (
     <aside 
       aria-label="Panel de accesibilidad"
-      className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-[60] flex flex-col items-end pointer-events-auto"
+      className="fixed inset-x-3 bottom-20 md:inset-x-auto md:bottom-6 md:right-6 z-[60] flex flex-col items-center md:items-end pointer-events-auto"
     >
       {/* Ventana Flotante de Opciones de Accesibilidad */}
       {panelAbierto && (
@@ -74,7 +78,7 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
           role="dialog"
           aria-modal="true"
           aria-labelledby="titulo-panel-accesibilidad"
-          className="mb-3 w-80 sm:w-96 bg-white border border-blue-100 rounded-2xl shadow-2xl p-5 overflow-hidden transition-all duration-200 animate-in fade-in slide-in-from-bottom-4"
+          className="mb-0 md:mb-3 w-full max-w-[calc(100vw-1.5rem)] sm:w-96 bg-white border border-blue-100 rounded-2xl shadow-2xl p-5 overflow-hidden transition-all duration-200 animate-in fade-in slide-in-from-bottom-4"
         >
           {/* Cabecera del Panel */}
           <div className="flex items-center justify-between pb-3 border-b border-gray-100">
@@ -91,7 +95,7 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
             </div>
             <button
               type="button"
-              onClick={() => setPanelAbierto(false)}
+              onClick={cerrarPanel}
               className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
               aria-label="Cerrar panel de accesibilidad"
             >
@@ -249,12 +253,12 @@ export const BotonAccesibilidadFlotante: React.FC = () => {
         </section>
       )}
 
-      {/* Botón Flotante Activador */}
+      {/* Botón Flotante Activador (Solo Desktop; en móvil se activa desde el header para evitar colisiones) */}
       <button
         ref={botonActivadorRef}
         type="button"
-        onClick={() => setPanelAbierto((prev) => !prev)}
-        className="cursor-pointer relative p-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl hover:shadow-2xl active:scale-95 transition-all duration-200 focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:outline-hidden"
+        onClick={alternarPanel}
+        className="hidden md:inline-flex cursor-pointer relative p-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-xl hover:shadow-2xl active:scale-95 transition-all duration-200 focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:outline-hidden"
         aria-label="Menú de accesibilidad"
         aria-expanded={panelAbierto}
         aria-haspopup="dialog"
