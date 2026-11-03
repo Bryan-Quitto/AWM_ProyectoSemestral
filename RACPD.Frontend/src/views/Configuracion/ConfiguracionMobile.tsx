@@ -126,7 +126,7 @@ export function ConfiguracionMobile() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pb-8">
+    <div className="flex flex-col min-h-full w-full bg-gray-50 pb-16">
       <div className="bg-white px-4 py-4 shadow-sm border-b">
         <h1 className="text-xl font-bold text-gray-800">Configuración de Usuario</h1>
       </div>

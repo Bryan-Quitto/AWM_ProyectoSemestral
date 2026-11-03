@@ -18,12 +18,8 @@ const FILTROS: { id: FiltroEstado; label: string }[] = [
 /**
  * Vista Mobile del Directorio de Relevos.
  *
- * Header sticky con buscador y pills compactas; lista vertical debajo.
- * Botón compacto para agregar relevo (lo provee el Contenedor).
- *
- * El filtro por dependiente vive en el Contenedor (compartido con
- * Desktop) — aquí solo se renderiza un select compacto cuando hay más
- * de un dependiente visible.
+ * Header sticky con buscador, selector accesible de dependiente y pills de estado en grid.
+ * Lista vertical debajo con padding inferior de seguridad contra solapamientos.
  */
 export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }) => {
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
@@ -47,7 +43,7 @@ export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }
     header.perfilesDependientes.length > 1;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full w-full bg-gray-50 flex flex-col">
       <div className="bg-white border-b border-blue-100 p-4 sticky top-0 z-10">
         <div className="flex items-start justify-between mb-3">
           <div>
@@ -75,7 +71,7 @@ export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }
             aria-hidden="true"
           />
           <input
-            type="text"
+            type="search"
             value={terminoBusqueda}
             onChange={(e) => setTerminoBusqueda(e.target.value)}
             placeholder="Buscar por nombre..."
@@ -85,8 +81,36 @@ export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }
           />
         </div>
 
-        {/* Pills compactas + filtro dependiente */}
-        <div className="flex gap-2 overflow-x-auto items-center">
+        {/* Selector de Dependiente en fila dedicada (sin scrolls horizontales ciegos) */}
+        {mostrarFiltroDependiente && (
+          <div className="mb-2.5 flex items-center gap-2 bg-blue-50/80 border border-blue-200/80 rounded-xl px-3 py-1.5">
+            <Filter className="w-3.5 h-3.5 text-blue-600 shrink-0" aria-hidden="true" />
+            <label htmlFor="filtro-dependiente-mobile" className="text-xs text-blue-900 font-medium shrink-0">
+              Dependiente:
+            </label>
+            <select
+              id="filtro-dependiente-mobile"
+              aria-label="Filtrar por dependiente"
+              value={header.filtroDependienteId ?? ''}
+              onChange={(e) =>
+                header.onCambiarFiltroDependiente?.(
+                  e.target.value === '' ? undefined : e.target.value,
+                )
+              }
+              className="flex-1 min-w-0 bg-transparent text-xs text-blue-950 font-semibold cursor-pointer focus:outline-none truncate"
+            >
+              <option value="">Todos los dependientes</option>
+              {header.perfilesDependientes?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombreCompleto}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Chips de estado en grid de 3 columnas para visualización 100% visible en cualquier pantalla */}
+        <div className="grid grid-cols-3 gap-2">
           {FILTROS.map((f) => {
             const activo = filtroEstado === f.id;
             return (
@@ -94,44 +118,21 @@ export const DirectorioRelevosMobile = ({ header }: { header: DirectorioHeader }
                 key={f.id}
                 onClick={() => setFiltroEstado(f.id)}
                 aria-pressed={activo}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap cursor-pointer transition-colors ${
+                className={`py-2 px-1 rounded-xl text-xs font-semibold text-center cursor-pointer transition-colors active:scale-95 ${
                   activo
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {f.label}
               </button>
             );
           })}
-
-          {mostrarFiltroDependiente && (
-            <div className="inline-flex items-center gap-1 shrink-0">
-              <Filter className="w-3.5 h-3.5 text-gray-500" aria-hidden="true" />
-              <select
-                aria-label="Filtrar por dependiente"
-                value={header.filtroDependienteId ?? ''}
-                onChange={(e) =>
-                  header.onCambiarFiltroDependiente?.(
-                    e.target.value === '' ? undefined : e.target.value,
-                  )
-                }
-                className="px-2 py-1.5 border border-blue-200 rounded-lg bg-white text-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Todos</option>
-                {header.perfilesDependientes?.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombreCompleto}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Lista */}
-      <div className="p-4 space-y-3 pb-8">
+      {/* Lista vertical con padding inferior holgado para evitar cualquier solapamiento */}
+      <div className="flex-1 p-4 space-y-3 pb-16">
         {isLoading ? (
           <>
             {[1, 2, 3].map((i) => (

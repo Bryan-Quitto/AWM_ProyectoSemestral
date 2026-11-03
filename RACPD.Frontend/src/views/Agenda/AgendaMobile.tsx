@@ -438,7 +438,7 @@ export const AgendaMobile = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full w-full bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 p-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">

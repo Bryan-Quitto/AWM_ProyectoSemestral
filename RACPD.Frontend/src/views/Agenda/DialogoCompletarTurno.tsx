@@ -644,12 +644,12 @@ export const DialogoCompletarTurno = ({
 
             {/* Estado 2: Botones iniciales (Tomar foto con cámara interna o Galería) */}
             {!camaraActiva && !previewFoto && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2.5">
                 <button
                   type="button"
                   onClick={iniciarCamara}
                   disabled={isMutating || isSubiendoEvidencia}
-                  className="cursor-pointer disabled:cursor-not-allowed w-full py-3 px-3 border-2 border-dashed border-sky-300 rounded-xl bg-white hover:bg-sky-50 text-sky-800 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 shadow-sm"
+                  className="md:hidden cursor-pointer disabled:cursor-not-allowed w-full py-3 px-3 border-2 border-dashed border-sky-300 rounded-xl bg-white hover:bg-sky-50 text-sky-800 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition disabled:opacity-50 shadow-sm"
                 >
                   <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-sky-600 shrink-0" />
                   <span>Tomar fotografía</span>
@@ -661,7 +661,8 @@ export const DialogoCompletarTurno = ({
                   className="cursor-pointer disabled:cursor-not-allowed w-full py-3 px-3 border border-sky-200 rounded-xl bg-white hover:bg-sky-50 text-sky-700 text-xs sm:text-sm font-medium flex items-center justify-center gap-2 transition disabled:opacity-50 shadow-sm"
                 >
                   <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-sky-500 shrink-0" />
-                  <span>Elegir de galería</span>
+                  <span className="hidden md:inline">Seleccionar imagen o archivo de evidencia</span>
+                  <span className="md:hidden">Elegir de galería</span>
                 </button>
               </div>
             )}
@@ -679,11 +680,21 @@ export const DialogoCompletarTurno = ({
                       type="button"
                       onClick={iniciarCamara}
                       disabled={isMutating || isSubiendoEvidencia}
-                      className="cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-800 font-medium p-1 hover:bg-sky-50 rounded-lg transition disabled:opacity-50"
+                      className="md:hidden cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1 text-xs text-sky-700 hover:text-sky-800 font-medium p-1 hover:bg-sky-50 rounded-lg transition disabled:opacity-50"
                       title="Volver a tomar foto"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
                       <span>Retomar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => inputGaleriaRef.current?.click()}
+                      disabled={isMutating || isSubiendoEvidencia}
+                      className="hidden md:inline-flex cursor-pointer disabled:cursor-not-allowed items-center gap-1 text-xs text-sky-700 hover:text-sky-800 font-medium p-1 hover:bg-sky-50 rounded-lg transition disabled:opacity-50"
+                      title="Cambiar imagen seleccionada"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Cambiar</span>
                     </button>
                     <button
                       type="button"

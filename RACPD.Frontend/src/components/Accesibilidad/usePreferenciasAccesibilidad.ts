@@ -88,6 +88,38 @@ aplicarClasesEnDOM(estadoGlobal);
 
 const oyentes = new Set<() => void>();
 
+// Estado singleton para controlar la apertura del panel de accesibilidad (Mobile header + FAB desktop)
+let panelAbiertoGlobal = false;
+const oyentesPanel = new Set<() => void>();
+
+const suscribirPanel = (callback: () => void) => {
+  oyentesPanel.add(callback);
+  return () => {
+    oyentesPanel.delete(callback);
+  };
+};
+
+const obtenerSnapshotPanel = () => panelAbiertoGlobal;
+
+export const alternarPanelAccesibilidad = () => {
+  panelAbiertoGlobal = !panelAbiertoGlobal;
+  oyentesPanel.forEach((oyente) => oyente());
+};
+
+export const cerrarPanelAccesibilidad = () => {
+  if (panelAbiertoGlobal) {
+    panelAbiertoGlobal = false;
+    oyentesPanel.forEach((oyente) => oyente());
+  }
+};
+
+export const abrirPanelAccesibilidad = () => {
+  if (!panelAbiertoGlobal) {
+    panelAbiertoGlobal = true;
+    oyentesPanel.forEach((oyente) => oyente());
+  }
+};
+
 const suscribir = (callback: () => void) => {
   oyentes.add(callback);
 
@@ -121,6 +153,19 @@ const actualizarEstadoGlobal = (nuevoEstado: PreferenciasAccesibilidad) => {
 
 export const usePreferenciasAccesibilidad = () => {
   const preferencias = useSyncExternalStore(suscribir, obtenerSnapshot, () => PREFERENCIAS_POR_DEFECTO);
+  const panelAbierto = useSyncExternalStore(suscribirPanel, obtenerSnapshotPanel, () => false);
+
+  const alternarPanel = useCallback(() => {
+    alternarPanelAccesibilidad();
+  }, []);
+
+  const cerrarPanel = useCallback(() => {
+    cerrarPanelAccesibilidad();
+  }, []);
+
+  const abrirPanel = useCallback(() => {
+    abrirPanelAccesibilidad();
+  }, []);
 
   const cambiarTamanoTexto = useCallback((nuevoTamano: TamanoTexto) => {
     actualizarEstadoGlobal({
@@ -178,6 +223,10 @@ export const usePreferenciasAccesibilidad = () => {
   return {
     preferencias,
     totalModificacionesActivas,
+    panelAbierto,
+    alternarPanel,
+    cerrarPanel,
+    abrirPanel,
     cambiarTamanoTexto,
     alternarAltoContraste,
     alternarEscalaGrises,
