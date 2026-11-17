@@ -164,16 +164,18 @@ export const LayoutPrincipalMobile = () => {
             {!cerrando && <LogOut size={20} />}
           </Boton>
           
-          {/* DECISIÓN DE DISEÑO: El botón SOS es exclusivo de la vista móvil por su naturaleza de emergencia y acceso rápido en terreno. No es una inconsistencia con Desktop. */}
-          <button
-            type="button"
-            onClick={() => setModalSosAbierto(true)}
-            aria-label="Activar alerta de emergencia SOS"
-            className="px-2.5 py-1 flex items-center justify-center gap-1 bg-red-600 text-white rounded-lg font-bold border border-red-700 text-xs sm:text-sm touch-manipulation cursor-pointer hover:bg-red-700 active:scale-95 transition-all shadow-xs min-h-[40px] min-w-[40px] select-none"
-          >
-            <AlertTriangle size={15} />
-            SOS
-          </button>
+          {/* DECISIÓN DE DISEÑO: El botón SOS es exclusivo de la vista móvil por su naturaleza de emergencia y acceso rápido en terreno. Solo visible para roles con dependientes (CuidadorPrincipal y Apoyo). */}
+          {puedeVerFichaDependiente && (
+            <button
+              type="button"
+              onClick={() => setModalSosAbierto(true)}
+              aria-label="Activar alerta de emergencia SOS"
+              className="px-2.5 py-1 flex items-center justify-center gap-1 bg-red-600 text-white rounded-lg font-bold border border-red-700 text-xs sm:text-sm touch-manipulation cursor-pointer hover:bg-red-700 active:scale-95 transition-all shadow-xs min-h-[40px] min-w-[40px] select-none"
+            >
+              <AlertTriangle size={15} />
+              SOS
+            </button>
+          )}
         </div>
       </header>
 

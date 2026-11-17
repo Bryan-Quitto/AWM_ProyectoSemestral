@@ -242,7 +242,7 @@ export function SOSMobile({ dependienteId }: SOSMobileProps = {}) {
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
                       >
                         <Phone className="w-5 h-5 shrink-0" />
-                        �� Llamar a {c.nombre ?? 'Contacto'}
+                        Llamar a {c.nombre ?? 'Contacto'}
                       </a>
                       <a
                         href={enlaceWhatsApp}
@@ -251,7 +251,7 @@ export function SOSMobile({ dependienteId }: SOSMobileProps = {}) {
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
                       >
                         <MessageCircle className="w-5 h-5 shrink-0" />
-                        �� WhatsApp {c.nombre ?? 'Contacto'}
+                        WhatsApp {c.nombre ?? 'Contacto'}
                       </a>
                     </div>
                   </div>

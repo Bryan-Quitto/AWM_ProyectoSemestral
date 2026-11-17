@@ -32,9 +32,11 @@ export function ModalConfirmacionSos({ abierto, onCerrar }: ModalConfirmacionSos
     if (enviadoRef.current) return;
     enviadoRef.current = true;
 
+    let dependienteIdDestino: string | undefined;
     try {
       const res = await dispararSos({ perfilDependienteId: null });
       if (res.status === 201) {
+        dependienteIdDestino = res.data.perfilDependienteId;
         const cantidad = res.data.cuidadoresNotificados ?? 0;
         toast.success(
           cantidad > 0
@@ -48,7 +50,10 @@ export function ModalConfirmacionSos({ abierto, onCerrar }: ModalConfirmacionSos
       toast.warning('Sin conexión para enviar alerta push. Abriendo ficha médica y teléfonos.');
     } finally {
       onCerrar();
-      void navigate({ to: '/sos' });
+      void navigate({
+        to: '/sos',
+        search: dependienteIdDestino ? { dependienteId: dependienteIdDestino } : {},
+      });
     }
   };
 
@@ -59,20 +64,18 @@ export function ModalConfirmacionSos({ abierto, onCerrar }: ModalConfirmacionSos
       return;
     }
 
-    const intervalo = window.setInterval(() => {
-      setSegundosRestantes((prev) => {
-        if (prev <= 1) {
-          window.clearInterval(intervalo);
-          void ejecutarEnvioSos();
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (segundosRestantes <= 0) {
+      void ejecutarEnvioSos();
+      return;
+    }
+
+    const temporizador = window.setTimeout(() => {
+      setSegundosRestantes((prev) => Math.max(0, prev - 1));
     }, 1000);
 
-    return () => window.clearInterval(intervalo);
+    return () => window.clearTimeout(temporizador);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [abierto]);
+  }, [abierto, segundosRestantes]);
 
   if (!abierto) return null;
 

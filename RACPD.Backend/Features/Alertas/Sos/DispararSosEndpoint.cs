@@ -33,7 +33,6 @@ public sealed class DispararSosEndpoint(AppDbContext db)
     {
         Post("/api/alertas/sos");
         Roles(
-            Rol.AdministradorSistema.ToString(),
             Rol.CuidadorPrincipal.ToString(),
             Rol.Apoyo.ToString());
         Description(x => x
@@ -115,9 +114,6 @@ public sealed class DispararSosEndpoint(AppDbContext db)
             cuidadoresANotificar,
             ahora);
 
-        await Send.CreatedAtAsync<DispararSosEndpoint>(
-            routeValues: null,
-            responseBody: respuesta,
-            cancellation: ct);
+        await Send.ResponseAsync(respuesta, StatusCodes.Status201Created, ct);
     }
 }
