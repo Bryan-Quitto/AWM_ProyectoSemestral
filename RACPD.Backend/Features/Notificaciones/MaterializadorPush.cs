@@ -17,11 +17,62 @@ public sealed class MaterializadorPush(AppDbContext db, IOptions<OpcionesPush> o
             var limite = Math.Clamp(opciones.Value.Lote, 1, 200);
             var mensajes = await db.OutboxMensajes.FromSqlInterpolated($"""
                 SELECT * FROM "OutboxMensajes"
-                WHERE "Tipo" = 'BITACORA_ANIMO_CRITICO' AND NOT "Procesado" AND NOT "Fallo" AND NOT "DestinatariosResueltos"
+                WHERE "Tipo" IN ('BITACORA_ANIMO_CRITICO', 'ALERTA_SOS_URGENTE')
+                  AND NOT "Procesado" AND NOT "Fallo" AND NOT "DestinatariosResueltos"
                 ORDER BY "Fecha", "Id" LIMIT {limite} FOR UPDATE SKIP LOCKED
                 """).ParaJob().ToListAsync(ct);
             foreach (var mensaje in mensajes)
             {
+                if (mensaje.Tipo == "ALERTA_SOS_URGENTE")
+                {
+                    CargaAlertaSos? cargaSos;
+                    try { cargaSos = JsonSerializer.Deserialize<CargaAlertaSos>(mensaje.PayloadJson); }
+                    catch (JsonException) { cargaSos = null; }
+
+                    var emisorAutorizado = cargaSos != null
+                        && cargaSos.PerfilDependienteId != Guid.Empty
+                        && await db.VinculosDependientes.ParaJob().AnyAsync(v =>
+                            v.PerfilDependienteId == cargaSos.PerfilDependienteId
+                            && v.UsuarioId == cargaSos.EmitidoPorUsuarioId
+                            && v.Activo
+                            && v.Usuario.Estado == EstadoUsuario.Activo, ct);
+
+                    if (mensaje.VersionCarga != 1 || cargaSos == null || !emisorAutorizado)
+                    {
+                        mensaje.Fallo = true;
+                        mensaje.Procesado = true;
+                        mensaje.FechaProcesamiento = DateTimeOffset.UtcNow;
+                        mensaje.UltimoErrorClasificado = "CargaInvalida";
+                        continue;
+                    }
+
+                    // Identifica a familiares con rol Apoyo vinculados al dependiente activo
+                    // (y también a CuidadorPrincipal si el emisor fue Apoyo, excluyendo al propio emisor).
+                    var usuariosSos = db.VinculosDependientes.ParaJob().Where(v =>
+                        v.PerfilDependienteId == cargaSos.PerfilDependienteId
+                        && v.Activo
+                        && v.UsuarioId != cargaSos.EmitidoPorUsuarioId
+                        && (v.RolEnDependiente == RolEnDependiente.Apoyo || v.RolEnDependiente == RolEnDependiente.CuidadorPrincipal)
+                        && v.Usuario.Estado == EstadoUsuario.Activo).Select(v => v.UsuarioId);
+
+                    var idsSos = await db.SuscripcionesPush.ParaJob()
+                        .Where(x => x.Activa && usuariosSos.Contains(x.UsuarioId))
+                        .Select(x => x.Id)
+                        .ToListAsync(ct);
+
+                    foreach (var id in idsSos)
+                        db.EntregasPush.Add(new EntregaPush { OutboxMensajeId = mensaje.Id, SuscripcionPushId = id, PerfilDependienteId = cargaSos.PerfilDependienteId });
+
+                    mensaje.DestinatariosResueltos = true;
+                    if (idsSos.Count == 0)
+                    {
+                        mensaje.Procesado = true;
+                        mensaje.FechaProcesamiento = DateTimeOffset.UtcNow;
+                        mensaje.UltimoErrorClasificado = "SinDestinatariosSuscritos";
+                    }
+                    continue;
+                }
+
                 CargaAnimoCritico? carga;
                 try { carga = JsonSerializer.Deserialize<CargaAnimoCritico>(mensaje.PayloadJson); }
                 catch (JsonException) { carga = null; }

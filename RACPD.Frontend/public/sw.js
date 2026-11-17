@@ -56,17 +56,31 @@ self.addEventListener('fetch', (evento) => {
 });
 
 // No incluir información clínica en la pantalla bloqueada.
+const PATRON_RUTA_SEGURA = /^\/(?:agenda(?:\?bloqueIdDestacado=[0-9a-f-]{36})?|sos(?:\?dependienteId=[0-9a-f-]{36})?)$/i;
+
 self.addEventListener('push', (evento) => {
   evento.waitUntil((async () => {
     let datos;
     try { datos = evento.data?.json(); } catch { datos = null; }
     const valido = datos && typeof datos === 'object' && typeof datos.idMensaje === 'string'
       && /^[0-9a-f-]{36}$/i.test(datos.idMensaje);
-    const ruta = valido && typeof datos.ruta === 'string' && /^\/agenda(?:\?bloqueIdDestacado=[0-9a-f-]{36})?$/i.test(datos.ruta) ? datos.ruta : '/agenda';
-    await self.registration.showNotification('RACPD', {
-      body: 'Hay una actualización importante en tu red de cuidados. Abre la aplicación para revisarla.',
+    const ruta = valido && typeof datos.ruta === 'string' && PATRON_RUTA_SEGURA.test(datos.ruta)
+      ? datos.ruta
+      : '/agenda';
+    const esSos = ruta.startsWith('/sos');
+    const titulo = valido && typeof datos.titulo === 'string' && datos.titulo.trim()
+      ? datos.titulo.trim().slice(0, 80)
+      : 'RACPD';
+    const cuerpo = valido && typeof datos.cuerpo === 'string' && datos.cuerpo.trim()
+      ? datos.cuerpo.trim().slice(0, 200)
+      : 'Hay una actualización importante en tu red de cuidados. Abre la aplicación para revisarla.';
+
+    await self.registration.showNotification(titulo, {
+      body: cuerpo,
       tag: valido ? datos.idMensaje : 'racpd-aviso',
       icon: '/icono-racpd.svg',
+      requireInteraction: esSos,
+      vibrate: esSos ? [300, 150, 300, 150, 300] : undefined,
       data: { ruta },
     });
   })());
@@ -75,7 +89,7 @@ self.addEventListener('notificationclick', (evento) => {
   evento.notification.close();
   evento.waitUntil((async () => {
     const ruta = evento.notification.data?.ruta;
-    const destino = typeof ruta === 'string' && /^\/agenda(?:\?bloqueIdDestacado=[0-9a-f-]{36})?$/i.test(ruta) ? ruta : '/agenda';
+    const destino = typeof ruta === 'string' && PATRON_RUTA_SEGURA.test(ruta) ? ruta : '/agenda';
     const url = new URL(destino, self.location.origin);
     const ventanas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const ventana = ventanas.find(v => new URL(v.url).origin === self.location.origin);

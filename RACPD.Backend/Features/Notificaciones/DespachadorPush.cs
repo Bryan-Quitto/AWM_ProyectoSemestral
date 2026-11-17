@@ -42,11 +42,32 @@ public sealed class DespachadorPush(AppDbContext db, TransportePush transporte, 
         var autorizado = suscripcion != null && await db.VinculosDependientes.ParaJob().AnyAsync(x => x.UsuarioId == suscripcion.UsuarioId
             && x.PerfilDependienteId == entrega.PerfilDependienteId && x.Activo && x.Usuario.Estado == EstadoUsuario.Activo
             && (x.RolEnDependiente == RolEnDependiente.CuidadorPrincipal || x.RolEnDependiente == RolEnDependiente.Apoyo), ct);
-        var cargaJson = await db.OutboxMensajes.ParaJob().Where(x => x.Id == entrega.OutboxMensajeId).Select(x => x.PayloadJson).SingleAsync(ct);
-        var carga = JsonSerializer.Deserialize<CargaAnimoCritico>(cargaJson);
-        var ruta = carga == null ? "/agenda" : $"/agenda?bloqueIdDestacado={carga.BloqueId:D}";
+        var outbox = await db.OutboxMensajes.ParaJob()
+            .Where(x => x.Id == entrega.OutboxMensajeId)
+            .Select(x => new { x.Tipo, x.PayloadJson })
+            .SingleAsync(ct);
+
+        string ruta;
+        string? tituloPersonalizado = null;
+        string? cuerpoPersonalizado = null;
+
+        if (outbox.Tipo == "ALERTA_SOS_URGENTE")
+        {
+            var cargaSos = JsonSerializer.Deserialize<CargaAlertaSos>(outbox.PayloadJson);
+            ruta = cargaSos == null
+                ? "/sos"
+                : $"/sos?dependienteId={cargaSos.PerfilDependienteId:D}";
+            tituloPersonalizado = "ALERTA SOS RACPD";
+            cuerpoPersonalizado = "Emergencia activa en tu red de cuidados. Toca aquí para abrir la ficha y teléfonos de auxilio.";
+        }
+        else
+        {
+            var carga = JsonSerializer.Deserialize<CargaAnimoCritico>(outbox.PayloadJson);
+            ruta = carga == null ? "/agenda" : $"/agenda?bloqueIdDestacado={carga.BloqueId:D}";
+        }
+
         var resultado = autorizado && suscripcion != null
-            ? await transporte.Enviar(suscripcion, entrega.OutboxMensajeId, ruta, ct)
+            ? await transporte.Enviar(suscripcion, entrega.OutboxMensajeId, ruta, ct, tituloPersonalizado, cuerpoPersonalizado)
             : new ResultadoEnvioPush(null, "SinAutorizacion");
         if (resultado.Error == "ConfiguracionVapidRechazada") registro.LogWarning("El proveedor rechazó VAPID. Revisa las credenciales del servidor antes de agotar los reintentos.");
         var codigo = resultado.Codigo;
@@ -75,7 +96,7 @@ public sealed class DespachadorPush(AppDbContext db, TransportePush transporte, 
         UPDATE "OutboxMensajes" m SET "Procesado" = true, "FechaProcesamiento" = NOW(),
             "Fallo" = EXISTS (SELECT 1 FROM "EntregasPush" e WHERE e."OutboxMensajeId" = m."Id" AND e."Estado" = 'Fallida'),
             "UltimoErrorClasificado" = CASE WHEN EXISTS (SELECT 1 FROM "EntregasPush" e WHERE e."OutboxMensajeId" = m."Id" AND e."Estado" = 'Fallida') THEN 'EntregasFallidas' ELSE NULL END
-        WHERE m."Tipo" = 'BITACORA_ANIMO_CRITICO' AND m."DestinatariosResueltos" AND NOT m."Procesado"
+        WHERE m."Tipo" IN ('BITACORA_ANIMO_CRITICO', 'ALERTA_SOS_URGENTE') AND m."DestinatariosResueltos" AND NOT m."Procesado"
         AND NOT EXISTS (SELECT 1 FROM "EntregasPush" e WHERE e."OutboxMensajeId" = m."Id" AND e."Estado" IN ('Pendiente', 'EnProceso'))
         """, ct);
 }

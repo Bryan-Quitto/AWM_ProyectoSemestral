@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "http://127.0.0.1:50127"
+      "url": "http://127.0.0.1:58034"
     }
   ],
   "paths": {
@@ -1408,6 +1408,78 @@
         ]
       }
     },
+    "/api/alertas/sos": {
+      "post": {
+        "tags": [
+          "Api"
+        ],
+        "operationId": "RACPDBackendFeaturesAlertasSosDispararSosEndpoint",
+        "requestBody": {
+          "x-name": "DispararSosRequest",
+          "description": "",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RACPDBackendFeaturesAlertasSosDispararSosRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RACPDBackendFeaturesAlertasSosDispararSosResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicrosoftAspNetCoreMvcProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "JWTBearerAuth": [
+              "AdministradorSistema",
+              "CuidadorPrincipal",
+              "Apoyo"
+            ]
+          }
+        ]
+      }
+    },
     "/api/agenda/ultima-bitacora": {
       "get": {
         "tags": [
@@ -2760,6 +2832,42 @@
           },
           "listado": {
             "type": "boolean",
+            "nullable": true
+          }
+        }
+      },
+      "RACPDBackendFeaturesAlertasSosDispararSosResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "alertaId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid"
+          },
+          "nombreDependiente": {
+            "type": "string"
+          },
+          "cuidadoresNotificados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fechaEmision": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RACPDBackendFeaturesAlertasSosDispararSosRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "perfilDependienteId": {
+            "type": "string",
+            "format": "guid",
             "nullable": true
           }
         }

@@ -8,6 +8,8 @@ import { Boton } from '../../components/Boton'
 import { CampanaNotificaciones } from './CampanaNotificaciones'
 import { extraerRolDelToken, type Rol } from '../../autenticacion/roles'
 import { usePreferenciasAccesibilidad } from '../../components/Accesibilidad/usePreferenciasAccesibilidad'
+import { BannerInstalarPwa } from '../../components/BannerInstalarPwa'
+import { ModalConfirmacionSos } from './ModalConfirmacionSos'
 
 type UsuarioSesion = {
   id?: string
@@ -19,6 +21,7 @@ export const LayoutPrincipalMobile = () => {
   const { cerrarSesion, cerrando } = useCerrarSesion()
   const [usuario, setUsuario] = useState<UsuarioSesion | null>(null)
   const [tecladoAbierto, setTecladoAbierto] = useState(false)
+  const [modalSosAbierto, setModalSosAbierto] = useState(false)
 
   // Acceso al panel de accesibilidad para activarlo desde el header móvil
   const { totalModificacionesActivas, panelAbierto, alternarPanel, preferencias } = usePreferenciasAccesibilidad()
@@ -162,21 +165,28 @@ export const LayoutPrincipalMobile = () => {
           </Boton>
           
           {/* DECISIÓN DE DISEÑO: El botón SOS es exclusivo de la vista móvil por su naturaleza de emergencia y acceso rápido en terreno. No es una inconsistencia con Desktop. */}
-          <Link
-            to="/sos"
-            aria-label="Abrir modo de emergencia SOS"
-            className="px-2.5 py-1 flex items-center justify-center gap-1 bg-red-50 text-red-700 rounded-lg font-bold border border-red-200 text-xs sm:text-sm touch-manipulation cursor-pointer hover:bg-red-100 active:scale-95 transition-transform min-h-[40px] min-w-[40px] select-none"
+          <button
+            type="button"
+            onClick={() => setModalSosAbierto(true)}
+            aria-label="Activar alerta de emergencia SOS"
+            className="px-2.5 py-1 flex items-center justify-center gap-1 bg-red-600 text-white rounded-lg font-bold border border-red-700 text-xs sm:text-sm touch-manipulation cursor-pointer hover:bg-red-700 active:scale-95 transition-all shadow-xs min-h-[40px] min-w-[40px] select-none"
           >
             <AlertTriangle size={15} />
             SOS
-          </Link>
+          </button>
         </div>
       </header>
 
       {/* Main en flujo flex: min-h-0 obligatorio para permitir scroll natural en flex-1 */}
       <main className="flex-1 overflow-y-auto min-h-0">
+        <BannerInstalarPwa />
         <Outlet />
       </main>
+
+      <ModalConfirmacionSos
+        abierto={modalSosAbierto}
+        onCerrar={() => setModalSosAbierto(false)}
+      />
 
       {/* Nav en flujo normal (shrink-0) sin fixed frágil: desaparece limpiamente al escribir para no restar pantalla */}
       <nav className={`shrink-0 w-full bg-white border-t border-blue-200 flex justify-around items-center h-16 pb-safe z-30 transition-all duration-150 ${tecladoAbierto ? 'hidden' : ''}`}>

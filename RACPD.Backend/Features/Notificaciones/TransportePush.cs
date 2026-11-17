@@ -8,13 +8,25 @@ namespace RACPD.Backend.Features.Notificaciones;
 public sealed record ResultadoEnvioPush(int? Codigo, string? Error, TimeSpan? Espera = null);
 public sealed class TransportePush(IHttpClientFactory fabrica, IOptions<OpcionesPush> opciones)
 {
-    public async Task<ResultadoEnvioPush> Enviar(SuscripcionPush suscripcion, Guid mensajeId, string ruta, CancellationToken ct)
+    public async Task<ResultadoEnvioPush> Enviar(
+        SuscripcionPush suscripcion,
+        Guid mensajeId,
+        string ruta,
+        CancellationToken ct,
+        string? tituloPersonalizado = null,
+        string? cuerpoPersonalizado = null)
     {
         var o = opciones.Value;
         if (!o.DestinoPermitido(suscripcion.UrlDestino)) return new(null, "DestinoNoPermitido");
         using var cliente = fabrica.CreateClient("push");
         using var web = new WebPushClient(cliente);
-        var aviso = new AvisoPush(mensajeId.ToString(), "RACPD", "Hay una actualización importante en tu red de cuidados. Abre la aplicación para revisarla.", ruta);
+        var aviso = new AvisoPush(
+            mensajeId.ToString(),
+            string.IsNullOrWhiteSpace(tituloPersonalizado) ? "RACPD" : tituloPersonalizado,
+            string.IsNullOrWhiteSpace(cuerpoPersonalizado)
+                ? "Hay una actualización importante en tu red de cuidados. Abre la aplicación para revisarla."
+                : cuerpoPersonalizado,
+            ruta);
         try
         {
             using var solicitud = web.GenerateRequestDetails(new PushSubscription(suscripcion.UrlDestino, suscripcion.ClavePublica, suscripcion.SecretoAutenticacion),

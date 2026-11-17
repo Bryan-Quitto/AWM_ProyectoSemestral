@@ -15,6 +15,7 @@ import {
   useRACPDBackendFeaturesPerfilesDependientesObtenerDependienteObtenerDependienteEndpoint,
 } from '../../api/generated/api/api';
 import { TIPOS_SANGRE } from './schema';
+import { construirEnlaceWhatsApp } from '../DirectorioRelevos/construirEnlaceWhatsApp';
 
 const TIPO_SANGRE_LABELS: Record<(typeof TIPOS_SANGRE)[number], string> = {
   APositivo: 'A+',
@@ -34,14 +35,20 @@ interface ContactoEmergencia {
   telefonoWhatsApp?: string;
 }
 
-export function SOSMobile() {
+interface SOSMobileProps {
+  dependienteId?: string;
+}
+
+export function SOSMobile({ dependienteId }: SOSMobileProps = {}) {
   const navigate = useNavigate();
 
-  // 1. Pedimos el listado para conocer el perfilId del primer dependiente.
+  // 1. Pedimos el listado solo si no llegó ?dependienteId en la URL (ej. desde Push SOS).
   const { data: listadoData, isLoading: isListando } =
-    useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint();
+    useRACPDBackendFeaturesPerfilesDependientesListarMisDependientesListarMisDependientesEndpoint({
+      swr: { enabled: !dependienteId },
+    });
 
-  const primerDependienteId = listadoData?.data?.[0]?.perfilId;
+  const primerDependienteId = dependienteId ?? listadoData?.data?.[0]?.perfilId;
 
   // 2. Con ese id pedimos el detalle para mostrar info crítica en el SOS.
   const { data: detalleData, isLoading: isCargandoDetalle, error } =
@@ -215,6 +222,10 @@ export function SOSMobile() {
             ) : (
               contactos.map((c, i) => {
                 const telefonoSoloDigitos = (c.telefonoWhatsApp ?? '').replace(/\D/g, '');
+                const enlaceWhatsApp = construirEnlaceWhatsApp(
+                  c.telefonoWhatsApp ?? '',
+                  `Hola ${c.nombre ?? ''}. Te contactamos desde RACPD por una EMERGENCIA con ${perfil.nombreCompleto ?? 'el dependiente'}. Por favor, contesta inmediatamente.`
+                );
                 return (
                   <div key={`${c.telefonoWhatsApp ?? i}-${i}`} className="p-4 sm:p-5">
                     <div className="mb-3">
@@ -227,20 +238,14 @@ export function SOSMobile() {
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       <a
-                        href={`tel:${c.telefonoWhatsApp ?? ''}`}
+                        href={`tel:${telefonoSoloDigitos}`}
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
                       >
                         <Phone className="w-5 h-5 shrink-0" />
                         �� Llamar a {c.nombre ?? 'Contacto'}
                       </a>
                       <a
-                        href={`https://wa.me/${telefonoSoloDigitos}?text=${encodeURIComponent(
-                          `Hola ${
-                            c.nombre ?? ''
-                          }. Te contactamos desde RACPD por una EMERGENCIA con ${
-                            perfil.nombreCompleto ?? 'el dependiente'
-                          }. Por favor, contesta inmediatamente.`
-                        )}`}
+                        href={enlaceWhatsApp}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2 w-full bg-green-600 hover:bg-green-700 active:scale-[0.99] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition disabled:opacity-50"
