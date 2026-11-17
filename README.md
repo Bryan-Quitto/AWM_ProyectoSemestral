@@ -2,46 +2,47 @@
 
 **RACPD** es una plataforma web y PWA de alta fiabilidad diseñada para coordinar, apoyar y optimizar la gestión diaria de cuidadores de personas con dependencia.
 
-> ⚠️ **Estado del Proyecto:** En desarrollo activo. La funcionalidad de Agenda de Turnos está implementada y operativa.
+> ✅ **Estado del Proyecto:** Funcionalidades troncales implementadas al 100% (Semanas 1–6 completadas: Estabilización Dual Views, Agenda Compartida, Bitácora con Evidencias Fotográficas, Directorio de Relevos, Notificaciones Push VAPID con Outbox Nativo, Botón SOS de Emergencia y Hardening PWA).
 
 ---
 
 ## ✅ Funcionalidades Implementadas
 
-### 1. Gestión de Usuarios y Roles
-- [x] Creación de cuentas con roles definidos (Administrador, Cuidador Principal, Apoyo)
-- [x] Autenticación JWT via Supabase (RS256 + JWKS)
-- [x] Configuración de perfil (nombre, apellido)
-- [x] Modificación de contraseña con política de seguridad
+### 1. Gestión de Usuarios, Roles y Accesibilidad
+- [x] Creación e invitación de cuentas con roles definidos (`AdministradorSistema`, `CuidadorPrincipal`, `Apoyo`)
+- [x] Autenticación JWT asimétrica vía Supabase (RS256 + JWKS)
+- [x] Configuración de perfil, cambio de contraseña y preferencias de accesibilidad (`BotonAccesibilidadFlotante`)
 
-### 2. Agenda Compartida de Turnos *(✨ Nuevo - Implementado)*
-- [x] **Backend:** 6 endpoints FastEndpoints con validaciones RFC 7807
-  - `GET /api/agenda` — Listar bloques de turnos
-  - `GET /api/agenda/{id}` — Obtener detalle de bloque
-  - `POST /api/agenda` — Crear bloque (solo Cuidador Principal)
-  - `PUT /api/agenda/{id}` — Editar bloque (solo creador)
-  - `DELETE /api/agenda/{id}` — Eliminar bloque (con validación de reservas)
-  - `POST /api/agenda/{id}/reservar` — Reservar turno
-  - `DELETE /api/agenda/{id}/reserva` — Cancelar reserva
-- [x] **Entidades:** `BloqueTurno`, `ReservaTurno` con control de concurrencia
-- [x] **Frontend:** Dual Views (Desktop grid 3 columnas / Mobile lista vertical) + Calendario visual mensual
-- [x] **Validaciones:**
-  - R1: Solo Cuidador Principal puede crear/editar bloques
-  - R2: No reservar propio bloque
-  - R3: No bloques en fechas pasadas
-  - R4: Cupos entre 1-5
-  - R5: No doble reserva
-  - R6: Control de cupos máximos
-- [x] **UX:** Microinteracciones, toasts, estados visuales diferenciados
+### 2. Perfiles de Dependientes y Ficha Médica Crítica
+- [x] CRUD completo de dependientes con concurrencia optimista (`xmin`), tipo de sangre, condiciones crónicas y alergias estructuradas
+- [x] Contactos de emergencia con marcación telefónica (`tel:`) y enlace WhatsApp normalizado a código país `593` (`construirEnlaceWhatsApp.ts`)
+- [x] Gestión de vínculos y permisos RBAC entre cuidadores y dependientes
 
-### 3. Control de Tareas Diarias
-- [ ] Pendiente de implementación
+### 3. Agenda Compartida de Turnos y Control de Tareas
+- [x] **Backend:** Endpoints FastEndpoints con validaciones RFC 7807 y proyección de recurrencia semanal
+- [x] **Reservas y Relevos:** Reserva de turnos con UI optimista, regla de antelación mínima (72h) y cancelación controlada
+- [x] **Control de Tareas Diarias:** Checklist configurable por bloque de turno y registro de tareas completadas
+- [x] **Frontend:** *Dual Views* (Desktop grid 3 columnas + calendario / Mobile lista vertical)
 
 ### 4. Directorio Verificado de Relevos
-- [ ] Pendiente de implementación
+- [x] Listado filtrable por estado (`Disponible` / `NoDisponible`), búsqueda y dependiente
+- [x] Contacto inmediato vía WhatsApp (`wa.me/593...`) y llamada telefónica (`tel:`)
 
-### 5. Bitácora de Novedades (Traspaso de turno)
-- [ ] Pendiente de implementación
+### 5. Bitácora de Novedades y Evidencias Fotográficas Médicas
+- [x] Cierre de turno (`POST /api/agenda/{id}/completar`) con estado de ánimo, síntomas, horas de sueño, observaciones y checklist
+- [x] **Captura y Storage:** Captura de cámara en vivo / selector táctil (`capture="environment"`), validación de magic bytes, subida vía `POST /api/evidencias/subir` y servido estático bajo `/uploads/evidencias`
+- [x] **Visualización:** Vista previa y acceso al original en Agenda (`TarjetaBloque`) y Dashboard (`ModalDetalleBitacoraDashboard`)
+
+### 6. Sistema Troncal Web Push (VAPID) y Outbox Worker Nativo
+- [x] **Worker Nativo .NET 10:** `ProcesadorOutbox` (`BackgroundService` + `PeriodicTimer`) ejecutando `SELECT ... FOR UPDATE SKIP LOCKED` sobre `OutboxMensajes` y `EntregasPush` (sin Hangfire)
+- [x] **Envío Web Push:** Credenciales VAPID RFC 8292 (`TransportePush`), reintentos con backoff exponencial y desactivación automática ante HTTP 404/410
+- [x] **Disparos Automáticos:** Encolado transaccional de `BITACORA_ANIMO_CRITICO` (ánimo `Mal` / `MuyMal`) y `ALERTA_SOS_URGENTE`
+- [x] **Service Worker (`public/sw.js`):** Listeners `push` y `notificationclick` con navegación directa a la alerta correspondiente sin exponer datos clínicos en pantalla bloqueada
+
+### 7. Botón SOS de Emergencia y Hardening PWA
+- [x] **Botón SOS Móvil:** Acceso prominente en `LayoutPrincipalMobile` con modal de confirmación (`ModalConfirmacionSos`) y cuenta regresiva de 4 segundos para evitar falsos positivos
+- [x] **Alerta a Red de Apoyo:** Endpoint `POST /api/alertas/sos` que notifica por Push a los cuidadores con rol `Apoyo` vinculados y abre `/sos?dependienteId=...` con datos críticos y teléfonos de auxilio
+- [x] **Instalabilidad y Modo Offline:** Banner `"Instalar App RACPD"` (`beforeinstallprompt`) y caché básica de navegación offline en `sw.js`
 
 ---
 
@@ -119,6 +120,15 @@ SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-aqui
 SUPABASE_DB_CONNECTION_STRING=Host=...;Database=...;Username=...;Password=...
 ```
 
+Para habilitar el envío de notificaciones Push VAPID en desarrollo, genera las claves locales ejecutando:
+
+```bash
+cd RACPD.Backend
+dotnet run -- --generar-claves-push
+```
+
+Esto crea el archivo `appsettings.Push.local.json` (ignorado por Git). En celulares reales fuera de `localhost`, asegúrate de servir la aplicación bajo **HTTPS** para habilitar Service Worker, Cámara y Push.
+
 ---
 
 ## 🚀 Guía de Inicio Rápido
@@ -150,7 +160,7 @@ npm run dev
 | Comando | Descripción |
 | :--- | :--- |
 | `npm run dev` | Inicia el servidor de desarrollo Vite. |
-| `npm run api:generate` | Ejecuta **Orval** para sincronizar contratos API (`src/api/generated`). Requiere Backend encendido. |
+| `npm run api:generate` | Exporta automáticamente `swagger.json` desde `RACPD.Backend` y genera los contratos TypeScript/SWR con **Orval** (no requiere servidor encendido). |
 | `npm run build` | Valida linter, tipos TypeScript y compila para producción. |
 | `npm run lint` | Ejecuta **Oxlint** para análisis estático ultrarrápido. |
 | `npm run preview` | Previsualiza el build de producción localmente. |
@@ -175,26 +185,29 @@ AWM_ProyectoSemestral/
 ├── RACPD.Backend/            # Backend .NET 10 (FastEndpoints + EF Core)
 │   ├── Data/                 # AppDbContext y configuraciones EF Core
 │   ├── Domain/               # Entidades y Enums de dominio
-│   │   └── Entities/         # BloqueTurno.cs, ReservaTurno.cs, Usuario.cs
 │   ├── Features/             # Vertical Slices
-│   │   ├── Agenda/           # Agenda de Turnos (6 endpoints)
-│   │   ├── Identidad/        # Autenticación
-│   │   └── Usuarios/         # Gestión de usuarios
-│   ├── Migrations/           # Migraciones EF Core (incluye AddAgendaTables)
-│   └── Program.cs            # Configuración de servicios y middlewares
-├── RACPD.Frontend/           # Frontend React 19 + Vite + Tailwind CSS
+│   │   ├── Agenda/           # Agenda de Turnos, Reservas y Bitácora
+│   │   ├── Alertas/          # Botón SOS (ALERTA_SOS_URGENTE)
+│   │   ├── DirectorioRelevos/# Directorio verificado de cuidadores
+│   │   ├── Evidencias/       # Subida y validación de evidencias médicas
+│   │   ├── Identidad/        # Autenticación JWKS
+│   │   ├── Notificaciones/   # Push VAPID + ProcesadorOutbox (SKIP LOCKED)
+│   │   ├── PerfilesDependientes/ # Fichas médicas, alergias y vínculos
+│   │   └── Usuarios/         # Gestión e invitación de usuarios
+│   ├── Migrations/           # Migraciones EF Core
+│   ├── uploads/evidencias/   # Almacenamiento estático local de evidencias
+│   └── Program.cs            # Configuración de servicios, static files y middlewares
+├── RACPD.Frontend/           # Frontend React 19 + Vite + Tailwind CSS + PWA
+│   ├── public/sw.js          # Service Worker (caché offline + push + notificationclick)
 │   ├── src/
 │   │   ├── api/              # Cliente autogenerado (Orval)
-│   │   ├── components/       # Componentes UI agnósticos
-│   │   ├── views/            # Vistas bimodal (Desktop / Mobile)
-│   │   │   └── Agenda/      # AgendaDesktop, AgendaMobile, TarjetaBloque, DialogoBloque
-│   │   ├── features/        # Hooks y lógica por feature
-│   │   │   └── agenda/      # useAgenda.ts, useCrearBloque.ts, etc.
-│   │   └── routes/          # Rutas TanStack Router
+│   │   ├── components/       # Componentes UI agnósticos (BannerInstalarPwa, Boton, Accesibilidad)
+│   │   ├── views/            # Vistas bimodales (Desktop / Mobile)
+│   │   ├── features/         # Hooks y lógica por feature (agenda, notificaciones, pwa, etc.)
+│   │   └── routes/           # Rutas TanStack Router
 │   ├── orval.config.ts       # Configuración del generador de API Orval
 │   └── package.json
-├── docs/                     # Documentación técnica y especificaciones
-│   └── spec-agenda-turnos.md # Especificación de la Agenda de Turnos
+├── docs/                     # Documentación técnica, evidencias y especificaciones
 ├── AGENTS.md                 # Misión, roles y embudo de planificación para Agentes IA
 ├── SKILLS.md                 # Contexto técnico y Reglas Maestras de desarrollo
 └── README.md                 # Documentación principal del repositorio
